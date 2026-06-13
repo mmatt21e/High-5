@@ -1,0 +1,73 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+
+export function Lobby() {
+  const router = useRouter();
+  const [code, setCode] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState<"create" | "join" | null>(null);
+
+  async function createGame() {
+    setError(null);
+    setBusy("create");
+    const res = await fetch("/api/match", { method: "POST" });
+    const data = await res.json().catch(() => ({}));
+    setBusy(null);
+    if (!res.ok) return setError(data.error ?? "Could not create game");
+    router.push(`/play/${data.code}`);
+  }
+
+  async function joinGame(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setBusy("join");
+    const res = await fetch("/api/match/join", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: code.trim() }),
+    });
+    const data = await res.json().catch(() => ({}));
+    setBusy(null);
+    if (!res.ok) return setError(data.error ?? "Could not join game");
+    router.push(`/play/${data.code}`);
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <button
+        onClick={createGame}
+        disabled={busy !== null}
+        className="rounded-xl bg-gold py-4 text-lg font-bold text-felt-900 shadow disabled:opacity-50"
+      >
+        {busy === "create" ? "Creating…" : "Create a game"}
+      </button>
+
+      <div className="flex items-center gap-3 text-xs text-white/40">
+        <span className="h-px flex-1 bg-white/15" />
+        OR
+        <span className="h-px flex-1 bg-white/15" />
+      </div>
+
+      <form onSubmit={joinGame} className="flex flex-col gap-3">
+        <input
+          value={code}
+          onChange={(e) => setCode(e.target.value.toUpperCase())}
+          placeholder="Enter invite code"
+          maxLength={8}
+          className="rounded-xl border border-white/15 bg-black/20 px-4 py-4 text-center text-2xl font-bold tracking-[0.3em] outline-none focus:border-gold"
+        />
+        <button
+          type="submit"
+          disabled={busy !== null || code.trim().length < 3}
+          className="rounded-xl border border-gold/60 py-3 font-bold text-gold disabled:opacity-40"
+        >
+          {busy === "join" ? "Joining…" : "Join game"}
+        </button>
+      </form>
+
+      {error && <p className="text-center text-sm text-rose-400">{error}</p>}
+    </div>
+  );
+}

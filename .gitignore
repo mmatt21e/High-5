@@ -30,3 +30,6 @@ npm-debug.log*
 
 # testing
 /coverage
+
+# typescript build info
+*.tsbuildinfo

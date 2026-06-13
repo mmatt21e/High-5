@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#0e3a24"/>
+  <text x="50%" y="46%" text-anchor="middle" dominant-baseline="middle"
+        font-family="system-ui, sans-serif" font-size="190" font-weight="800"
+        fill="#e8c46a">5</text>
+  <text x="50%" y="74%" text-anchor="middle" dominant-baseline="middle"
+        font-family="system-ui, sans-serif" font-size="120" fill="#f7f5ef">♠♥</text>
+</svg>

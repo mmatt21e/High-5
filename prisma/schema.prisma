@@ -1,0 +1,119 @@
+// Prisma schema for Five-O Poker.
+//
+// Dev uses SQLite for zero-config local runs. For production, switch the
+// datasource provider to "postgresql" and point DATABASE_URL at your Postgres
+// instance (Railway/Render/Neon) — no model changes required.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ----- Auth.js (NextAuth) models -----
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  displayName   String    @default("") // backfilled on create for OAuth users
+  passwordHash  String? // null for OAuth-only accounts
+  image         String?
+  createdAt     DateTime  @default(now())
+
+  accounts Account[]
+  sessions Session[]
+  stats    Stats?
+
+  hostedMatches Match[] @relation("HostMatches")
+  guestMatches  Match[] @relation("GuestMatches")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ----- Game domain models -----
+
+model Stats {
+  userId        String @id
+  gamesPlayed   Int    @default(0)
+  gameWins      Int    @default(0)
+  gameLosses    Int    @default(0)
+  gamePushes    Int    @default(0)
+  fiveOs        Int    @default(0) // games won by sweeping all five hands
+  matchesPlayed Int    @default(0)
+  matchWins     Int    @default(0)
+  currentStreak Int    @default(0) // consecutive game wins
+  bestStreak    Int    @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// A match pairs two players via an invite code and runs first-to-N games.
+model Match {
+  id         String   @id @default(cuid())
+  inviteCode String   @unique
+  status     String   @default("lobby") // lobby | active | complete | abandoned
+  targetWins Int      @default(5)
+  hostId     String
+  guestId    String?
+  scoreHost  Int      @default(0)
+  scoreGuest Int      @default(0)
+  winnerId   String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  host  User   @relation("HostMatches", fields: [hostId], references: [id], onDelete: Cascade)
+  guest User?  @relation("GuestMatches", fields: [guestId], references: [id], onDelete: SetNull)
+  games Game[]
+}
+
+// A single completed game within a match. The board snapshot and result are
+// stored as JSON strings for portability across SQLite/Postgres.
+model Game {
+  id          String   @id @default(cuid())
+  matchId     String
+  seed        Int
+  winnerSeat  Int? // 0 = host, 1 = guest, null = push
+  isFiveO     Boolean  @default(false)
+  resultJson  String // serialized GameResult
+  boardJson   String // serialized final boards
+  createdAt   DateTime @default(now())
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+}

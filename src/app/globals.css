@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+@theme {
+  --color-felt-900: #0a2a1a;
+  --color-felt-800: #0e3a24;
+  --color-felt-700: #14512f;
+  --color-gold: #e8c46a;
+  --color-card: #f7f5ef;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at 50% 0%, var(--color-felt-700), var(--color-felt-900));
+  color: #f4f6f5;
+  font-family:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  /* Respect mobile safe areas (notches / home indicator). */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+    env(safe-area-inset-bottom) env(safe-area-inset-left);
+  overscroll-behavior-y: none;
+}
+
+/* Prevent iOS auto-zoom on input focus by keeping font-size >= 16px. */
+input,
+button,
+select {
+  font-size: 16px;
+}

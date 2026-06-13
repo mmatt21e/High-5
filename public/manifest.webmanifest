@@ -1,0 +1,18 @@
+{
+  "name": "Five-O Poker",
+  "short_name": "Five-O",
+  "description": "Heads-up Five-O Poker, played across two devices.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a2a1a",
+  "theme_color": "#0a2a1a",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
