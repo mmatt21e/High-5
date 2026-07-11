@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
+import { ServiceWorker } from "@/components/ServiceWorker";
 
 export const metadata: Metadata = {
   title: "Five-O Poker",
@@ -26,6 +27,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <Providers>
+          <ServiceWorker />
           <div className="mx-auto flex min-h-screen w-full max-w-md flex-col">
             {children}
           </div>
