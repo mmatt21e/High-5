@@ -3,9 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useGameSocket } from "./useGameSocket";
-import { CardSlot, CardFace } from "./PlayingCard";
-import type { GameView, PlayerIndex } from "@/lib/game/types";
-import type { CardView } from "@/lib/game/types";
+import { CardFace, FannedColumn, type CardSize } from "./PlayingCard";
+import type { CardView, GameView, PlayerIndex } from "@/lib/game/types";
 import type { MatchSnapshot } from "@/lib/realtime/events";
 
 export function GameRoom({ code }: { code: string }) {
@@ -14,8 +13,8 @@ export function GameRoom({ code }: { code: string }) {
   if (error) {
     return (
       <Centered>
-        <p className="text-rose-400">{error}</p>
-        <Link href="/" className="mt-4 text-gold underline">
+        <p className="text-lg font-semibold text-rose-300">{error}</p>
+        <Link href="/" className="btn-primary mt-6">
           Back to lobby
         </Link>
       </Centered>
@@ -23,28 +22,43 @@ export function GameRoom({ code }: { code: string }) {
   }
 
   if (!snapshot) {
-    return <Centered>{connected ? "Joining game…" : "Connecting…"}</Centered>;
+    return (
+      <Centered>
+        <Spinner />
+        <p className="mt-4 text-white/70">
+          {connected ? "Joining game…" : "Connecting…"}
+        </p>
+      </Centered>
+    );
   }
 
-  // Waiting for the opponent to join.
   if (!snapshot.guest || snapshot.status === "lobby") {
     return <WaitingRoom snapshot={snapshot} />;
   }
 
   if (!view) {
-    return <Centered>Setting up the table…</Centered>;
+    return (
+      <Centered>
+        <Spinner />
+        <p className="mt-4 text-white/70">Shuffling the deck…</p>
+      </Centered>
+    );
   }
 
-  return (
-    <Table snapshot={snapshot} view={view} onPlace={place} onNext={next} />
-  );
+  return <Table snapshot={snapshot} view={view} onPlace={place} onNext={next} />;
 }
 
 function Centered({ children }: { children: React.ReactNode }) {
   return (
-    <main className="flex flex-1 flex-col items-center justify-center p-6 text-center text-white/80">
+    <main className="flex flex-1 flex-col items-center justify-center p-6 text-center">
       {children}
     </main>
+  );
+}
+
+function Spinner() {
+  return (
+    <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-gold" />
   );
 }
 
@@ -73,18 +87,18 @@ function WaitingRoom({ snapshot }: { snapshot: MatchSnapshot }) {
 
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-6 p-6 text-center">
-      <h1 className="text-xl font-bold">Waiting for your opponent…</h1>
+      <div className="flex items-center gap-3 text-white/70">
+        <Spinner />
+        <span className="font-semibold">Waiting for your opponent…</span>
+      </div>
       <p className="text-sm text-white/60">Share this code to invite a player</p>
-      <div className="rounded-2xl border border-gold/40 bg-black/20 px-8 py-6">
-        <div className="text-5xl font-black tracking-[0.4em] text-gold">
+      <div className="panel border-gold/40 px-8 py-6">
+        <div className="text-5xl font-black tracking-[0.35em] text-gold">
           {snapshot.inviteCode}
         </div>
       </div>
-      <button
-        onClick={share}
-        className="rounded-xl bg-gold px-6 py-3 font-bold text-felt-900"
-      >
-        {copied ? "Copied!" : "Share invite"}
+      <button onClick={share} className="btn-primary w-full max-w-xs">
+        {copied ? "Copied to clipboard!" : "Share invite"}
       </button>
       <Link href="/" className="text-sm text-white/60 underline">
         Cancel
@@ -110,88 +124,148 @@ function Table({
   const oppBoard = view.players[opp];
   const myScore = you === 0 ? snapshot.scoreHost : snapshot.scoreGuest;
   const oppScore = you === 0 ? snapshot.scoreGuest : snapshot.scoreHost;
+  const result = view.result;
   const gameOver = view.phase === "complete";
   const matchOver = snapshot.status === "complete";
-  const result = view.result;
+
+  const wins = (seat: PlayerIndex) =>
+    result ? result.columns.map((c) => c.winner === seat) : null;
+  const labels = (seat: PlayerIndex) =>
+    result ? result.columns.map((c) => c.scores[seat].label) : null;
 
   return (
-    <main className="flex flex-1 flex-col gap-2 p-3">
-      {/* Opponent header */}
-      <div className="flex items-center justify-between text-sm">
-        <span className="font-semibold">{oppBoard.displayName}</span>
-        <ScoreBadge mine={oppScore} target={snapshot.targetWins} />
+    <main className="flex flex-1 flex-col justify-center gap-3 p-3">
+      {/* Top group: opponent */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between text-xs text-white/50">
+          <Link href="/" className="rounded px-1 py-0.5 active:text-white">
+            ← Leave
+          </Link>
+          <span className="font-mono tracking-[0.25em]">
+            {snapshot.inviteCode}
+          </span>
+          <Link
+            href="/how-to-play"
+            className="rounded px-1 py-0.5 active:text-white"
+          >
+            Rules
+          </Link>
+        </div>
+        <PlayerBar
+          name={oppBoard.displayName}
+          score={oppScore}
+          target={snapshot.targetWins}
+        />
+        <Board board={oppBoard.columns} size="sm" wins={wins(opp)} labels={labels(opp)} />
       </div>
 
-      {/* Opponent board */}
-      <BoardGrid
-        board={oppBoard.columns}
-        size="sm"
-        result={result ? result.columns.map((c) => c.winner === opp) : null}
-        labels={result ? result.columns.map((c) => c.scores[opp].label) : null}
-      />
-
-      {/* Center status */}
-      <div className="my-1 rounded-xl bg-black/25 px-3 py-2 text-center">
+      {/* Center: turn banner or end-of-game panel, between the two boards */}
+      <div className="w-full">
         {matchOver ? (
           <MatchOver snapshot={snapshot} you={you} />
         ) : gameOver ? (
-          <GameOver result={result} you={you} onNext={onNext} snapshot={snapshot} />
+          <GameOver view={view} you={you} snapshot={snapshot} onNext={onNext} />
         ) : (
-          <TurnStatus view={view} oppName={oppBoard.displayName} />
+          <TurnBanner view={view} oppName={oppBoard.displayName} />
         )}
       </div>
 
-      {/* Your board */}
-      <BoardGrid
-        board={myBoard.columns}
-        size="md"
-        interactive={view.yourTurn ? view.legalColumns : null}
-        onColumn={onPlace}
-        result={result ? result.columns.map((c) => c.winner === you) : null}
-        labels={result ? result.columns.map((c) => c.scores[you].label) : null}
-      />
-
-      <div className="flex items-center justify-between text-sm">
-        <span className="font-semibold text-gold">
-          {myBoard.displayName} (you)
-        </span>
-        <ScoreBadge mine={myScore} target={snapshot.targetWins} highlight />
+      {/* Bottom group: your board */}
+      <div className="flex flex-col gap-2">
+        <Board
+          board={myBoard.columns}
+          size="md"
+          interactive={view.yourTurn ? view.legalColumns : null}
+          onColumn={onPlace}
+          wins={wins(you)}
+          labels={labels(you)}
+        />
+        <PlayerBar
+          name={myBoard.displayName}
+          score={myScore}
+          target={snapshot.targetWins}
+          gold
+          you
+        />
       </div>
     </main>
   );
 }
 
-function ScoreBadge({
-  mine,
+function PlayerBar({
+  name,
+  score,
   target,
-  highlight = false,
+  gold = false,
+  you = false,
 }: {
-  mine: number;
+  name: string;
+  score: number;
   target: number;
-  highlight?: boolean;
+  gold?: boolean;
+  you?: boolean;
 }) {
   return (
-    <span
-      className={`rounded-full px-3 py-0.5 text-xs font-bold ${
-        highlight ? "bg-gold text-felt-900" : "bg-white/10 text-white"
-      }`}
-    >
-      {mine} / {target}
-    </span>
+    <div className="flex items-center justify-between px-1">
+      <span className={`text-sm font-semibold ${gold ? "text-gold" : "text-white"}`}>
+        {name}
+        {you && <span className="ml-1 text-white/40">(you)</span>}
+      </span>
+      <div className="flex items-center gap-2">
+        <ScorePips score={score} target={target} gold={gold} />
+        <span className="text-xs tabular-nums text-white/50">
+          {score}/{target}
+        </span>
+      </div>
+    </div>
   );
 }
 
-function TurnStatus({ view, oppName }: { view: GameView; oppName: string }) {
+function ScorePips({
+  score,
+  target,
+  gold,
+}: {
+  score: number;
+  target: number;
+  gold: boolean;
+}) {
   return (
-    <div className="flex items-center justify-center gap-3">
-      <div className="text-left">
-        <div className="text-xs text-white/50">Round {view.round + 1} of 5</div>
-        <div className="text-sm font-semibold">
-          {view.yourTurn ? "Your turn — tap a column" : `${oppName} is playing…`}
+    <div className="flex gap-1">
+      {Array.from({ length: target }).map((_, i) => (
+        <span
+          key={i}
+          className={`h-2 w-2 rounded-full ${
+            i < score ? (gold ? "bg-gold" : "bg-white") : "bg-white/20"
+          }`}
+        />
+      ))}
+    </div>
+  );
+}
+
+function TurnBanner({ view, oppName }: { view: GameView; oppName: string }) {
+  const yours = view.yourTurn;
+  return (
+    <div
+      className={`flex items-center justify-between rounded-xl px-4 py-2.5 ${
+        yours ? "bg-gold text-felt-900" : "bg-black/30 text-white"
+      }`}
+    >
+      <div>
+        <div className="text-[11px] font-semibold uppercase tracking-wide opacity-70">
+          Round {view.round + 1} of 5
+        </div>
+        <div className="text-base font-black">
+          {yours ? "Your turn" : `${oppName}’s turn`}
+        </div>
+        <div className="text-[11px] opacity-70">
+          {yours ? "Tap a highlighted column" : "Waiting…"}
         </div>
       </div>
-      {view.yourTurn && view.pending && (
-        <div className="animate-pulse">
+      {yours && view.pending && (
+        <div className="flex flex-col items-center gap-1">
+          <span className="text-[10px] font-bold uppercase">Place</span>
           <CardFace card={view.pending} size="md" />
         </div>
       )}
@@ -200,16 +274,17 @@ function TurnStatus({ view, oppName }: { view: GameView; oppName: string }) {
 }
 
 function GameOver({
-  result,
+  view,
   you,
-  onNext,
   snapshot,
+  onNext,
 }: {
-  result: GameView["result"];
+  view: GameView;
   you: PlayerIndex;
-  onNext: () => void;
   snapshot: MatchSnapshot;
+  onNext: () => void;
 }) {
+  const result = view.result;
   if (!result) return null;
   const won = result.winner === you;
   const tie = result.winner === null;
@@ -217,32 +292,32 @@ function GameOver({
     ? "Game tied"
     : won
       ? result.isFiveO
-        ? "FIVE-O! You swept all 5!"
+        ? "FIVE-O! Clean sweep!"
         : "You won the game!"
-      : "You lost the game";
+      : "Opponent won the game";
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="panel flex flex-col items-center gap-2 py-3">
       <div
-        className={`text-base font-black ${
-          tie ? "text-white" : won ? "text-gold" : "text-rose-400"
+        className={`text-lg font-black ${
+          tie ? "text-white" : won ? "text-gold" : "text-rose-300"
         }`}
       >
         {headline}
       </div>
       <div className="text-xs text-white/60">
-        Columns won — you {result.columnWins[you]} ·{" "}
-        {result.columnWins[(1 - you) as PlayerIndex]} opponent
+        Hands won — you {result.columnWins[you]} · opponent{" "}
+        {result.columnWins[(1 - you) as PlayerIndex]}
       </div>
       <button
         onClick={onNext}
         disabled={snapshot.youReady}
-        className="mt-1 rounded-lg bg-gold px-5 py-2 text-sm font-bold text-felt-900 disabled:opacity-50"
+        className="btn-primary mt-1 w-full max-w-xs"
       >
         {snapshot.youReady
           ? snapshot.opponentReady
             ? "Starting…"
             : "Waiting for opponent…"
-          : "Next game"}
+          : "Next game →"}
       </button>
     </div>
   );
@@ -258,66 +333,72 @@ function MatchOver({
   const myId = you === 0 ? snapshot.host.userId : snapshot.guest?.userId;
   const won = snapshot.matchWinnerId === myId;
   return (
-    <div className="flex flex-col items-center gap-2 py-1">
-      <div
-        className={`text-lg font-black ${won ? "text-gold" : "text-rose-400"}`}
-      >
+    <div className="panel flex flex-col items-center gap-2 py-4">
+      <div className={`text-2xl font-black ${won ? "text-gold" : "text-rose-300"}`}>
         {won ? "🏆 You win the match!" : "Match over"}
       </div>
-      <div className="text-xs text-white/60">
+      <div className="text-sm text-white/60">
         Final score {snapshot.scoreHost} – {snapshot.scoreGuest}
       </div>
-      <Link
-        href="/"
-        className="mt-1 rounded-lg bg-gold px-5 py-2 text-sm font-bold text-felt-900"
-      >
+      <Link href="/" className="btn-primary mt-2 w-full max-w-xs">
         Back to lobby
       </Link>
     </div>
   );
 }
 
-function BoardGrid({
+function firstEmpty(col: CardView[]): number {
+  return col.findIndex((s) => s.state === "empty");
+}
+
+function Board({
   board,
   size,
   interactive = null,
   onColumn,
-  result = null,
+  wins = null,
   labels = null,
 }: {
   board: CardView[][];
-  size: "sm" | "md";
+  size: CardSize;
   interactive?: number[] | null;
   onColumn?: (col: number) => void;
-  result?: boolean[] | null;
+  wins?: boolean[] | null;
   labels?: string[] | null;
 }) {
   return (
     <div className="grid grid-cols-5 gap-1.5">
       {board.map((col, i) => {
         const playable = interactive?.includes(i) ?? false;
-        const wonCol = result?.[i] ?? false;
+        const won = wins?.[i] ?? false;
+        const showResult = wins != null;
         return (
           <button
             key={i}
             type="button"
             disabled={!playable}
             onClick={() => playable && onColumn?.(i)}
-            className={`flex flex-col items-center gap-1 rounded-lg p-1 transition ${
+            className={`flex flex-col items-center rounded-lg p-1 transition ${
               playable
-                ? "bg-gold/15 ring-2 ring-gold active:scale-95"
-                : result
-                  ? wonCol
-                    ? "ring-1 ring-emerald-400/70"
-                    : "ring-1 ring-white/5"
+                ? "target-glow bg-gold/10 ring-2 ring-gold/80 active:scale-95"
+                : showResult
+                  ? won
+                    ? "bg-emerald-400/5 ring-2 ring-emerald-400/70"
+                    : "opacity-60"
                   : ""
             }`}
           >
-            {col.map((slot, r) => (
-              <CardSlot key={r} slot={slot} size={size} />
-            ))}
+            <FannedColumn
+              slots={col}
+              size={size}
+              targetIndex={playable ? firstEmpty(col) : null}
+            />
             {labels && (
-              <span className="mt-0.5 text-center text-[9px] leading-tight text-white/70">
+              <span
+                className={`mt-1 text-center text-[9px] leading-tight ${
+                  won ? "text-emerald-300" : "text-white/55"
+                }`}
+              >
                 {labels[i]}
               </span>
             )}

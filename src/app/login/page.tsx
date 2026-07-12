@@ -47,7 +47,7 @@ export default function LoginPage() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="rounded-lg border border-white/15 bg-black/20 px-4 py-3 outline-none focus:border-gold"
+          className="field"
         />
         <input
           type="password"
@@ -56,14 +56,10 @@ export default function LoginPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          className="rounded-lg border border-white/15 bg-black/20 px-4 py-3 outline-none focus:border-gold"
+          className="field"
         />
         {error && <p className="text-sm text-rose-400">{error}</p>}
-        <button
-          type="submit"
-          disabled={loading}
-          className="rounded-lg bg-gold py-3 font-bold text-felt-900 disabled:opacity-50"
-        >
+        <button type="submit" disabled={loading} className="btn-primary">
           {loading ? "Signing in…" : "Sign in"}
         </button>
       </form>
@@ -71,7 +67,7 @@ export default function LoginPage() {
       {googleEnabled && (
         <button
           onClick={() => signIn("google", { callbackUrl: "/" })}
-          className="rounded-lg border border-white/20 bg-white/5 py-3 font-semibold"
+          className="btn-ghost"
         >
           Continue with Google
         </button>
@@ -81,6 +77,11 @@ export default function LoginPage() {
         New here?{" "}
         <Link href="/register" className="font-semibold text-gold underline">
           Create an account
+        </Link>
+      </p>
+      <p className="text-center text-sm">
+        <Link href="/how-to-play" className="text-white/60 underline">
+          How to play Five-O
         </Link>
       </p>
     </main>

@@ -39,7 +39,7 @@ export function Lobby() {
       <button
         onClick={createGame}
         disabled={busy !== null}
-        className="rounded-xl bg-gold py-4 text-lg font-bold text-felt-900 shadow disabled:opacity-50"
+        className="btn-primary py-4 text-lg"
       >
         {busy === "create" ? "Creating…" : "Create a game"}
       </button>
@@ -56,12 +56,12 @@ export function Lobby() {
           onChange={(e) => setCode(e.target.value.toUpperCase())}
           placeholder="Enter invite code"
           maxLength={8}
-          className="rounded-xl border border-white/15 bg-black/20 px-4 py-4 text-center text-2xl font-bold tracking-[0.3em] outline-none focus:border-gold"
+          className="field py-4 text-center text-2xl font-bold tracking-[0.3em] placeholder:text-base placeholder:font-normal placeholder:tracking-normal"
         />
         <button
           type="submit"
           disabled={busy !== null || code.trim().length < 3}
-          className="rounded-xl border border-gold/60 py-3 font-bold text-gold disabled:opacity-40"
+          className="btn-outline"
         >
           {busy === "join" ? "Joining…" : "Join game"}
         </button>

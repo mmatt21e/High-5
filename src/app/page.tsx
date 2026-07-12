@@ -27,7 +27,7 @@ export default async function HomePage() {
 
       <Lobby />
 
-      <section className="mt-2 rounded-xl border border-white/10 bg-black/15 p-4">
+      <section className="panel mt-2">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="font-bold">Your stats</h2>
           <Link href="/profile" className="text-sm text-gold underline">
@@ -41,9 +41,12 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <p className="mt-auto text-center text-xs text-white/40">
-        Build 5 hands, hide your 4th card, win 3 of 5 to take the game.
-      </p>
+      <Link
+        href="/how-to-play"
+        className="mt-auto text-center text-sm text-white/60 underline"
+      >
+        New to Five-O? How to play →
+      </Link>
     </main>
   );
 }

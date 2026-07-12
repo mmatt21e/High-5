@@ -38,3 +38,46 @@ button,
 select {
   font-size: 16px;
 }
+
+/* ---- Reusable component classes for a consistent, clean UI ---- */
+@layer components {
+  .btn,
+  .btn-primary,
+  .btn-ghost,
+  .btn-outline {
+    @apply inline-flex items-center justify-center rounded-xl px-5 py-3 text-center font-bold
+      transition-transform duration-100 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50;
+    min-height: 48px; /* comfortable tap target */
+  }
+  .btn-primary {
+    @apply bg-gold text-felt-900 shadow-lg shadow-black/20;
+  }
+  .btn-ghost {
+    @apply border border-white/15 bg-white/5 text-white;
+  }
+  .btn-outline {
+    @apply border border-gold/60 text-gold;
+  }
+  .field {
+    @apply w-full rounded-xl border border-white/15 bg-black/25 px-4 py-3 text-white
+      outline-none transition-colors placeholder:text-white/35 focus:border-gold;
+    min-height: 48px;
+  }
+  .panel {
+    @apply rounded-2xl border border-white/10 bg-black/20 p-4;
+  }
+}
+
+/* Gentle attention pulse for the active placement target. */
+@keyframes targetGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(232, 196, 106, 0.55);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(232, 196, 106, 0);
+  }
+}
+.target-glow {
+  animation: targetGlow 1.6s ease-in-out infinite;
+}

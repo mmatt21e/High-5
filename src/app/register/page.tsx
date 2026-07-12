@@ -60,7 +60,7 @@ export default function RegisterPage() {
           required
           minLength={2}
           maxLength={20}
-          className="rounded-lg border border-white/15 bg-black/20 px-4 py-3 outline-none focus:border-gold"
+          className="field"
         />
         <input
           type="email"
@@ -69,7 +69,7 @@ export default function RegisterPage() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="rounded-lg border border-white/15 bg-black/20 px-4 py-3 outline-none focus:border-gold"
+          className="field"
         />
         <input
           type="password"
@@ -79,14 +79,10 @@ export default function RegisterPage() {
           onChange={(e) => setPassword(e.target.value)}
           required
           minLength={8}
-          className="rounded-lg border border-white/15 bg-black/20 px-4 py-3 outline-none focus:border-gold"
+          className="field"
         />
         {error && <p className="text-sm text-rose-400">{error}</p>}
-        <button
-          type="submit"
-          disabled={loading}
-          className="rounded-lg bg-gold py-3 font-bold text-felt-900 disabled:opacity-50"
-        >
+        <button type="submit" disabled={loading} className="btn-primary">
           {loading ? "Creating…" : "Create account"}
         </button>
       </form>
