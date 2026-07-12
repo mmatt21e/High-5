@@ -28,8 +28,21 @@ model User {
   sessions Session[]
   stats    Stats?
 
-  hostedMatches Match[] @relation("HostMatches")
-  guestMatches  Match[] @relation("GuestMatches")
+  hostedMatches Match[]            @relation("HostMatches")
+  guestMatches  Match[]            @relation("GuestMatches")
+  pushSubs      PushSubscription[]
+}
+
+// A browser Web Push subscription for turn notifications.
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Account {

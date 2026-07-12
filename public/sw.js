@@ -66,3 +66,43 @@ self.addEventListener("fetch", (event) => {
     ),
   );
 });
+
+// ---- Web Push: "it's your turn" notifications ----
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch (e) {
+    data = {};
+  }
+  const title = data.title || "Five-O Poker";
+  const url = data.url || "/";
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: data.body || "",
+      icon: "/icon.svg",
+      badge: "/icon.svg",
+      data: { url },
+      // Collapse repeated alerts for the same game into one.
+      tag: url,
+      renotify: true,
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || "/";
+  event.waitUntil(
+    (async () => {
+      const all = await self.clients.matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      });
+      for (const client of all) {
+        if (client.url.includes(url) && "focus" in client) return client.focus();
+      }
+      if (self.clients.openWindow) return self.clients.openWindow(url);
+    })(),
+  );
+});

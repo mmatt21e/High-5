@@ -1,5 +1,6 @@
 import type { Server, Socket } from "socket.io";
 import { prisma } from "../lib/prisma";
+import { sendPushToUser } from "../lib/push";
 import {
   createGame,
   placeCard,
@@ -133,6 +134,27 @@ async function broadcast(io: IO, live: LiveMatch) {
       live.game && seat !== -1 ? viewFor(live.game, seat) : null,
     );
   }
+}
+
+/**
+ * If it's a player's turn but they're not currently connected to the match,
+ * send them an "it's your turn" push notification.
+ */
+async function maybeNotifyTurn(io: IO, live: LiveMatch) {
+  if (!live.game || live.game.phase !== "playing" || !live.guest) return;
+  const seat = live.game.toMove;
+  const player = seat === 0 ? live.host : live.guest;
+  const opponent = seat === 0 ? live.guest : live.host;
+
+  const sockets = await io.in(room(live.id)).fetchSockets();
+  const online = sockets.some((s) => s.data.userId === player.userId);
+  if (online) return; // they're already looking at the game
+
+  await sendPushToUser(player.userId, {
+    title: "Your turn — Five-O Poker",
+    body: `It's your move vs ${opponent.displayName}.`,
+    url: `/play/${live.inviteCode}`,
+  });
 }
 
 function startGame(live: LiveMatch) {
@@ -286,6 +308,9 @@ export async function handleJoin(io: IO, socket: SocketT, code: string) {
   ) {
     startGame(live);
     await saveState(live);
+    await broadcast(io, live);
+    await maybeNotifyTurn(io, live);
+    return;
   }
 
   await broadcast(io, live);
@@ -330,10 +355,13 @@ async function applyMove(
 
   if (live.game.phase === "complete") {
     await persistAndScore(live);
+    await broadcast(io, live);
   } else {
     await saveState(live);
+    await broadcast(io, live);
+    // Ping the player whose turn it now is, if they've stepped away.
+    await maybeNotifyTurn(io, live);
   }
-  await broadcast(io, live);
 }
 
 export async function handleNext(io: IO, socket: SocketT) {
@@ -353,6 +381,7 @@ export async function handleNext(io: IO, socket: SocketT) {
   }
   await saveState(live);
   await broadcast(io, live);
+  if (bothReady) await maybeNotifyTurn(io, live);
 }
 
 /** A player voluntarily ends the match; it is marked complete for both. */

@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useGameSocket } from "./useGameSocket";
 import { DeckToggle } from "./DeckToggle";
+import { NotificationToggle } from "./NotificationToggle";
 import { CardFace, CardSlot, FannedColumn, type CardSize } from "./PlayingCard";
 import { cardId } from "@/lib/game/cards";
 import type { Card } from "@/lib/game/cards";
@@ -294,6 +295,10 @@ function SettingsModal({
           </button>
         </div>
         <DeckToggle />
+        <div className="mt-4 border-t border-white/10 pt-4">
+          <div className="mb-2 text-sm font-bold">Notifications</div>
+          <NotificationToggle />
+        </div>
         <a
           href="/how-to-play"
           target="_blank"

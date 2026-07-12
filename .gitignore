@@ -33,3 +33,13 @@ npm-debug.log*
 
 # typescript build info
 *.tsbuildinfo
+
+# AI assistant local files
+.claude/
+.codex/
+.cursor/
+CLAUDE.md
+CODEX.md
+AGENTS.md
+*.claude
+*.codex

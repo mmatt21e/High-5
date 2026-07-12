@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { Lobby } from "@/components/Lobby";
 import { SignOutButton } from "@/components/SignOutButton";
 import { DeckToggle } from "@/components/DeckToggle";
+import { NotificationToggle } from "@/components/NotificationToggle";
 
 export default async function HomePage() {
   const session = await auth();
@@ -113,8 +114,12 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="panel">
+      <section className="panel flex flex-col gap-4">
         <DeckToggle />
+        <div className="border-t border-white/10 pt-4">
+          <div className="mb-2 text-sm font-bold">Notifications</div>
+          <NotificationToggle />
+        </div>
       </section>
 
       <Link
