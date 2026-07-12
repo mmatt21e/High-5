@@ -367,8 +367,8 @@ function YourHand({
                 yourTurn ? "active:scale-95" : "opacity-90"
               }`}
             >
-              <div className={isSel ? "rounded-md ring-2 ring-gold" : ""}>
-                <CardSlot slot={cv} size="md" />
+              <div className={isSel ? "rounded-lg ring-2 ring-gold" : ""}>
+                <CardSlot slot={cv} size="lg" />
               </div>
             </button>
           );

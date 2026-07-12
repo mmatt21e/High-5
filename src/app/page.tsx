@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Lobby } from "@/components/Lobby";
 import { SignOutButton } from "@/components/SignOutButton";
+import { DeckToggle } from "@/components/DeckToggle";
 
 export default async function HomePage() {
   const session = await auth();
@@ -39,6 +40,10 @@ export default async function HomePage() {
           <Stat label="Wins" value={stats?.gameWins ?? 0} />
           <Stat label="Five-Os" value={stats?.fiveOs ?? 0} />
         </div>
+      </section>
+
+      <section className="panel">
+        <DeckToggle />
       </section>
 
       <Link

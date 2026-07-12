@@ -4,34 +4,28 @@ import type { CardView } from "@/lib/game/types";
 
 export type CardSize = "sm" | "md" | "lg";
 
-// Per-size geometry. `peek` is how many px of a card show when it is fanned
-// under the next one — enough to read the corner index.
+// Per-size geometry. `hpx`/`peek` drive the fanned overlap; the rest are the
+// corner rank, corner suit, and center pip font sizes. Suit colour comes from
+// the `.suit-*` classes (see globals.css) which honour the deck-colour theme.
 const SIZE = {
-  sm: { box: "h-14 w-10", hpx: 56, corner: "text-[10px]", pip: "text-lg", peek: 20 },
-  md: { box: "h-16 w-12", hpx: 64, corner: "text-xs", pip: "text-2xl", peek: 24 },
-  lg: { box: "h-24 w-16", hpx: 96, corner: "text-sm", pip: "text-4xl", peek: 34 },
+  sm: { box: "h-[62px] w-[44px]", hpx: 62, peek: 26, rank: "text-[13px]", suit: "text-[10px]", pip: "text-lg" },
+  md: { box: "h-20 w-14", hpx: 80, peek: 32, rank: "text-base", suit: "text-xs", pip: "text-2xl" },
+  lg: { box: "h-[88px] w-[62px]", hpx: 88, peek: 34, rank: "text-xl", suit: "text-sm", pip: "text-4xl" },
 } as const;
-
-function suitColor(suit: Card["suit"]) {
-  return suit === "h" || suit === "d" ? "text-red-600" : "text-neutral-900";
-}
 
 export function CardFace({ card, size = "md" }: { card: Card; size?: CardSize }) {
   const s = SIZE[size];
-  const color = suitColor(card.suit);
   return (
     <div
-      className={`${s.box} relative overflow-hidden rounded-md border border-black/10 bg-card shadow-sm`}
+      className={`${s.box} suit-${card.suit} relative overflow-hidden rounded-lg border border-black/15 bg-card shadow-sm`}
     >
       {/* Corner index — stays visible when cards are fanned. */}
-      <div
-        className={`absolute left-1 top-0.5 flex flex-col items-center font-bold leading-none ${s.corner} ${color}`}
-      >
-        <span>{RANK_LABEL[card.rank]}</span>
-        <span>{SUIT_LABEL[card.suit]}</span>
+      <div className="absolute left-1 top-0.5 flex flex-col items-center font-black leading-[0.9]">
+        <span className={s.rank}>{RANK_LABEL[card.rank]}</span>
+        <span className={s.suit}>{SUIT_LABEL[card.suit]}</span>
       </div>
-      {/* Center pip — shown on whichever card is fully visible (the top one). */}
-      <div className={`flex h-full items-center justify-center ${s.pip} ${color}`}>
+      {/* Large center pip — shown on whichever card is fully visible. */}
+      <div className={`flex h-full items-end justify-center pb-[8%] font-black ${s.pip}`}>
         {SUIT_LABEL[card.suit]}
       </div>
     </div>
@@ -42,7 +36,7 @@ export function CardBack({ size = "md" }: { size?: CardSize }) {
   const s = SIZE[size];
   return (
     <div
-      className={`${s.box} flex items-center justify-center rounded-md border border-black/30 bg-gradient-to-br from-rose-800 to-rose-950 shadow-sm`}
+      className={`${s.box} flex items-center justify-center rounded-lg border border-black/30 bg-gradient-to-br from-rose-800 to-rose-950 shadow-sm`}
     >
       <span className="text-rose-300/60">★</span>
     </div>
@@ -59,7 +53,7 @@ export function EmptySlot({
   const s = SIZE[size];
   return (
     <div
-      className={`${s.box} rounded-md border border-dashed ${
+      className={`${s.box} rounded-lg border border-dashed ${
         target ? "border-gold/70 bg-gold/10" : "border-white/15 bg-black/10"
       }`}
     />
@@ -81,9 +75,9 @@ export function CardSlot({
 }
 
 /**
- * A single hand: five card slots fanned vertically so a full column fits in a
- * fraction of the height while every card's corner index stays readable.
- * `targetIndex` marks the next empty slot to receive a card (when playable).
+ * A single hand: card slots fanned vertically so a full hand fits in a fraction
+ * of the height while every card's corner index stays readable. `targetIndex`
+ * marks the next empty slot to receive a card (when playable).
  */
 export function FannedColumn({
   slots,
@@ -95,7 +89,7 @@ export function FannedColumn({
   targetIndex?: number | null;
 }) {
   const s = SIZE[size];
-  const overlap = s.hpx - s.peek; // px each fanned card slides under the next
+  const overlap = s.hpx - s.peek;
   return (
     <div className="flex flex-col items-center">
       {slots.map((slot, i) => (

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { DeckToggle } from "@/components/DeckToggle";
 
 export default async function ProfilePage() {
   const session = await auth();
@@ -40,6 +41,10 @@ export default async function ProfilePage() {
         <Cell label="Best streak" value={stats?.bestStreak ?? 0} />
         <Cell label="Matches played" value={stats?.matchesPlayed ?? 0} />
         <Cell label="Match wins" value={stats?.matchWins ?? 0} />
+      </div>
+
+      <div className="panel">
+        <DeckToggle />
       </div>
     </main>
   );

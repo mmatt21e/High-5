@@ -26,6 +26,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
+        {/* Apply the saved deck-colour choice before paint to avoid a flash. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var d=localStorage.getItem('fiveo-deck')||'four';document.documentElement.setAttribute('data-deck',d);}catch(e){}",
+          }}
+        />
         <Providers>
           <ServiceWorker />
           <div className="mx-auto flex min-h-screen w-full max-w-md flex-col">

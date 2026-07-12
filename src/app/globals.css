@@ -81,3 +81,32 @@ select {
 .target-glow {
   animation: targetGlow 1.6s ease-in-out infinite;
 }
+
+/* ---- Deck colour theming ----
+   Suit colour is driven by data-deck on <html>. Default is the traditional
+   two-colour deck; data-deck="four" switches to a four-colour deck for easier
+   suit reading on small screens. Card text inherits `color` from these. */
+.suit-s {
+  color: #141414;
+}
+.suit-h {
+  color: #c62828;
+}
+.suit-d {
+  color: #c62828;
+}
+.suit-c {
+  color: #141414;
+}
+[data-deck="four"] .suit-s {
+  color: #141414;
+}
+[data-deck="four"] .suit-h {
+  color: #c62828;
+}
+[data-deck="four"] .suit-d {
+  color: #1565c0;
+}
+[data-deck="four"] .suit-c {
+  color: #2e7d32;
+}
