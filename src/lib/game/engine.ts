@@ -3,21 +3,21 @@
 // Rules implemented:
 //  - Two players, one shared shuffled 52-card deck.
 //  - Each player builds 5 hands (columns) of 5 cards => 50 cards dealt total.
-//  - Five rounds. In each round, every column receives exactly one card.
-//  - Players alternate one card at a time; the "lead" alternates each round.
-//  - On your turn the engine deals you the top card; you choose which eligible
-//    column to place it in (a column is eligible if it still needs a card this
-//    round). Placement is the only decision.
-//  - Cards 1-3 and 5 are face-up; the 4th card is face-down (hidden from the
-//    opponent until showdown).
-//  - At showdown, each column is compared head-to-head; winning 3+ columns wins
-//    the game. Winning all five is a "Five-O".
+//  - Players alternate one card at a time. On your turn the engine deals you
+//    the top card; you choose ANY of your hands that still has room (fewer than
+//    5 cards) to place it in. Placement is the only decision.
+//  - The 4th card placed into each hand is face-down (hidden from the opponent
+//    until showdown); all other cards are face-up.
+//  - At showdown, each hand is compared head-to-head with the opponent's hand
+//    in the same position; winning 3+ hands wins the game. All five is a
+//    "Five-O".
 
 import { type Card, buildDeck, shuffle, seededRng } from "./cards";
 import { compareScores, evaluateHand } from "./evaluator";
 import {
   CARDS_PER_HAND,
-  FACE_DOWN_ROUND,
+  CARDS_TOTAL,
+  FACE_DOWN_INDEX,
   type GameResult,
   type GameState,
   type GameView,
@@ -26,12 +26,11 @@ import {
   type PlayerView,
   type CardView,
   NUM_COLUMNS,
-  NUM_ROUNDS,
 } from "./types";
 
 export interface NewGameOptions {
   seed?: number;
-  /** Which player leads round 1 (subsequent rounds alternate). Default 0. */
+  /** Which player places the first card of the game. Default 0. */
   firstLead?: PlayerIndex;
 }
 
@@ -39,9 +38,9 @@ function emptyColumns(): Card[][] {
   return Array.from({ length: NUM_COLUMNS }, () => []);
 }
 
-/** The player who leads (acts first) in a given 0-based round. */
-function leadForRound(round: number, firstLead: PlayerIndex): PlayerIndex {
-  return ((firstLead + round) % 2) as PlayerIndex;
+/** Total cards a player has placed so far (across all five hands). */
+function placedCount(state: GameState, player: PlayerIndex): number {
+  return state.players[player].columns.reduce((n, c) => n + c.length, 0);
 }
 
 export function createGame(
@@ -58,27 +57,17 @@ export function createGame(
     { userId: playerB.userId, displayName: playerB.displayName, columns: emptyColumns() },
   ];
 
-  const toMove = leadForRound(0, firstLead);
   const state: GameState = {
     deck,
     players,
-    round: 0,
-    placedThisRound: [0, 0],
-    toMove,
+    toMove: firstLead,
     pending: null,
     phase: "playing",
     result: null,
-    // stash firstLead on the state via closure-free field
-  } as GameState;
-  // Persist firstLead for round transitions.
-  (state as GameState & { firstLead: PlayerIndex }).firstLead = firstLead;
+  };
 
   drawForCurrent(state);
   return state;
-}
-
-function firstLeadOf(state: GameState): PlayerIndex {
-  return (state as GameState & { firstLead?: PlayerIndex }).firstLead ?? 0;
 }
 
 /** Deal the top card from the deck to the player to move. */
@@ -90,14 +79,13 @@ function drawForCurrent(state: GameState): void {
   state.pending = card;
 }
 
-/** Columns the player to move may legally place into this round. */
+/** Hands the player to move may legally place into — any that still has room. */
 export function legalColumns(state: GameState): number[] {
   if (state.phase !== "playing") return [];
   const cols = state.players[state.toMove].columns;
   const out: number[] = [];
   for (let i = 0; i < NUM_COLUMNS; i++) {
-    // A column needs its round-th card when it currently holds `round` cards.
-    if (cols[i].length === state.round) out.push(i);
+    if (cols[i].length < CARDS_PER_HAND) out.push(i);
   }
   return out;
 }
@@ -116,32 +104,29 @@ export function placeCard(
   if (state.phase !== "playing") throw new IllegalMoveError("Game is not in progress");
   if (player !== state.toMove) throw new IllegalMoveError("Not your turn");
   if (!state.pending) throw new IllegalMoveError("No card to place");
-  if (!legalColumns(state).includes(column)) {
-    throw new IllegalMoveError("That column already has a card this round");
+  if (column < 0 || column >= NUM_COLUMNS) {
+    throw new IllegalMoveError("No such hand");
+  }
+  if (state.players[player].columns[column].length >= CARDS_PER_HAND) {
+    throw new IllegalMoveError("That hand is already full");
   }
 
   state.players[player].columns[column].push(state.pending);
   state.pending = null;
-  state.placedThisRound[player]++;
 
   advanceTurn(state);
   return state;
 }
 
 function advanceTurn(state: GameState): void {
-  const [a, b] = state.placedThisRound;
-  if (a === NUM_COLUMNS && b === NUM_COLUMNS) {
-    // Round complete.
-    state.round++;
-    if (state.round >= NUM_ROUNDS) {
-      finishGame(state);
-      return;
-    }
-    state.placedThisRound = [0, 0];
-    state.toMove = leadForRound(state.round, firstLeadOf(state));
-  } else {
-    state.toMove = (1 - state.toMove) as PlayerIndex;
+  if (
+    placedCount(state, 0) === CARDS_TOTAL &&
+    placedCount(state, 1) === CARDS_TOTAL
+  ) {
+    finishGame(state);
+    return;
   }
+  state.toMove = (1 - state.toMove) as PlayerIndex;
   drawForCurrent(state);
 }
 
@@ -151,7 +136,7 @@ function finishGame(state: GameState): void {
   state.result = evaluateGame(state);
 }
 
-/** Compare all five columns and determine the overall winner. */
+/** Compare all five hands and determine the overall winner. */
 export function evaluateGame(state: GameState): GameResult {
   const columns: GameResult["columns"] = [];
   const columnWins: [number, number] = [0, 0];
@@ -194,7 +179,7 @@ function viewColumn(
       slots.push({ state: "empty" });
       continue;
     }
-    const hide = isOpponent && !revealAll && i === FACE_DOWN_ROUND;
+    const hide = isOpponent && !revealAll && i === FACE_DOWN_INDEX;
     slots.push(hide ? { state: "hidden" } : { state: "card", card: column[i] });
   }
   return slots;
@@ -221,7 +206,8 @@ export function viewFor(state: GameState, you: PlayerIndex): GameView {
     viewPlayer(state.players[1], you !== 1, revealAll),
   ];
   return {
-    round: state.round,
+    placed: [placedCount(state, 0), placedCount(state, 1)],
+    total: CARDS_TOTAL,
     phase: state.phase,
     toMove: state.toMove,
     you,

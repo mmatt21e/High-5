@@ -9,10 +9,9 @@ an invite code, and the second player joins to play in real time.
 Two players each build **five poker hands at once** (five columns of five cards)
 from a **single shared 52-card deck**:
 
-- The game runs over **5 rounds**. Each round, every column receives exactly one
-  card — all columns stay equal in length.
-- On your turn the server deals you the top card of the deck; **you choose which
-  column to place it in**. Placement is the only decision.
+- Players alternate turns. On your turn the server deals you the top card of the
+  shared deck and **you choose which hand to place it in** — any hand that still
+  has room (fewer than 5 cards). Placement is the only decision.
 - Cards 1–3 and 5 are **face-up**; the **4th card is face-down** and hidden from
   your opponent until showdown.
 - At showdown, each column is compared head-to-head with standard poker

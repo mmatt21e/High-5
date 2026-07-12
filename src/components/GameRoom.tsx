@@ -254,7 +254,7 @@ function TurnBanner({ view, oppName }: { view: GameView; oppName: string }) {
     >
       <div>
         <div className="text-[11px] font-semibold uppercase tracking-wide opacity-70">
-          Round {view.round + 1} of 5
+          {view.placed[view.you]} / {view.total} cards placed
         </div>
         <div className="text-base font-black">
           {yours ? "Your turn" : `${oppName}’s turn`}

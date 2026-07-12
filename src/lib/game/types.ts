@@ -3,9 +3,10 @@ import type { HandScore } from "./evaluator";
 
 export const NUM_COLUMNS = 5;
 export const CARDS_PER_HAND = 5;
-export const NUM_ROUNDS = 5;
-/** Zero-based round index whose card is dealt face-down (the 4th card). */
-export const FACE_DOWN_ROUND = 3;
+/** Total cards each player places over a game (5 hands x 5 cards). */
+export const CARDS_TOTAL = NUM_COLUMNS * CARDS_PER_HAND;
+/** Zero-based position in a hand whose card is dealt face-down (the 4th card). */
+export const FACE_DOWN_INDEX = 3;
 
 export type PlayerIndex = 0 | 1;
 
@@ -22,10 +23,6 @@ export interface GameState {
   /** Remaining deck; the card at the end of the array is the "top". */
   deck: Card[];
   players: [PlayerState, PlayerState];
-  /** Current round, 0-based (0..4). Equals NUM_ROUNDS when complete. */
-  round: number;
-  /** Number of cards each player has placed in the current round. */
-  placedThisRound: [number, number];
   /** Which player is to act next. */
   toMove: PlayerIndex;
   /** The card dealt to the player to move, awaiting placement. */
@@ -64,7 +61,10 @@ export interface PlayerView {
 }
 
 export interface GameView {
-  round: number; // 0-based, NUM_ROUNDS when complete
+  /** Cards placed so far by each seat (0..CARDS_TOTAL). */
+  placed: [number, number];
+  /** Cards each player places in total (CARDS_TOTAL). */
+  total: number;
   phase: GamePhase;
   toMove: PlayerIndex;
   /** Your seat at this table. */

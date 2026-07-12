@@ -35,8 +35,8 @@ export default function HowToPlayPage() {
 
       <Step n={2} title="Take turns placing cards">
         On your turn you’re dealt one card from a shared deck. You choose{" "}
-        <b>which hand to add it to</b> — that’s the whole game. Each round, every
-        hand gets exactly one new card.
+        <b>which hand to add it to</b> — any hand that still has room. That’s the
+        whole game.
       </Step>
 
       <Step n={3} title="Your 4th card is hidden">
