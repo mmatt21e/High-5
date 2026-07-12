@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useGameSocket } from "./useGameSocket";
+import { DeckToggle } from "./DeckToggle";
 import { CardFace, CardSlot, FannedColumn, type CardSize } from "./PlayingCard";
 import { cardId } from "@/lib/game/cards";
 import type { Card } from "@/lib/game/cards";
@@ -139,6 +140,7 @@ function Table({
   const matchOver = snapshot.status === "complete";
 
   const [selected, setSelected] = useState<string | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   // Drop any selection whose card is no longer in hand (after a move / new turn).
   useEffect(() => {
     const ids = new Set(myBoard.hand.map(cvId));
@@ -153,10 +155,13 @@ function Table({
     setSelected(null);
   }
 
+  const openSettings = () => setSettingsOpen(true);
+  let body: ReactNode;
+
   if (gameOver || matchOver) {
-    return (
+    body = (
       <main className="flex flex-1 flex-col gap-2 p-3">
-        <TopBar code={snapshot.inviteCode} />
+        <TopBar code={snapshot.inviteCode} onSettings={openSettings} />
         <PlayerBar name={oppBoard.displayName} score={oppScore} target={snapshot.targetWins} />
         <ResultBoard board={oppBoard} view={view} seat={opp} size="sm" />
         <div className="my-1">
@@ -170,11 +175,10 @@ function Table({
         <PlayerBar name={myBoard.displayName} score={myScore} target={snapshot.targetWins} gold you />
       </main>
     );
-  }
-
-  return (
+  } else {
+    body = (
     <main className="flex flex-1 flex-col gap-2 p-3">
-      <TopBar code={snapshot.inviteCode} />
+      <TopBar code={snapshot.inviteCode} onSettings={openSettings} />
 
       {/* Opponent: 4 face-up hands + concealed hand (hidden) */}
       <PlayerBar name={oppBoard.displayName} score={oppScore} target={snapshot.targetWins} />
@@ -208,19 +212,73 @@ function Table({
 
       <PlayerBar name={myBoard.displayName} score={myScore} target={snapshot.targetWins} gold you />
     </main>
+    );
+  }
+
+  return (
+    <>
+      {body}
+      {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
+    </>
   );
 }
 
-function TopBar({ code }: { code: string }) {
+function TopBar({ code, onSettings }: { code: string; onSettings: () => void }) {
   return (
     <div className="flex items-center justify-between text-xs text-white/50">
       <Link href="/" className="rounded px-1 py-0.5 active:text-white">
         ← Leave
       </Link>
       <span className="font-mono tracking-[0.25em]">{code}</span>
-      <Link href="/how-to-play" className="rounded px-1 py-0.5 active:text-white">
-        Rules
-      </Link>
+      <button
+        type="button"
+        onClick={onSettings}
+        className="rounded px-1 py-0.5 active:text-white"
+      >
+        ⚙ Settings
+      </button>
+    </div>
+  );
+}
+
+/**
+ * In-game settings overlay. It is a pure client-side modal — opening or closing
+ * it never navigates away, so the live socket connection and the server-side
+ * game state are untouched and the session is preserved.
+ */
+function SettingsModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6"
+      onClick={onClose}
+    >
+      <div
+        className="panel w-full max-w-sm"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-black text-gold">Settings</h2>
+          <button
+            onClick={onClose}
+            aria-label="Close settings"
+            className="px-1 text-lg text-white/60"
+          >
+            ✕
+          </button>
+        </div>
+        <DeckToggle />
+        <a
+          href="/how-to-play"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-4 block text-center text-sm text-white/70 underline"
+        >
+          How to play (opens in a new tab)
+        </a>
+        <button onClick={onClose} className="btn-primary mt-4 w-full">
+          Resume game
+        </button>
+      </div>
     </div>
   );
 }
