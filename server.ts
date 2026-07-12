@@ -13,6 +13,7 @@ import {
   handlePlace,
   handleDiscard,
   handleNext,
+  handleEndMatch,
   handleDisconnect,
 } from "./src/server/gameManager";
 
@@ -52,6 +53,9 @@ app.prepare().then(() => {
     });
     socket.on("game:next", () => {
       void handleNext(io, socket);
+    });
+    socket.on("match:end", () => {
+      void handleEndMatch(io, socket);
     });
     socket.on("disconnect", () => {
       void handleDisconnect(io, socket);

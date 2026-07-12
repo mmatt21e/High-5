@@ -27,6 +27,8 @@ export interface ClientToServerEvents {
   /** Discard a held card (allowed once per game). */
   "game:discard": (payload: { cardId: string }) => void;
   "game:next": () => void;
+  /** Voluntarily end the whole match. */
+  "match:end": () => void;
 }
 
 // Server -> Client

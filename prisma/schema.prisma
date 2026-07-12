@@ -95,6 +95,12 @@ model Match {
   scoreHost  Int      @default(0)
   scoreGuest Int      @default(0)
   winnerId   String?
+  // Async persistence: the current in-progress game and turn state so players
+  // can close the app and resume later.
+  gameNumber Int      @default(0)
+  gameState  String? // serialized in-progress GameState (JSON), null between games
+  readyHost  Boolean  @default(false)
+  readyGuest Boolean  @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 

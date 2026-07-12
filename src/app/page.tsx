@@ -9,9 +9,55 @@ import { DeckToggle } from "@/components/DeckToggle";
 export default async function HomePage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
+  const uid = session.user.id;
 
-  const stats = await prisma.stats.findUnique({
-    where: { userId: session.user.id },
+  const [stats, activeMatches] = await Promise.all([
+    prisma.stats.findUnique({ where: { userId: uid } }),
+    prisma.match.findMany({
+      where: {
+        status: { in: ["lobby", "active"] },
+        OR: [{ hostId: uid }, { guestId: uid }],
+      },
+      include: { host: true, guest: true },
+      orderBy: { updatedAt: "desc" },
+      take: 12,
+    }),
+  ]);
+
+  const games = activeMatches.map((m) => {
+    const seat = m.hostId === uid ? 0 : 1;
+    const opponent =
+      seat === 0 ? m.guest?.displayName ?? null : m.host.displayName;
+    const myScore = seat === 0 ? m.scoreHost : m.scoreGuest;
+    const oppScore = seat === 0 ? m.scoreGuest : m.scoreHost;
+    let turn: "yours" | "theirs" | "waiting" | "next";
+    if (!m.guest || m.status === "lobby") turn = "waiting";
+    else {
+      let toMove: number | null = null;
+      let playing = false;
+      if (m.gameState) {
+        try {
+          const s = JSON.parse(m.gameState) as {
+            toMove: number;
+            phase: string;
+          };
+          toMove = s.toMove;
+          playing = s.phase === "playing";
+        } catch {
+          /* ignore */
+        }
+      }
+      if (!playing) turn = "next";
+      else turn = toMove === seat ? "yours" : "theirs";
+    }
+    return {
+      code: m.inviteCode,
+      opponent,
+      myScore,
+      oppScore,
+      target: m.targetWins,
+      turn,
+    };
   });
 
   return (
@@ -25,6 +71,31 @@ export default async function HomePage() {
         </div>
         <SignOutButton />
       </header>
+
+      {games.length > 0 && (
+        <section className="panel">
+          <h2 className="mb-3 font-bold">Your games</h2>
+          <div className="flex flex-col gap-2">
+            {games.map((g) => (
+              <Link
+                key={g.code}
+                href={`/play/${g.code}`}
+                className="flex items-center justify-between rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 active:scale-[0.99]"
+              >
+                <div>
+                  <div className="text-sm font-semibold">
+                    vs {g.opponent ?? "waiting…"}
+                  </div>
+                  <div className="text-xs text-white/50">
+                    {g.myScore}–{g.oppScore} · code {g.code}
+                  </div>
+                </div>
+                <TurnBadge turn={g.turn} />
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       <Lobby />
 
@@ -53,6 +124,24 @@ export default async function HomePage() {
         New to Five-O? How to play →
       </Link>
     </main>
+  );
+}
+
+function TurnBadge({
+  turn,
+}: {
+  turn: "yours" | "theirs" | "waiting" | "next";
+}) {
+  const map = {
+    yours: { text: "Your turn", cls: "bg-gold text-felt-900" },
+    theirs: { text: "Their turn", cls: "bg-white/10 text-white/70" },
+    waiting: { text: "Waiting", cls: "bg-white/10 text-white/70" },
+    next: { text: "Next game", cls: "bg-emerald-400/20 text-emerald-200" },
+  }[turn];
+  return (
+    <span className={`rounded-full px-3 py-1 text-xs font-bold ${map.cls}`}>
+      {map.text}
+    </span>
   );
 }
 

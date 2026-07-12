@@ -11,7 +11,7 @@ import type { CardView, GameView, PlayerIndex } from "@/lib/game/types";
 import type { MatchSnapshot } from "@/lib/realtime/events";
 
 export function GameRoom({ code }: { code: string }) {
-  const { snapshot, view, error, connected, place, discard, next } =
+  const { snapshot, view, error, connected, place, discard, next, endMatch } =
     useGameSocket(code);
 
   if (error) {
@@ -34,6 +34,16 @@ export function GameRoom({ code }: { code: string }) {
       </Centered>
     );
   }
+  if (snapshot.status === "complete" && !view) {
+    return (
+      <Centered>
+        <p className="text-lg font-semibold">This match has ended.</p>
+        <Link href="/" className="btn-primary mt-6">
+          Back to lobby
+        </Link>
+      </Centered>
+    );
+  }
   if (!snapshot.guest || snapshot.status === "lobby") {
     return <WaitingRoom snapshot={snapshot} />;
   }
@@ -53,6 +63,7 @@ export function GameRoom({ code }: { code: string }) {
       onPlace={place}
       onDiscard={discard}
       onNext={next}
+      onEndMatch={endMatch}
     />
   );
 }
@@ -123,12 +134,14 @@ function Table({
   onPlace,
   onDiscard,
   onNext,
+  onEndMatch,
 }: {
   snapshot: MatchSnapshot;
   view: GameView;
   onPlace: (cardId: string, row: number) => void;
   onDiscard: (cardId: string) => void;
   onNext: () => void;
+  onEndMatch: () => void;
 }) {
   const you = view.you;
   const opp = (1 - you) as PlayerIndex;
@@ -218,7 +231,13 @@ function Table({
   return (
     <>
       {body}
-      {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
+      {settingsOpen && (
+        <SettingsModal
+          onClose={() => setSettingsOpen(false)}
+          onEndMatch={onEndMatch}
+          matchOver={matchOver}
+        />
+      )}
     </>
   );
 }
@@ -246,7 +265,15 @@ function TopBar({ code, onSettings }: { code: string; onSettings: () => void }) 
  * it never navigates away, so the live socket connection and the server-side
  * game state are untouched and the session is preserved.
  */
-function SettingsModal({ onClose }: { onClose: () => void }) {
+function SettingsModal({
+  onClose,
+  onEndMatch,
+  matchOver,
+}: {
+  onClose: () => void;
+  onEndMatch: () => void;
+  matchOver: boolean;
+}) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6"
@@ -275,9 +302,30 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
         >
           How to play (opens in a new tab)
         </a>
-        <button onClick={onClose} className="btn-primary mt-4 w-full">
+        <p className="mt-4 rounded-lg bg-black/20 px-3 py-2 text-center text-[11px] text-white/50">
+          Your game is saved automatically — close the app and come back
+          anytime to continue.
+        </p>
+        <button onClick={onClose} className="btn-primary mt-3 w-full">
           Resume game
         </button>
+        {!matchOver && (
+          <button
+            onClick={() => {
+              if (
+                window.confirm(
+                  "End this match for both players? This can't be undone.",
+                )
+              ) {
+                onEndMatch();
+                onClose();
+              }
+            }}
+            className="mt-2 w-full rounded-xl border border-rose-400/40 py-2 text-sm font-bold text-rose-200"
+          >
+            End match
+          </button>
+        )}
       </div>
     </div>
   );

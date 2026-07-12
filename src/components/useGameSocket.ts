@@ -20,6 +20,7 @@ export interface GameSocketState {
   place: (cardId: string, row: number) => void;
   discard: (cardId: string) => void;
   next: () => void;
+  endMatch: () => void;
 }
 
 export function useGameSocket(code: string): GameSocketState {
@@ -62,6 +63,9 @@ export function useGameSocket(code: string): GameSocketState {
   const next = useCallback(() => {
     socketRef.current?.emit("game:next");
   }, []);
+  const endMatch = useCallback(() => {
+    socketRef.current?.emit("match:end");
+  }, []);
 
-  return { snapshot, view, error, connected, place, discard, next };
+  return { snapshot, view, error, connected, place, discard, next, endMatch };
 }

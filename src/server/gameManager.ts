@@ -66,12 +66,33 @@ async function getLive(matchId: string): Promise<LiveMatch | null> {
     scoreHost: m.scoreHost,
     scoreGuest: m.scoreGuest,
     matchWinnerId: m.winnerId,
-    gameNumber: 0,
-    game: null,
-    ready: new Set(),
+    // Restore the persisted in-progress game so play resumes across app
+    // closes and server restarts.
+    gameNumber: m.gameNumber,
+    game: m.gameState ? (JSON.parse(m.gameState) as GameState) : null,
+    ready: new Set<string>(),
   };
+  if (m.readyHost) live.ready.add(m.host.id);
+  if (m.guest && m.readyGuest) live.ready.add(m.guest.id);
   registry.set(matchId, live);
   return live;
+}
+
+/** Persist the full live match + in-progress game so it can be resumed later. */
+async function saveState(live: LiveMatch) {
+  await prisma.match.update({
+    where: { id: live.id },
+    data: {
+      status: live.status,
+      gameNumber: live.gameNumber,
+      scoreHost: live.scoreHost,
+      scoreGuest: live.scoreGuest,
+      winnerId: live.matchWinnerId,
+      gameState: live.game ? JSON.stringify(live.game) : null,
+      readyHost: live.ready.has(live.host.userId),
+      readyGuest: live.guest ? live.ready.has(live.guest.userId) : false,
+    },
+  });
 }
 
 function seatOfUser(live: LiveMatch, userId: string): PlayerIndex | -1 {
@@ -170,15 +191,9 @@ async function persistAndScore(live: LiveMatch) {
     await applyMatchStats(hostId, guestId, live.matchWinnerId!);
   }
 
-  await prisma.match.update({
-    where: { id: live.id },
-    data: {
-      scoreHost: live.scoreHost,
-      scoreGuest: live.scoreGuest,
-      status: live.status,
-      winnerId: live.matchWinnerId,
-    },
-  });
+  // Persist the completed game snapshot + updated scores/status so a
+  // reconnecting player still sees the showdown and running match state.
+  await saveState(live);
 }
 
 async function applyGameStats(
@@ -270,6 +285,7 @@ export async function handleJoin(io: IO, socket: SocketT, code: string) {
     live.gameNumber === 0
   ) {
     startGame(live);
+    await saveState(live);
   }
 
   await broadcast(io, live);
@@ -314,6 +330,8 @@ async function applyMove(
 
   if (live.game.phase === "complete") {
     await persistAndScore(live);
+  } else {
+    await saveState(live);
   }
   await broadcast(io, live);
 }
@@ -333,6 +351,24 @@ export async function handleNext(io: IO, socket: SocketT) {
   if (bothReady) {
     startGame(live);
   }
+  await saveState(live);
+  await broadcast(io, live);
+}
+
+/** A player voluntarily ends the match; it is marked complete for both. */
+export async function handleEndMatch(io: IO, socket: SocketT) {
+  const userId = socket.data.userId as string;
+  const matchId = socket.data.matchId as string | undefined;
+  if (!matchId) return;
+  const live = registry.get(matchId) ?? (await getLive(matchId));
+  if (!live || seatOfUser(live, userId) === -1) return;
+  if (live.status === "complete") return;
+
+  live.status = "complete";
+  live.ready.clear();
+  // Keep live.game so the final board stays visible; the match is just marked
+  // complete for both players.
+  await saveState(live);
   await broadcast(io, live);
 }
 
