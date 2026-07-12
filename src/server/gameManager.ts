@@ -3,6 +3,7 @@ import { prisma } from "../lib/prisma";
 import {
   createGame,
   placeCard,
+  discardCard,
   viewFor,
   IllegalMoveError,
 } from "../lib/game/engine";
@@ -140,7 +141,9 @@ async function persistAndScore(live: LiveMatch) {
       winnerSeat: result.winner,
       isFiveO: result.isFiveO,
       resultJson: JSON.stringify(result),
-      boardJson: JSON.stringify(game.players.map((p) => p.columns)),
+      boardJson: JSON.stringify(
+        game.players.map((p) => ({ rows: p.rows, hand: p.hand })),
+      ),
     },
   });
 
@@ -272,7 +275,24 @@ export async function handleJoin(io: IO, socket: SocketT, code: string) {
   await broadcast(io, live);
 }
 
-export async function handlePlace(io: IO, socket: SocketT, column: number) {
+export async function handlePlace(
+  io: IO,
+  socket: SocketT,
+  cardId: string,
+  row: number,
+) {
+  await applyMove(io, socket, (game, seat) => placeCard(game, seat, cardId, row));
+}
+
+export async function handleDiscard(io: IO, socket: SocketT, cardId: string) {
+  await applyMove(io, socket, (game, seat) => discardCard(game, seat, cardId));
+}
+
+async function applyMove(
+  io: IO,
+  socket: SocketT,
+  move: (game: NonNullable<LiveMatch["game"]>, seat: PlayerIndex) => void,
+) {
   const userId = socket.data.userId as string;
   const matchId = socket.data.matchId as string | undefined;
   if (!matchId) return;
@@ -283,7 +303,7 @@ export async function handlePlace(io: IO, socket: SocketT, column: number) {
   if (seat === -1) return;
 
   try {
-    placeCard(live.game, seat, column);
+    move(live.game, seat);
   } catch (err) {
     if (err instanceof IllegalMoveError) {
       socket.emit("errorMsg", { message: err.message });

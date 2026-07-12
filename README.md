@@ -6,17 +6,20 @@ an invite code, and the second player joins to play in real time.
 
 ## What is Five-O Poker?
 
-Two players each build **five poker hands at once** (five columns of five cards)
-from a **single shared 52-card deck**:
+Two players each build **five poker hands** from a **single shared 52-card
+deck** — four rows the opponent can see, plus one concealed hand only you can
+see:
 
-- Players alternate turns. On your turn the server deals you the top card of the
-  shared deck and **you choose which hand to place it in** — any hand that still
-  has room (fewer than 5 cards). Placement is the only decision.
-- Cards 1–3 and 5 are **face-up**; the **4th card is face-down** and hidden from
-  your opponent until showdown.
-- At showdown, each column is compared head-to-head with standard poker
-  rankings. **Win 3+ of the 5 columns to win the game.** Winning all five is a
-  **"Five-O"**.
+- Each player is dealt a **concealed hand of 5 cards** to start.
+- Players alternate turns. On your turn you **draw one card** (now holding six),
+  then place **one card** — the drawn card or a held one — into one of your
+  **four face-up rows** that still has room. You always keep 5 cards concealed.
+- **Once per game** you may **discard** a held card instead of placing it.
+- When both players have filled all four rows, everything is revealed. Your held
+  5 cards are your **concealed 5th hand**.
+- At showdown, each of your five hands is compared head-to-head with the
+  opponent's in the same spot. **Win 3+ of the 5 to win the game.** Winning all
+  five is a **"Five-O"**.
 
 Matches are **first-to-5 game wins** (configurable), and every result feeds your
 lifetime stats.
@@ -31,7 +34,7 @@ lifetime stats.
 | Database | Prisma — SQLite for dev, Postgres for production |
 
 The game engine lives entirely on the server, so clients never receive the
-opponent's face-down card or the deck order. The engine is pure and fully
+opponent's concealed hand or the deck order. The engine is pure and fully
 unit-tested (`src/lib/game`).
 
 ## Getting started

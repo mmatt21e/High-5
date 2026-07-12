@@ -11,6 +11,7 @@ import { userIdFromCookie } from "./src/server/socketAuth";
 import {
   handleJoin,
   handlePlace,
+  handleDiscard,
   handleNext,
   handleDisconnect,
 } from "./src/server/gameManager";
@@ -43,8 +44,11 @@ app.prepare().then(() => {
     socket.on("match:join", ({ code }) => {
       void handleJoin(io, socket, code);
     });
-    socket.on("game:place", ({ column }) => {
-      void handlePlace(io, socket, column);
+    socket.on("game:place", ({ cardId, row }) => {
+      void handlePlace(io, socket, cardId, row);
+    });
+    socket.on("game:discard", ({ cardId }) => {
+      void handleDiscard(io, socket, cardId);
     });
     socket.on("game:next", () => {
       void handleNext(io, socket);

@@ -17,7 +17,8 @@ export interface GameSocketState {
   view: GameView | null;
   error: string | null;
   connected: boolean;
-  place: (column: number) => void;
+  place: (cardId: string, row: number) => void;
+  discard: (cardId: string) => void;
   next: () => void;
 }
 
@@ -52,12 +53,15 @@ export function useGameSocket(code: string): GameSocketState {
     };
   }, [code]);
 
-  const place = useCallback((column: number) => {
-    socketRef.current?.emit("game:place", { column });
+  const place = useCallback((cardId: string, row: number) => {
+    socketRef.current?.emit("game:place", { cardId, row });
+  }, []);
+  const discard = useCallback((cardId: string) => {
+    socketRef.current?.emit("game:discard", { cardId });
   }, []);
   const next = useCallback(() => {
     socketRef.current?.emit("game:next");
   }, []);
 
-  return { snapshot, view, error, connected, place, next };
+  return { snapshot, view, error, connected, place, discard, next };
 }

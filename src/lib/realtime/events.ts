@@ -22,7 +22,10 @@ export interface MatchSnapshot {
 // Client -> Server
 export interface ClientToServerEvents {
   "match:join": (payload: { code: string }) => void;
-  "game:place": (payload: { column: number }) => void;
+  /** Place a held card (by card id, e.g. "14s") into a row (0..3). */
+  "game:place": (payload: { cardId: string; row: number }) => void;
+  /** Discard a held card (allowed once per game). */
+  "game:discard": (payload: { cardId: string }) => void;
   "game:next": () => void;
 }
 
