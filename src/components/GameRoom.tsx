@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useGameSocket } from "./useGameSocket";
 import { DeckToggle } from "./DeckToggle";
 import { NotificationToggle } from "./NotificationToggle";
-import { CardFace, CardSlot, FannedColumn, type CardSize } from "./PlayingCard";
+import { CardSlot, FannedColumn, type CardSize } from "./PlayingCard";
 import { cardId } from "@/lib/game/cards";
 import type { Card } from "@/lib/game/cards";
 import type { CardView, GameView, PlayerIndex } from "@/lib/game/types";
@@ -15,7 +15,7 @@ export function GameRoom({ code }: { code: string }) {
   const { snapshot, view, error, connected, place, discard, next, endMatch } =
     useGameSocket(code);
 
-  if (error) {
+  if (error && !snapshot) {
     return (
       <Centered>
         <p className="text-lg font-semibold text-rose-300">{error}</p>
@@ -37,35 +37,57 @@ export function GameRoom({ code }: { code: string }) {
   }
   if (snapshot.status === "complete" && !view) {
     return (
-      <Centered>
-        <p className="text-lg font-semibold">This match has ended.</p>
-        <Link href="/" className="btn-primary mt-6">
-          Back to lobby
-        </Link>
-      </Centered>
+      <>
+        {error && <SocketNotice message={error} />}
+        <Centered>
+          <p className="text-lg font-semibold">This match has ended.</p>
+          <Link href="/" className="btn-primary mt-6">
+            Back to lobby
+          </Link>
+        </Centered>
+      </>
     );
   }
   if (!snapshot.guest || snapshot.status === "lobby") {
-    return <WaitingRoom snapshot={snapshot} />;
+    return (
+      <>
+        {error && <SocketNotice message={error} />}
+        <WaitingRoom snapshot={snapshot} />
+      </>
+    );
   }
   if (!view) {
     return (
-      <Centered>
-        <Spinner />
-        <p className="mt-4 text-white/70">Dealing the cards…</p>
-      </Centered>
+      <>
+        {error && <SocketNotice message={error} />}
+        <Centered>
+          <Spinner />
+          <p className="mt-4 text-white/70">Dealing the cards…</p>
+        </Centered>
+      </>
     );
   }
 
   return (
-    <Table
-      snapshot={snapshot}
-      view={view}
-      onPlace={place}
-      onDiscard={discard}
-      onNext={next}
-      onEndMatch={endMatch}
-    />
+    <>
+      {error && <SocketNotice message={error} />}
+      <Table
+        snapshot={snapshot}
+        view={view}
+        onPlace={place}
+        onDiscard={discard}
+        onNext={next}
+        onEndMatch={endMatch}
+      />
+    </>
+  );
+}
+
+function SocketNotice({ message }: { message: string }) {
+  return (
+    <div role="alert" className="bg-rose-950 px-4 py-2 text-center text-sm text-rose-100">
+      {message}
+    </div>
   );
 }
 
@@ -78,7 +100,7 @@ function Centered({ children }: { children: React.ReactNode }) {
 }
 function Spinner() {
   return (
-    <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-gold" />
+    <div aria-hidden="true" className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-gold" />
   );
 }
 
@@ -139,10 +161,10 @@ function Table({
 }: {
   snapshot: MatchSnapshot;
   view: GameView;
-  onPlace: (cardId: string, row: number) => void;
-  onDiscard: (cardId: string) => void;
-  onNext: () => void;
-  onEndMatch: () => void;
+  onPlace: (cardId: string, row: number) => boolean;
+  onDiscard: (cardId: string) => boolean;
+  onNext: () => boolean;
+  onEndMatch: () => boolean;
 }) {
   const you = view.you;
   const opp = (1 - you) as PlayerIndex;
@@ -165,8 +187,7 @@ function Table({
   function tapRow(rowIndex: number) {
     if (!view.yourTurn || !selected) return;
     if (!view.legalRows.includes(rowIndex)) return;
-    onPlace(selected, rowIndex);
-    setSelected(null);
+    if (onPlace(selected, rowIndex)) setSelected(null);
   }
 
   const openSettings = () => setSettingsOpen(true);
@@ -218,8 +239,7 @@ function Table({
         onSelect={(id) => setSelected((s) => (s === id ? null : id))}
         onDiscard={() => {
           if (selected) {
-            onDiscard(selected);
-            setSelected(null);
+            if (onDiscard(selected)) setSelected(null);
           }
         }}
       />
@@ -272,7 +292,7 @@ function SettingsModal({
   matchOver,
 }: {
   onClose: () => void;
-  onEndMatch: () => void;
+  onEndMatch: () => boolean;
   matchOver: boolean;
 }) {
   return (
@@ -283,9 +303,12 @@ function SettingsModal({
       <div
         className="panel w-full max-w-sm"
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="settings-title"
       >
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-black text-gold">Settings</h2>
+          <h2 id="settings-title" className="text-lg font-black text-gold">Settings</h2>
           <button
             onClick={onClose}
             aria-label="Close settings"
@@ -322,8 +345,7 @@ function SettingsModal({
                   "End this match for both players? This can't be undone.",
                 )
               ) {
-                onEndMatch();
-                onClose();
+                if (onEndMatch()) onClose();
               }
             }}
             className="mt-2 w-full rounded-xl border border-rose-400/40 py-2 text-sm font-bold text-rose-200"
@@ -420,6 +442,11 @@ function RowsBoard({
             type="button"
             disabled={!playable}
             onClick={() => onRow(i)}
+            aria-label={
+              playable
+                ? `Place selected card in hand ${i + 1}`
+                : `Hand ${i + 1} is not available`
+            }
             className={`flex flex-col items-center rounded-lg p-1 transition ${
               playable
                 ? "target-glow bg-gold/10 ring-2 ring-gold/80 active:scale-95"
@@ -474,6 +501,12 @@ function YourHand({
               type="button"
               disabled={!yourTurn || cv.state !== "card"}
               onClick={() => id && onSelect(id)}
+              aria-label={
+                cv.state === "card"
+                  ? `${isSel ? "Deselect" : "Select"} ${describeCard(cv.card)}`
+                  : "Unavailable card"
+              }
+              aria-pressed={isSel}
               className={`transition ${isSel ? "-translate-y-2" : ""} ${
                 yourTurn ? "active:scale-95" : "opacity-90"
               }`}
@@ -506,6 +539,8 @@ function TurnBanner({
     : "Waiting…";
   return (
     <div
+      role="status"
+      aria-live="polite"
       className={`flex items-center justify-between rounded-xl px-4 py-2 ${
         yours ? "bg-gold text-felt-900" : "bg-black/30 text-white"
       }`}
@@ -521,6 +556,22 @@ function TurnBanner({
       <div className="max-w-[55%] text-right text-[11px] opacity-80">{hint}</div>
     </div>
   );
+}
+
+function describeCard(card: Card): string {
+  const ranks: Record<number, string> = {
+    11: "Jack",
+    12: "Queen",
+    13: "King",
+    14: "Ace",
+  };
+  const suits: Record<Card["suit"], string> = {
+    s: "spades",
+    h: "hearts",
+    d: "diamonds",
+    c: "clubs",
+  };
+  return `${ranks[card.rank] ?? card.rank} of ${suits[card.suit]}`;
 }
 
 /** Showdown board: 4 rows + the (revealed) concealed hand, with win highlights. */
@@ -582,7 +633,7 @@ function GameOver({
   view: GameView;
   you: PlayerIndex;
   snapshot: MatchSnapshot;
-  onNext: () => void;
+  onNext: () => boolean;
 }) {
   const result = view.result;
   if (!result) return null;

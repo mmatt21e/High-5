@@ -6,9 +6,11 @@ import {
   legalRows,
   viewFor,
   seatOf,
+  evaluateGame,
   IllegalMoveError,
 } from "../engine";
 import { cardId } from "../cards";
+import type { Card, Rank, Suit } from "../cards";
 import { NUM_ROWS, ROW_SLOTS_TOTAL, NUM_HANDS } from "../types";
 import type { GameState, PlayerIndex } from "../types";
 
@@ -16,6 +18,43 @@ const A = { userId: "a", displayName: "Alice" };
 const B = { userId: "b", displayName: "Bob" };
 
 const topCard = (s: GameState) => cardId(s.players[s.toMove].hand[0]);
+
+function cards(...values: string[]): Card[] {
+  const ranks: Record<string, Rank> = {
+    "2": 2,
+    "3": 3,
+    "4": 4,
+    "5": 5,
+    "6": 6,
+    "7": 7,
+    "8": 8,
+    "9": 9,
+    T: 10,
+    J: 11,
+    Q: 12,
+    K: 13,
+    A: 14,
+  };
+  return values.map((value) => ({
+    rank: ranks[value[0]],
+    suit: value[1] as Suit,
+  }));
+}
+
+function scoringState(
+  playerAHands: [Card[], Card[], Card[], Card[], Card[]],
+  playerBHands: [Card[], Card[], Card[], Card[], Card[]],
+): GameState {
+  const state = createGame(A, B, { seed: 1 });
+  state.players[0].rows = playerAHands.slice(0, 4) as Card[][];
+  state.players[0].hand = playerAHands[4];
+  state.players[1].rows = playerBHands.slice(0, 4) as Card[][];
+  state.players[1].hand = playerBHands[4];
+  state.phase = "complete";
+  state.result = null;
+  state.deck = [];
+  return state;
+}
 
 /** Drive a full game to completion, always placing the first held card in the
  * lowest legal row (never discarding). */
@@ -93,6 +132,55 @@ describe("placing and discarding", () => {
 });
 
 describe("completion and scoring", () => {
+  it("requires three hand wins even when one player leads after tied hands", () => {
+    const state = scoringState(
+      [
+        cards("Ac", "Ad", "Kh", "Qs", "2c"),
+        cards("4c", "5d", "6h", "7s", "8c"),
+        cards("Ac", "Jd", "8h", "4s", "2c"),
+        cards("Ac", "Kd", "Qh", "Js", "9c"),
+        cards("7c", "7d", "Ah", "Ks", "2c"),
+      ],
+      [
+        cards("Kc", "Kd", "Ah", "Qh", "2d"),
+        cards("9c", "9d", "Ah", "Ks", "2c"),
+        cards("3c", "3d", "7h", "5s", "2d"),
+        cards("As", "Kh", "Qd", "Jc", "9d"),
+        cards("7h", "7s", "Ad", "Kc", "2d"),
+      ],
+    );
+
+    const result = evaluateGame(state);
+
+    expect(result.handWins).toEqual([2, 1]);
+    expect(result.winner).toBeNull();
+    expect(result.isFiveO).toBe(false);
+  });
+
+  it("declares a winner once a player wins three hands", () => {
+    const state = scoringState(
+      [
+        cards("Ac", "Ad", "Kh", "Qs", "2c"),
+        cards("4c", "5d", "6h", "7s", "8c"),
+        cards("Tc", "Td", "Ah", "Ks", "2c"),
+        cards("Ac", "Kd", "Qh", "Js", "9c"),
+        cards("7c", "7d", "Ah", "Ks", "2c"),
+      ],
+      [
+        cards("Kc", "Kd", "Ah", "Qh", "2d"),
+        cards("9c", "9d", "Ah", "Ks", "2c"),
+        cards("3c", "3d", "7h", "5s", "2d"),
+        cards("As", "Kh", "Qd", "Jc", "9d"),
+        cards("7h", "7s", "Ad", "Kc", "2d"),
+      ],
+    );
+
+    const result = evaluateGame(state);
+
+    expect(result.handWins).toEqual([3, 0]);
+    expect(result.winner).toBe(0);
+  });
+
   it("fills all four rows, keeps a 5-card concealed hand, scores five hands", () => {
     const g = playOut(createGame(A, B, { seed: 3 }));
     expect(g.phase).toBe("complete");
@@ -108,7 +196,7 @@ describe("completion and scoring", () => {
     const ties = r.hands.filter((h) => h.winner === null).length;
     expect(r.handWins[0] + r.handWins[1] + ties).toBe(NUM_HANDS);
     if (r.winner !== null) {
-      expect(r.handWins[r.winner]).toBeGreaterThan(r.handWins[1 - r.winner]);
+      expect(r.handWins[r.winner]).toBeGreaterThanOrEqual(3);
     }
     // 40 row cards + 10 concealed = 50 dealt into play; 2 unused.
     expect(g.deck.length).toBe(2);

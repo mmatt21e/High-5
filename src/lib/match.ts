@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { prisma } from "./prisma";
 
 // Unambiguous alphabet (no 0/O/1/I) for human-friendly invite codes.
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -38,22 +38,42 @@ export async function joinMatch(code: string, userId: string): Promise<JoinResul
     where: { inviteCode: code.toUpperCase() },
   });
   if (!match) return { ok: false, error: "No game found with that code" };
-  if (match.status === "complete" || match.status === "abandoned") {
-    return { ok: false, error: "That game has already finished" };
-  }
-  // Already a participant — allow rejoin.
+
+  // Participants may reopen an existing or completed match. This is also what
+  // makes a shared invite URL safe to revisit after authentication.
   if (match.hostId === userId || match.guestId === userId) {
     return { ok: true, matchId: match.id, inviteCode: match.inviteCode };
   }
-  if (match.hostId === userId) {
-    return { ok: false, error: "You can't join your own game" };
+  if (match.status === "complete" || match.status === "abandoned") {
+    return { ok: false, error: "That game has already finished" };
   }
   if (match.guestId && match.guestId !== userId) {
     return { ok: false, error: "That game is already full" };
   }
-  const updated = await prisma.match.update({
-    where: { id: match.id },
+
+  // Claim the empty seat conditionally. A plain update after the initial read
+  // lets two simultaneous guests overwrite each other (last writer wins).
+  const claim = await prisma.match.updateMany({
+    where: {
+      id: match.id,
+      guestId: null,
+      status: "lobby",
+    },
     data: { guestId: userId, status: "active" },
   });
-  return { ok: true, matchId: updated.id, inviteCode: updated.inviteCode };
+  if (claim.count === 1) {
+    return { ok: true, matchId: match.id, inviteCode: match.inviteCode };
+  }
+
+  // Resolve the race deterministically. The same user may have won the claim
+  // in another request; a different winner means the table is full.
+  const current = await prisma.match.findUnique({ where: { id: match.id } });
+  if (!current) return { ok: false, error: "No game found with that code" };
+  if (current.hostId === userId || current.guestId === userId) {
+    return { ok: true, matchId: current.id, inviteCode: current.inviteCode };
+  }
+  if (current.status === "complete" || current.status === "abandoned") {
+    return { ok: false, error: "That game has already finished" };
+  }
+  return { ok: false, error: "That game is already full" };
 }

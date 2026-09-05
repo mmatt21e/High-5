@@ -50,24 +50,41 @@ export function Lobby() {
         <span className="h-px flex-1 bg-white/15" />
       </div>
 
-      <form onSubmit={joinGame} className="flex flex-col gap-3">
+      <form
+        onSubmit={joinGame}
+        className="flex flex-col gap-3"
+        aria-describedby={error ? "lobby-error" : undefined}
+      >
+        <label htmlFor="invite-code" className="text-center text-sm font-semibold text-white/80">
+          Invite code
+        </label>
         <input
+          id="invite-code"
           value={code}
           onChange={(e) => setCode(e.target.value.toUpperCase())}
           placeholder="Enter invite code"
-          maxLength={8}
+          autoComplete="off"
+          inputMode="text"
+          pattern="[A-HJ-NP-Z2-9]{5}"
+          minLength={5}
+          maxLength={5}
+          aria-invalid={Boolean(error)}
           className="field py-4 text-center text-2xl font-bold tracking-[0.3em] placeholder:text-base placeholder:font-normal placeholder:tracking-normal"
         />
         <button
           type="submit"
-          disabled={busy !== null || code.trim().length < 3}
+          disabled={busy !== null || code.trim().length !== 5}
           className="btn-outline"
         >
           {busy === "join" ? "Joining…" : "Join game"}
         </button>
       </form>
 
-      {error && <p className="text-center text-sm text-rose-400">{error}</p>}
+      {error && (
+        <p id="lobby-error" role="alert" className="text-center text-sm text-rose-400">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

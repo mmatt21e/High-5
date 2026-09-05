@@ -1,13 +1,13 @@
-// Five-O Poker service worker — enables installability and a fast app shell.
-// Strategy: network-first for navigations (so the live app is always current),
-// cache-first for static assets, and NEVER touch API / auth / socket traffic.
+// Five-O Poker service worker — enables installability without storing private
+// pages. Navigations and APIs always go to the network; only immutable public
+// assets are eligible for Cache Storage.
 
-const CACHE = "fiveo-v1";
-const APP_SHELL = ["/", "/login", "/manifest.webmanifest", "/icon.svg"];
+const CACHE = "fiveo-static-v2";
+const PUBLIC_ASSETS = ["/manifest.webmanifest", "/icon.svg"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(APP_SHELL)),
+    caches.open(CACHE).then((cache) => cache.addAll(PUBLIC_ASSETS)),
   );
   self.skipWaiting();
 });
@@ -27,31 +27,24 @@ self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Only handle same-origin GETs. Realtime, auth, and API calls must always
-  // hit the network untouched.
+  // Never intercept navigations, personalized RSC requests, APIs, auth, or
+  // realtime traffic. A cached HTML response could belong to another account.
   if (
     request.method !== "GET" ||
     url.origin !== self.location.origin ||
-    url.pathname.startsWith("/api/")
+    request.mode === "navigate"
   ) {
     return;
   }
 
-  // Navigations: network-first, fall back to cached shell when offline.
-  if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request)
-        .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put(request, copy));
-          return res;
-        })
-        .catch(() => caches.match(request).then((r) => r || caches.match("/"))),
-    );
+  const immutableAsset =
+    url.pathname.startsWith("/_next/static/") ||
+    PUBLIC_ASSETS.includes(url.pathname);
+  if (!immutableAsset) {
     return;
   }
 
-  // Static assets: cache-first, then network (and cache the result).
+  // Immutable/static assets: cache-first, then network and populate the cache.
   event.respondWith(
     caches.match(request).then(
       (cached) =>
@@ -72,7 +65,7 @@ self.addEventListener("push", (event) => {
   let data = {};
   try {
     data = event.data ? event.data.json() : {};
-  } catch (e) {
+  } catch {
     data = {};
   }
   const title = data.title || "Five-O Poker";

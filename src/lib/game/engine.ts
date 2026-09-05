@@ -201,9 +201,12 @@ export function evaluateGame(state: GameState): GameResult {
   }
   compareAt(NUM_ROWS, "hand", state.players[0].hand, state.players[1].hand);
 
+  // A game is won only by taking a majority of all five hands. A player who
+  // leads 1-0 or 2-1 while the remaining hands tie has not won three hands and
+  // the game is therefore a push.
   let winner: PlayerIndex | null = null;
-  if (handWins[0] > handWins[1]) winner = 0;
-  else if (handWins[1] > handWins[0]) winner = 1;
+  if (handWins[0] >= 3) winner = 0;
+  else if (handWins[1] >= 3) winner = 1;
 
   const isFiveO = winner !== null && handWins[winner] === hands.length;
   return { hands, handWins, winner, isFiveO };

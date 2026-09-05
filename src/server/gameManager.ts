@@ -1,5 +1,6 @@
 import type { Server, Socket } from "socket.io";
 import { prisma } from "../lib/prisma";
+import { joinMatch } from "../lib/match";
 import { sendPushToUser } from "../lib/push";
 import {
   createGame,
@@ -45,20 +46,55 @@ function room(matchId: string) {
 }
 
 /** Load a match from the DB into the live registry (or return the cached one). */
-async function getLive(matchId: string): Promise<LiveMatch | null> {
+async function getLive(
+  matchId: string,
+  refreshMembership = false,
+): Promise<LiveMatch | null> {
   const cached = registry.get(matchId);
-  if (cached) return cached;
+  if (cached && !refreshMembership) return cached;
 
   const m = await prisma.match.findUnique({
     where: { id: matchId },
     include: { host: true, guest: true },
   });
-  if (!m) return null;
+  if (!m) {
+    registry.delete(matchId);
+    return null;
+  }
+
+  if (cached) {
+    // REST owns seat acquisition. Reconcile only membership/status here so a
+    // host's cached lobby cannot reject the guest who legitimately claimed the
+    // seat, without replacing a newer in-memory turn with stale persisted JSON.
+    cached.host = { userId: m.host.id, displayName: m.host.displayName };
+    if (
+      !cached.guest &&
+      cached.status === "lobby" &&
+      !cached.game &&
+      m.guest &&
+      m.status === "active"
+    ) {
+      cached.guest = {
+        userId: m.guest.id,
+        displayName: m.guest.displayName,
+      };
+      cached.status = "active";
+    }
+    if (m.status === "complete" || m.status === "abandoned") {
+      cached.status = "complete";
+    }
+    return cached;
+  }
 
   const live: LiveMatch = {
     id: m.id,
     inviteCode: m.inviteCode,
-    status: m.status as LiveMatch["status"],
+    status:
+      m.status === "active"
+        ? "active"
+        : m.status === "lobby"
+          ? "lobby"
+          : "complete",
     targetWins: m.targetWins,
     host: { userId: m.host.id, displayName: m.host.displayName },
     guest: m.guest
@@ -279,14 +315,12 @@ async function applyMatchStats(
 
 export async function handleJoin(io: IO, socket: SocketT, code: string) {
   const userId = socket.data.userId as string;
-  const match = await prisma.match.findUnique({
-    where: { inviteCode: code.toUpperCase() },
-  });
-  if (!match) {
-    socket.emit("errorMsg", { message: "Game not found" });
+  const joined = await joinMatch(code, userId);
+  if (!joined.ok) {
+    socket.emit("errorMsg", { message: joined.error });
     return;
   }
-  const live = await getLive(match.id);
+  const live = await getLive(joined.matchId, true);
   if (!live) {
     socket.emit("errorMsg", { message: "Game not found" });
     return;
@@ -339,6 +373,11 @@ async function applyMove(
   if (!matchId) return;
   const live = registry.get(matchId);
   if (!live || !live.game) return;
+
+  if (live.status !== "active") {
+    socket.emit("errorMsg", { message: "This match has ended" });
+    return;
+  }
 
   const seat = seatOfUser(live, userId);
   if (seat === -1) return;

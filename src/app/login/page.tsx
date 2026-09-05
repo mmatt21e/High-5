@@ -1,14 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { safeCallbackPath } from "@/lib/safeCallbackPath";
 
 const googleEnabled = process.env.NEXT_PUBLIC_GOOGLE_ENABLED === "true";
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<AuthPageFallback label="Loading sign in…" />}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = safeCallbackPath(searchParams.get("callbackUrl"));
+  const registerHref =
+    callbackUrl === "/"
+      ? "/register"
+      : `/register?callbackUrl=${encodeURIComponent(callbackUrl)}`;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -21,6 +36,7 @@ export default function LoginPage() {
     const res = await signIn("credentials", {
       email,
       password,
+      callbackUrl,
       redirect: false,
     });
     setLoading(false);
@@ -28,7 +44,7 @@ export default function LoginPage() {
       setError("Invalid email or password");
       return;
     }
-    router.push("/");
+    router.push(callbackUrl);
     router.refresh();
   }
 
@@ -39,26 +55,44 @@ export default function LoginPage() {
         <p className="mt-1 text-sm text-white/70">Sign in to play</p>
       </header>
 
-      <form onSubmit={onSubmit} className="flex flex-col gap-3">
+      <form
+        onSubmit={onSubmit}
+        className="flex flex-col gap-3"
+        aria-describedby={error ? "login-error" : undefined}
+      >
+        <label htmlFor="login-email" className="text-sm font-semibold text-white/80">
+          Email
+        </label>
         <input
+          id="login-email"
           type="email"
           autoComplete="email"
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          aria-invalid={Boolean(error)}
           required
           className="field"
         />
+        <label htmlFor="login-password" className="text-sm font-semibold text-white/80">
+          Password
+        </label>
         <input
+          id="login-password"
           type="password"
           autoComplete="current-password"
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          aria-invalid={Boolean(error)}
           required
           className="field"
         />
-        {error && <p className="text-sm text-rose-400">{error}</p>}
+        {error && (
+          <p id="login-error" role="alert" className="text-sm text-rose-400">
+            {error}
+          </p>
+        )}
         <button type="submit" disabled={loading} className="btn-primary">
           {loading ? "Signing in…" : "Sign in"}
         </button>
@@ -66,7 +100,7 @@ export default function LoginPage() {
 
       {googleEnabled && (
         <button
-          onClick={() => signIn("google", { callbackUrl: "/" })}
+          onClick={() => signIn("google", { callbackUrl })}
           className="btn-ghost"
         >
           Continue with Google
@@ -75,7 +109,7 @@ export default function LoginPage() {
 
       <p className="text-center text-sm text-white/70">
         New here?{" "}
-        <Link href="/register" className="font-semibold text-gold underline">
+        <Link href={registerHref} className="font-semibold text-gold underline">
           Create an account
         </Link>
       </p>
@@ -84,6 +118,14 @@ export default function LoginPage() {
           How to play Five-O
         </Link>
       </p>
+    </main>
+  );
+}
+
+function AuthPageFallback({ label }: { label: string }) {
+  return (
+    <main className="flex flex-1 items-center justify-center p-6 text-white/70">
+      {label}
     </main>
   );
 }
