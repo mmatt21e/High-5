@@ -47,6 +47,41 @@ describe("joinMatch", () => {
     });
   });
 
+  it("treats a duplicate request from the winning guest as idempotent", async () => {
+    matchStore.findUnique
+      .mockResolvedValueOnce(lobby)
+      .mockResolvedValueOnce({ ...lobby, guestId: "guest-a", status: "active" });
+    matchStore.updateMany.mockResolvedValueOnce({ count: 0 });
+
+    await expect(joinMatch("ABCDE", "guest-a")).resolves.toEqual({
+      ok: true,
+      matchId: "match-1",
+      inviteCode: "ABCDE",
+    });
+  });
+
+  it("cannot revive a match completed during the seat claim", async () => {
+    matchStore.findUnique
+      .mockResolvedValueOnce(lobby)
+      .mockResolvedValueOnce({ ...lobby, status: "complete" });
+    matchStore.updateMany.mockResolvedValueOnce({ count: 0 });
+
+    await expect(joinMatch("ABCDE", "guest-a")).resolves.toEqual({
+      ok: false,
+      error: "That game has already finished",
+    });
+  });
+
+  it("reports a match deleted during the seat claim", async () => {
+    matchStore.findUnique.mockResolvedValueOnce(lobby).mockResolvedValueOnce(null);
+    matchStore.updateMany.mockResolvedValueOnce({ count: 0 });
+
+    await expect(joinMatch("ABCDE", "guest-a")).resolves.toEqual({
+      ok: false,
+      error: "No game found with that code",
+    });
+  });
+
   it("allows an existing participant to reopen a completed match", async () => {
     matchStore.findUnique.mockResolvedValueOnce({
       ...lobby,

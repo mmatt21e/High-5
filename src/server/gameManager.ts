@@ -3,6 +3,11 @@ import { prisma } from "../lib/prisma";
 import { joinMatch } from "../lib/match";
 import { sendPushToUser } from "../lib/push";
 import {
+  persistCompletedGame,
+  type CompletedGameWrite,
+} from "./completedGamePersistence";
+import { KeyedSerialQueue, SingleFlight } from "./keyedCoordination";
+import {
   createGame,
   placeCard,
   discardCard,
@@ -30,61 +35,43 @@ interface LiveMatch {
   scoreGuest: number;
   matchWinnerId: string | null;
   gameNumber: number; // 1-based index of the current/last game
+  gameSeed: number | null;
   game: GameState | null;
   ready: Set<string>; // userIds ready for the next game
 }
 
-/** In-memory registry of live matches, surviving dev hot reloads. */
-const registry: Map<string, LiveMatch> =
-  (globalThis as { __fiveOMatches?: Map<string, LiveMatch> }).__fiveOMatches ??
-  new Map();
-(globalThis as { __fiveOMatches?: Map<string, LiveMatch> }).__fiveOMatches =
-  registry;
+interface FiveOGlobals {
+  __fiveOMatches?: Map<string, LiveMatch>;
+  __fiveOMatchLoads?: SingleFlight<string, LiveMatch | null>;
+  __fiveOMatchMutations?: KeyedSerialQueue<string>;
+}
+
+/**
+ * In-memory coordination survives development hot reloads. It intentionally
+ * coordinates one Node process; deployment remains single-replica until the
+ * live registry and locks move to a shared store.
+ */
+const fiveOGlobals = globalThis as FiveOGlobals;
+const registry = fiveOGlobals.__fiveOMatches ?? new Map<string, LiveMatch>();
+const matchLoads =
+  fiveOGlobals.__fiveOMatchLoads ??
+  new SingleFlight<string, LiveMatch | null>();
+const matchMutations =
+  fiveOGlobals.__fiveOMatchMutations ?? new KeyedSerialQueue<string>();
+fiveOGlobals.__fiveOMatches = registry;
+fiveOGlobals.__fiveOMatchLoads = matchLoads;
+fiveOGlobals.__fiveOMatchMutations = matchMutations;
 
 function room(matchId: string) {
   return `match:${matchId}`;
 }
 
-/** Load a match from the DB into the live registry (or return the cached one). */
-async function getLive(
-  matchId: string,
-  refreshMembership = false,
-): Promise<LiveMatch | null> {
-  const cached = registry.get(matchId);
-  if (cached && !refreshMembership) return cached;
-
+async function readLiveFromDatabase(matchId: string): Promise<LiveMatch | null> {
   const m = await prisma.match.findUnique({
     where: { id: matchId },
     include: { host: true, guest: true },
   });
-  if (!m) {
-    registry.delete(matchId);
-    return null;
-  }
-
-  if (cached) {
-    // REST owns seat acquisition. Reconcile only membership/status here so a
-    // host's cached lobby cannot reject the guest who legitimately claimed the
-    // seat, without replacing a newer in-memory turn with stale persisted JSON.
-    cached.host = { userId: m.host.id, displayName: m.host.displayName };
-    if (
-      !cached.guest &&
-      cached.status === "lobby" &&
-      !cached.game &&
-      m.guest &&
-      m.status === "active"
-    ) {
-      cached.guest = {
-        userId: m.guest.id,
-        displayName: m.guest.displayName,
-      };
-      cached.status = "active";
-    }
-    if (m.status === "complete" || m.status === "abandoned") {
-      cached.status = "complete";
-    }
-    return cached;
-  }
+  if (!m) return null;
 
   const live: LiveMatch = {
     id: m.id,
@@ -106,13 +93,75 @@ async function getLive(
     // Restore the persisted in-progress game so play resumes across app
     // closes and server restarts.
     gameNumber: m.gameNumber,
+    gameSeed: m.gameSeed,
     game: m.gameState ? (JSON.parse(m.gameState) as GameState) : null,
     ready: new Set<string>(),
   };
   if (m.readyHost) live.ready.add(m.host.id);
   if (m.guest && m.readyGuest) live.ready.add(m.guest.id);
-  registry.set(matchId, live);
   return live;
+}
+
+async function refreshMembership(
+  matchId: string,
+  cached: LiveMatch,
+): Promise<LiveMatch | null> {
+  const m = await prisma.match.findUnique({
+    where: { id: matchId },
+    include: { host: true, guest: true },
+  });
+  if (!m) {
+    registry.delete(matchId);
+    return null;
+  }
+
+  // REST owns seat acquisition. Reconcile only the one legal lobby-to-active
+  // transition, never replacing a newer in-memory turn with persisted JSON.
+  cached.host = { userId: m.host.id, displayName: m.host.displayName };
+  if (
+    !cached.guest &&
+    cached.status === "lobby" &&
+    !cached.game &&
+    m.guest &&
+    m.status === "active"
+  ) {
+    cached.guest = {
+      userId: m.guest.id,
+      displayName: m.guest.displayName,
+    };
+    cached.status = "active";
+  }
+  if (m.status === "complete" || m.status === "abandoned") {
+    cached.status = "complete";
+  }
+  return cached;
+}
+
+/**
+ * Load a match once. The registry is checked both before and after the await so
+ * simultaneous cold callers can never install competing LiveMatch objects.
+ */
+async function getLive(
+  matchId: string,
+  shouldRefreshMembership = false,
+): Promise<LiveMatch | null> {
+  const cached = registry.get(matchId);
+  if (cached) {
+    return shouldRefreshMembership
+      ? refreshMembership(matchId, cached)
+      : cached;
+  }
+
+  return matchLoads.run(matchId, async () => {
+    const beforeRead = registry.get(matchId);
+    if (beforeRead) return beforeRead;
+
+    const loaded = await readLiveFromDatabase(matchId);
+    const installedWhileReading = registry.get(matchId);
+    if (installedWhileReading) return installedWhileReading;
+    if (loaded) registry.set(matchId, loaded);
+    return loaded;
+  });
 }
 
 /** Persist the full live match + in-progress game so it can be resumed later. */
@@ -125,11 +174,50 @@ async function saveState(live: LiveMatch) {
       scoreHost: live.scoreHost,
       scoreGuest: live.scoreGuest,
       winnerId: live.matchWinnerId,
+      gameSeed: live.gameSeed,
       gameState: live.game ? JSON.stringify(live.game) : null,
       readyHost: live.ready.has(live.host.userId),
       readyGuest: live.guest ? live.ready.has(live.guest.userId) : false,
     },
   });
+}
+
+function cloneLive(live: LiveMatch): LiveMatch {
+  return {
+    ...live,
+    host: { ...live.host },
+    guest: live.guest ? { ...live.guest } : null,
+    game: live.game ? structuredClone(live.game) : null,
+    ready: new Set(live.ready),
+  };
+}
+
+function restoreLive(live: LiveMatch, prior: LiveMatch): void {
+  live.status = prior.status;
+  live.targetWins = prior.targetWins;
+  live.host = prior.host;
+  live.guest = prior.guest;
+  live.scoreHost = prior.scoreHost;
+  live.scoreGuest = prior.scoreGuest;
+  live.matchWinnerId = prior.matchWinnerId;
+  live.gameNumber = prior.gameNumber;
+  live.gameSeed = prior.gameSeed;
+  live.game = prior.game;
+  live.ready = prior.ready;
+}
+
+/** Keep process memory aligned with the database when a write rolls back. */
+async function persistLiveMutation<T>(
+  live: LiveMatch,
+  mutation: () => Promise<T>,
+): Promise<T> {
+  const prior = cloneLive(live);
+  try {
+    return await mutation();
+  } catch (error) {
+    restoreLive(live, prior);
+    throw error;
+  }
 }
 
 function seatOfUser(live: LiveMatch, userId: string): PlayerIndex | -1 {
@@ -200,6 +288,7 @@ function startGame(live: LiveMatch) {
   // Alternate who leads the first round of each game for fairness.
   const firstLead: PlayerIndex = ((live.gameNumber - 1) % 2) as PlayerIndex;
   const seed = Math.floor(Math.random() * 0x7fffffff);
+  live.gameSeed = seed;
   live.game = createGame(
     { userId: live.host.userId, displayName: live.host.displayName },
     { userId: live.guest.userId, displayName: live.guest.displayName },
@@ -209,106 +298,44 @@ function startGame(live: LiveMatch) {
 
 async function persistAndScore(live: LiveMatch) {
   const game = live.game;
-  if (!game || !game.result || !live.guest) return;
-  const result = game.result;
-
-  // Record the completed game.
-  await prisma.game.create({
-    data: {
-      matchId: live.id,
-      seed: 0,
-      winnerSeat: result.winner,
-      isFiveO: result.isFiveO,
-      resultJson: JSON.stringify(result),
-      boardJson: JSON.stringify(
-        game.players.map((p) => ({ rows: p.rows, hand: p.hand })),
-      ),
-    },
-  });
-
-  // Update running match score.
-  if (result.winner === 0) live.scoreHost += 1;
-  else if (result.winner === 1) live.scoreGuest += 1;
-
-  // Per-user lifetime stats.
-  const hostId = live.host.userId;
-  const guestId = live.guest.userId;
-  await applyGameStats(hostId, guestId, result.winner, result.isFiveO);
-
-  // Has anyone reached the target?
-  let matchComplete = false;
-  if (live.scoreHost >= live.targetWins) {
-    live.matchWinnerId = hostId;
-    matchComplete = true;
-  } else if (live.scoreGuest >= live.targetWins) {
-    live.matchWinnerId = guestId;
-    matchComplete = true;
-  }
-  if (matchComplete) {
-    live.status = "complete";
-    await applyMatchStats(hostId, guestId, live.matchWinnerId!);
+  if (
+    live.status !== "active" ||
+    !game ||
+    !game.result ||
+    !live.guest
+  ) {
+    return;
   }
 
-  // Persist the completed game snapshot + updated scores/status so a
-  // reconnecting player still sees the showdown and running match state.
-  await saveState(live);
+  const write: CompletedGameWrite = {
+    matchId: live.id,
+    gameNumber: live.gameNumber,
+    seed: live.gameSeed ?? 0,
+    hostId: live.host.userId,
+    guestId: live.guest.userId,
+    scoreHost: live.scoreHost,
+    scoreGuest: live.scoreGuest,
+    targetWins: live.targetWins,
+    result: game.result,
+    gameStateJson: JSON.stringify(game),
+    boardJson: JSON.stringify(
+      game.players.map((player) => ({
+        rows: player.rows,
+        hand: player.hand,
+      })),
+    ),
+    readyHost: live.ready.has(live.host.userId),
+    readyGuest: live.ready.has(live.guest.userId),
+  };
+  const outcome = await persistCompletedGame(prisma, write);
+  live.scoreHost = outcome.scoreHost;
+  live.scoreGuest = outcome.scoreGuest;
+  live.status = outcome.status;
+  live.matchWinnerId = outcome.winnerId;
 }
 
-async function applyGameStats(
-  hostId: string,
-  guestId: string,
-  winner: PlayerIndex | null,
-  isFiveO: boolean,
-) {
-  const winnerId = winner === 0 ? hostId : winner === 1 ? guestId : null;
-  const loserId = winner === 0 ? guestId : winner === 1 ? hostId : null;
-
-  if (winnerId && loserId) {
-    const w = await prisma.stats.update({
-      where: { userId: winnerId },
-      data: {
-        gamesPlayed: { increment: 1 },
-        gameWins: { increment: 1 },
-        currentStreak: { increment: 1 },
-        fiveOs: { increment: isFiveO ? 1 : 0 },
-      },
-    });
-    if (w.currentStreak > w.bestStreak) {
-      await prisma.stats.update({
-        where: { userId: winnerId },
-        data: { bestStreak: w.currentStreak },
-      });
-    }
-    await prisma.stats.update({
-      where: { userId: loserId },
-      data: {
-        gamesPlayed: { increment: 1 },
-        gameLosses: { increment: 1 },
-        currentStreak: 0,
-      },
-    });
-  } else {
-    // Push: both played, neither win/loss, streaks unchanged.
-    await prisma.stats.updateMany({
-      where: { userId: { in: [hostId, guestId] } },
-      data: { gamesPlayed: { increment: 1 }, gamePushes: { increment: 1 } },
-    });
-  }
-}
-
-async function applyMatchStats(
-  hostId: string,
-  guestId: string,
-  winnerId: string,
-) {
-  await prisma.stats.updateMany({
-    where: { userId: { in: [hostId, guestId] } },
-    data: { matchesPlayed: { increment: 1 } },
-  });
-  await prisma.stats.update({
-    where: { userId: winnerId },
-    data: { matchWins: { increment: 1 } },
-  });
+function isMatchComplete(live: LiveMatch): boolean {
+  return live.status === "complete";
 }
 
 // ----- Socket event handlers -----
@@ -320,34 +347,46 @@ export async function handleJoin(io: IO, socket: SocketT, code: string) {
     socket.emit("errorMsg", { message: joined.error });
     return;
   }
-  const live = await getLive(joined.matchId, true);
-  if (!live) {
-    socket.emit("errorMsg", { message: "Game not found" });
-    return;
-  }
-  if (seatOfUser(live, userId) === -1) {
-    socket.emit("errorMsg", { message: "You are not part of this game" });
-    return;
-  }
+  await matchMutations.run(joined.matchId, async () => {
+    const live = await getLive(joined.matchId, true);
+    if (!live) {
+      socket.emit("errorMsg", { message: "Game not found" });
+      return;
+    }
+    if (seatOfUser(live, userId) === -1) {
+      socket.emit("errorMsg", { message: "You are not part of this game" });
+      return;
+    }
 
-  socket.data.matchId = live.id;
-  await socket.join(room(live.id));
+    socket.data.matchId = live.id;
+    await socket.join(room(live.id));
 
-  // Auto-start the first game once both seats are filled.
-  if (
-    live.guest &&
-    live.status === "active" &&
-    !live.game &&
-    live.gameNumber === 0
-  ) {
-    startGame(live);
-    await saveState(live);
+    if (
+      live.status === "active" &&
+      live.game?.phase === "complete" &&
+      live.game.result
+    ) {
+      await persistLiveMutation(live, () => persistAndScore(live));
+    }
+
+    // Auto-start exactly once after both seats are filled.
+    if (
+      live.guest &&
+      live.status === "active" &&
+      !live.game &&
+      live.gameNumber === 0
+    ) {
+      await persistLiveMutation(live, async () => {
+        startGame(live);
+        await saveState(live);
+      });
+      await broadcast(io, live);
+      await maybeNotifyTurn(io, live);
+      return;
+    }
+
     await broadcast(io, live);
-    await maybeNotifyTurn(io, live);
-    return;
-  }
-
-  await broadcast(io, live);
+  });
 }
 
 export async function handlePlace(
@@ -356,11 +395,19 @@ export async function handlePlace(
   cardId: string,
   row: number,
 ) {
-  await applyMove(io, socket, (game, seat) => placeCard(game, seat, cardId, row));
+  const matchId = socket.data.matchId as string | undefined;
+  if (!matchId) return;
+  await matchMutations.run(matchId, () =>
+    applyMove(io, socket, (game, seat) => placeCard(game, seat, cardId, row)),
+  );
 }
 
 export async function handleDiscard(io: IO, socket: SocketT, cardId: string) {
-  await applyMove(io, socket, (game, seat) => discardCard(game, seat, cardId));
+  const matchId = socket.data.matchId as string | undefined;
+  if (!matchId) return;
+  await matchMutations.run(matchId, () =>
+    applyMove(io, socket, (game, seat) => discardCard(game, seat, cardId)),
+  );
 }
 
 async function applyMove(
@@ -382,8 +429,14 @@ async function applyMove(
   const seat = seatOfUser(live, userId);
   if (seat === -1) return;
 
+  let completed = false;
   try {
-    move(live.game, seat);
+    await persistLiveMutation(live, async () => {
+      move(live.game!, seat);
+      completed = live.game!.phase === "complete";
+      if (completed) await persistAndScore(live);
+      else await saveState(live);
+    });
   } catch (err) {
     if (err instanceof IllegalMoveError) {
       socket.emit("errorMsg", { message: err.message });
@@ -392,35 +445,41 @@ async function applyMove(
     throw err;
   }
 
-  if (live.game.phase === "complete") {
-    await persistAndScore(live);
-    await broadcast(io, live);
-  } else {
-    await saveState(live);
-    await broadcast(io, live);
-    // Ping the player whose turn it now is, if they've stepped away.
-    await maybeNotifyTurn(io, live);
-  }
+  await broadcast(io, live);
+  if (!completed) await maybeNotifyTurn(io, live);
 }
 
 export async function handleNext(io: IO, socket: SocketT) {
   const userId = socket.data.userId as string;
   const matchId = socket.data.matchId as string | undefined;
   if (!matchId) return;
-  const live = registry.get(matchId);
-  if (!live || live.status === "complete" || !live.guest) return;
-  // Only meaningful once the current game is over.
-  if (live.game && live.game.phase !== "complete") return;
+  await matchMutations.run(matchId, async () => {
+    const live = registry.get(matchId);
+    if (!live || live.status === "complete" || !live.guest) return;
+    if (live.game && live.game.phase !== "complete") return;
 
-  live.ready.add(userId);
-  const bothReady =
-    live.ready.has(live.host.userId) && live.ready.has(live.guest.userId);
-  if (bothReady) {
-    startGame(live);
-  }
-  await saveState(live);
-  await broadcast(io, live);
-  if (bothReady) await maybeNotifyTurn(io, live);
+    // Retry a completion whose prior transaction rolled back before accepting
+    // readiness for the next game. Keep it separate from the following save so
+    // a later readiness failure never rolls memory behind a committed score.
+    if (live.game?.phase === "complete" && live.game.result) {
+      await persistLiveMutation(live, () => persistAndScore(live));
+    }
+    if (isMatchComplete(live)) {
+      await broadcast(io, live);
+      return;
+    }
+
+    let bothReady = false;
+    await persistLiveMutation(live, async () => {
+      live.ready.add(userId);
+      bothReady =
+        live.ready.has(live.host.userId) && live.ready.has(live.guest!.userId);
+      if (bothReady) startGame(live);
+      await saveState(live);
+    });
+    await broadcast(io, live);
+    if (bothReady) await maybeNotifyTurn(io, live);
+  });
 }
 
 /** A player voluntarily ends the match; it is marked complete for both. */
@@ -428,21 +487,27 @@ export async function handleEndMatch(io: IO, socket: SocketT) {
   const userId = socket.data.userId as string;
   const matchId = socket.data.matchId as string | undefined;
   if (!matchId) return;
-  const live = registry.get(matchId) ?? (await getLive(matchId));
-  if (!live || seatOfUser(live, userId) === -1) return;
-  if (live.status === "complete") return;
+  await matchMutations.run(matchId, async () => {
+    const live = registry.get(matchId) ?? (await getLive(matchId));
+    if (!live || seatOfUser(live, userId) === -1) return;
+    if (live.status === "complete") return;
 
-  live.status = "complete";
-  live.ready.clear();
-  // Keep live.game so the final board stays visible; the match is just marked
-  // complete for both players.
-  await saveState(live);
-  await broadcast(io, live);
+    await persistLiveMutation(live, async () => {
+      live.status = "complete";
+      live.ready.clear();
+      // Keep live.game so the final board stays visible; the match is just
+      // marked complete for both players.
+      await saveState(live);
+    });
+    await broadcast(io, live);
+  });
 }
 
 export async function handleDisconnect(io: IO, socket: SocketT) {
   const matchId = socket.data.matchId as string | undefined;
   if (!matchId) return;
-  const live = registry.get(matchId);
-  if (live) await broadcast(io, live);
+  await matchMutations.run(matchId, async () => {
+    const live = registry.get(matchId);
+    if (live) await broadcast(io, live);
+  });
 }
