@@ -5,6 +5,12 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { fitsBcryptPasswordLimit } from "@/lib/password";
+import {
+  RATE_LIMITS,
+  resetAccountRateLimit,
+  takeAccountRateLimit,
+} from "@/lib/rateLimit";
 
 // Make `id` and `displayName` available on the session/JWT.
 declare module "next-auth" {
@@ -17,8 +23,8 @@ declare module "next-auth" {
 }
 
 const credentialsSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
+  email: z.string().trim().email(),
+  password: z.string().min(1).refine(fitsBcryptPasswordLimit),
 });
 
 // Google is optional — only register it when credentials are configured.
@@ -28,7 +34,6 @@ if (process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET) {
     Google({
       clientId: process.env.AUTH_GOOGLE_ID,
       clientSecret: process.env.AUTH_GOOGLE_SECRET,
-      allowDangerousEmailAccountLinking: true,
     }),
   );
 }
@@ -42,12 +47,20 @@ providers.push(
       const parsed = credentialsSchema.safeParse(raw);
       if (!parsed.success) return null;
       const { email, password } = parsed.data;
+      const normalizedEmail = email.toLowerCase();
+      const rateLimit = takeAccountRateLimit(
+        "credentials",
+        normalizedEmail,
+        RATE_LIMITS.credentials,
+      );
+      if (!rateLimit.allowed) return null;
       const user = await prisma.user.findUnique({
-        where: { email: email.toLowerCase() },
+        where: { email: normalizedEmail },
       });
       if (!user?.passwordHash) return null;
       const ok = await bcrypt.compare(password, user.passwordHash);
       if (!ok) return null;
+      resetAccountRateLimit("credentials", normalizedEmail);
       return {
         id: user.id,
         email: user.email,

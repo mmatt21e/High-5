@@ -1,3 +1,4 @@
+import { randomInt } from "node:crypto";
 import type { Server, Socket } from "socket.io";
 import { prisma } from "../lib/prisma";
 import { joinMatch } from "../lib/match";
@@ -234,12 +235,17 @@ function snapshotFor(live: LiveMatch, userId: string): MatchSnapshot {
     inviteCode: live.inviteCode,
     status: live.status,
     targetWins: live.targetWins,
-    host: live.host,
-    guest: live.guest,
+    host: { displayName: live.host.displayName },
+    guest: live.guest ? { displayName: live.guest.displayName } : null,
     scoreHost: live.scoreHost,
     scoreGuest: live.scoreGuest,
     gameNumber: live.gameNumber,
-    matchWinnerId: live.matchWinnerId,
+    matchWinner:
+      live.matchWinnerId === live.host.userId
+        ? 0
+        : live.guest && live.matchWinnerId === live.guest.userId
+          ? 1
+          : null,
     youReady: live.ready.has(userId),
     opponentReady: opponentId ? live.ready.has(opponentId) : false,
   };
@@ -264,20 +270,46 @@ async function broadcast(io: IO, live: LiveMatch) {
  * If it's a player's turn but they're not currently connected to the match,
  * send them an "it's your turn" push notification.
  */
-async function maybeNotifyTurn(io: IO, live: LiveMatch) {
-  if (!live.game || live.game.phase !== "playing" || !live.guest) return;
+interface TurnNotification {
+  matchId: string;
+  userId: string;
+  title: string;
+  body: string;
+  url: string;
+}
+
+function notificationForTurn(live: LiveMatch): TurnNotification | null {
+  if (!live.game || live.game.phase !== "playing" || !live.guest) return null;
   const seat = live.game.toMove;
   const player = seat === 0 ? live.host : live.guest;
   const opponent = seat === 0 ? live.guest : live.host;
 
-  const sockets = await io.in(room(live.id)).fetchSockets();
-  const online = sockets.some((s) => s.data.userId === player.userId);
-  if (online) return; // they're already looking at the game
-
-  await sendPushToUser(player.userId, {
+  return {
+    matchId: live.id,
+    userId: player.userId,
     title: "Your turn — Five-O Poker",
     body: `It's your move vs ${opponent.displayName}.`,
     url: `/play/${live.inviteCode}`,
+  };
+}
+
+async function deliverTurnNotification(io: IO, intent: TurnNotification) {
+  const sockets = await io.in(room(intent.matchId)).fetchSockets();
+  const online = sockets.some((s) => s.data.userId === intent.userId);
+  if (online) return; // they're already looking at the game
+
+  await sendPushToUser(intent.userId, {
+    title: intent.title,
+    body: intent.body,
+    url: intent.url,
+  });
+}
+
+/** Optional notification delivery must never hold the match mutation queue. */
+function dispatchTurnNotification(io: IO, intent: TurnNotification | null) {
+  if (!intent) return;
+  void deliverTurnNotification(io, intent).catch((error: unknown) => {
+    console.error("Turn notification failed", error);
   });
 }
 
@@ -287,16 +319,22 @@ function startGame(live: LiveMatch) {
   live.ready.clear();
   // Alternate who leads the first round of each game for fairness.
   const firstLead: PlayerIndex = ((live.gameNumber - 1) % 2) as PlayerIndex;
-  const seed = Math.floor(Math.random() * 0x7fffffff);
-  live.gameSeed = seed;
+  // This nonce anchors persistence identity. The deck itself is shuffled with
+  // a fresh, unbiased operating-system random draw at every Fisher-Yates step;
+  // it cannot be reconstructed by enumerating this 31-bit database value.
+  const shuffleNonce = randomInt(0x80000000);
+  live.gameSeed = shuffleNonce;
   live.game = createGame(
     { userId: live.host.userId, displayName: live.host.displayName },
     { userId: live.guest.userId, displayName: live.guest.displayName },
-    { seed, firstLead },
+    { randomIndex: randomInt, firstLead },
   );
 }
 
-async function persistAndScore(live: LiveMatch) {
+async function persistAndScore(
+  live: LiveMatch,
+  expectedPriorGameStateJson: string | null = null,
+) {
   const game = live.game;
   if (
     live.status !== "active" ||
@@ -306,16 +344,15 @@ async function persistAndScore(live: LiveMatch) {
   ) {
     return;
   }
+  if (live.gameSeed === null) {
+    throw new Error("Cannot persist a completed game without its shuffle seed");
+  }
 
   const write: CompletedGameWrite = {
     matchId: live.id,
-    gameNumber: live.gameNumber,
-    seed: live.gameSeed ?? 0,
-    hostId: live.host.userId,
-    guestId: live.guest.userId,
-    scoreHost: live.scoreHost,
-    scoreGuest: live.scoreGuest,
-    targetWins: live.targetWins,
+    expectedGameNumber: live.gameNumber,
+    seed: live.gameSeed,
+    expectedPriorGameStateJson,
     result: game.result,
     gameStateJson: JSON.stringify(game),
     boardJson: JSON.stringify(
@@ -324,8 +361,6 @@ async function persistAndScore(live: LiveMatch) {
         hand: player.hand,
       })),
     ),
-    readyHost: live.ready.has(live.host.userId),
-    readyGuest: live.ready.has(live.guest.userId),
   };
   const outcome = await persistCompletedGame(prisma, write);
   live.scoreHost = outcome.scoreHost;
@@ -347,15 +382,15 @@ export async function handleJoin(io: IO, socket: SocketT, code: string) {
     socket.emit("errorMsg", { message: joined.error });
     return;
   }
-  await matchMutations.run(joined.matchId, async () => {
+  const notification = await matchMutations.run(joined.matchId, async () => {
     const live = await getLive(joined.matchId, true);
     if (!live) {
       socket.emit("errorMsg", { message: "Game not found" });
-      return;
+      return null;
     }
     if (seatOfUser(live, userId) === -1) {
       socket.emit("errorMsg", { message: "You are not part of this game" });
-      return;
+      return null;
     }
 
     socket.data.matchId = live.id;
@@ -381,12 +416,13 @@ export async function handleJoin(io: IO, socket: SocketT, code: string) {
         await saveState(live);
       });
       await broadcast(io, live);
-      await maybeNotifyTurn(io, live);
-      return;
+      return notificationForTurn(live);
     }
 
     await broadcast(io, live);
+    return null;
   });
+  dispatchTurnNotification(io, notification);
 }
 
 export async function handlePlace(
@@ -397,17 +433,19 @@ export async function handlePlace(
 ) {
   const matchId = socket.data.matchId as string | undefined;
   if (!matchId) return;
-  await matchMutations.run(matchId, () =>
+  const notification = await matchMutations.run(matchId, () =>
     applyMove(io, socket, (game, seat) => placeCard(game, seat, cardId, row)),
   );
+  dispatchTurnNotification(io, notification);
 }
 
 export async function handleDiscard(io: IO, socket: SocketT, cardId: string) {
   const matchId = socket.data.matchId as string | undefined;
   if (!matchId) return;
-  await matchMutations.run(matchId, () =>
+  const notification = await matchMutations.run(matchId, () =>
     applyMove(io, socket, (game, seat) => discardCard(game, seat, cardId)),
   );
+  dispatchTurnNotification(io, notification);
 }
 
 async function applyMove(
@@ -417,46 +455,49 @@ async function applyMove(
 ) {
   const userId = socket.data.userId as string;
   const matchId = socket.data.matchId as string | undefined;
-  if (!matchId) return;
+  if (!matchId) return null;
   const live = registry.get(matchId);
-  if (!live || !live.game) return;
+  if (!live || !live.game) return null;
 
   if (live.status !== "active") {
     socket.emit("errorMsg", { message: "This match has ended" });
-    return;
+    return null;
   }
 
   const seat = seatOfUser(live, userId);
-  if (seat === -1) return;
+  if (seat === -1) return null;
 
   let completed = false;
   try {
     await persistLiveMutation(live, async () => {
+      const expectedPriorGameStateJson = JSON.stringify(live.game);
       move(live.game!, seat);
       completed = live.game!.phase === "complete";
-      if (completed) await persistAndScore(live);
+      if (completed) {
+        await persistAndScore(live, expectedPriorGameStateJson);
+      }
       else await saveState(live);
     });
   } catch (err) {
     if (err instanceof IllegalMoveError) {
       socket.emit("errorMsg", { message: err.message });
-      return;
+      return null;
     }
     throw err;
   }
 
   await broadcast(io, live);
-  if (!completed) await maybeNotifyTurn(io, live);
+  return completed ? null : notificationForTurn(live);
 }
 
 export async function handleNext(io: IO, socket: SocketT) {
   const userId = socket.data.userId as string;
   const matchId = socket.data.matchId as string | undefined;
   if (!matchId) return;
-  await matchMutations.run(matchId, async () => {
+  const notification = await matchMutations.run(matchId, async () => {
     const live = registry.get(matchId);
-    if (!live || live.status === "complete" || !live.guest) return;
-    if (live.game && live.game.phase !== "complete") return;
+    if (!live || live.status === "complete" || !live.guest) return null;
+    if (live.game && live.game.phase !== "complete") return null;
 
     // Retry a completion whose prior transaction rolled back before accepting
     // readiness for the next game. Keep it separate from the following save so
@@ -466,7 +507,7 @@ export async function handleNext(io: IO, socket: SocketT) {
     }
     if (isMatchComplete(live)) {
       await broadcast(io, live);
-      return;
+      return null;
     }
 
     let bothReady = false;
@@ -478,8 +519,9 @@ export async function handleNext(io: IO, socket: SocketT) {
       await saveState(live);
     });
     await broadcast(io, live);
-    if (bothReady) await maybeNotifyTurn(io, live);
+    return bothReady ? notificationForTurn(live) : null;
   });
+  dispatchTurnNotification(io, notification);
 }
 
 /** A player voluntarily ends the match; it is marked complete for both. */
@@ -508,6 +550,13 @@ export async function handleDisconnect(io: IO, socket: SocketT) {
   if (!matchId) return;
   await matchMutations.run(matchId, async () => {
     const live = registry.get(matchId);
+    const sockets = await io.in(room(matchId)).fetchSockets();
+    if (sockets.length === 0) {
+      // Every accepted mutation is persisted before broadcast, so an empty
+      // room can safely release its process-local resume cache.
+      registry.delete(matchId);
+      return;
+    }
     if (live) await broadcast(io, live);
   });
 }

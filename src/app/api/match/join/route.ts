@@ -18,7 +18,16 @@ export async function POST(req: Request) {
   }
   const result = await joinMatch(parsed.data.code, session.user.id);
   if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: 400 });
+    return NextResponse.json(
+      { error: result.error },
+      {
+        status: result.rateLimited ? 429 : 400,
+        headers:
+          result.rateLimited && result.retryAfterSeconds
+            ? { "Retry-After": String(result.retryAfterSeconds) }
+            : undefined,
+      },
+    );
   }
   return NextResponse.json({ code: result.inviteCode }, { status: 200 });
 }

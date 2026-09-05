@@ -2,12 +2,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const matchStore = vi.hoisted(() => ({
   findUnique: vi.fn(),
+  create: vi.fn(),
   updateMany: vi.fn(),
 }));
 
 vi.mock("../prisma", () => ({ prisma: { match: matchStore } }));
 
-import { joinMatch } from "../match";
+import { generateInviteCode, joinMatch } from "../match";
+import { resetAccountRateLimit } from "../rateLimit";
 
 const lobby = {
   id: "match-1",
@@ -18,7 +20,33 @@ const lobby = {
 };
 
 describe("joinMatch", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    resetAccountRateLimit("match:join", "guest-a");
+  });
+
+  it("generates new cryptographic invite codes at the longer length", async () => {
+    matchStore.findUnique.mockResolvedValue(null);
+
+    const code = await generateInviteCode();
+
+    expect(code).toMatch(/^[A-HJ-NP-Z2-9]{8}$/);
+  });
+
+  it.each([
+    null,
+    { ...lobby, guestId: "guest-b", status: "active" },
+    { ...lobby, status: "complete" },
+    { ...lobby, status: "abandoned" },
+  ])("gives outsiders one uniform response for unavailable codes", async (value) => {
+    matchStore.findUnique.mockResolvedValueOnce(value);
+
+    await expect(joinMatch("ABCDE", "guest-a")).resolves.toEqual({
+      ok: false,
+      error: "That game is unavailable",
+    });
+    expect(matchStore.updateMany).not.toHaveBeenCalled();
+  });
 
   it("claims an empty lobby seat with a conditional write", async () => {
     matchStore.findUnique.mockResolvedValueOnce(lobby);
@@ -43,7 +71,7 @@ describe("joinMatch", () => {
 
     await expect(joinMatch("ABCDE", "guest-a")).resolves.toEqual({
       ok: false,
-      error: "That game is already full",
+      error: "That game is unavailable",
     });
   });
 
@@ -68,7 +96,7 @@ describe("joinMatch", () => {
 
     await expect(joinMatch("ABCDE", "guest-a")).resolves.toEqual({
       ok: false,
-      error: "That game has already finished",
+      error: "That game is unavailable",
     });
   });
 
@@ -78,7 +106,7 @@ describe("joinMatch", () => {
 
     await expect(joinMatch("ABCDE", "guest-a")).resolves.toEqual({
       ok: false,
-      error: "No game found with that code",
+      error: "That game is unavailable",
     });
   });
 

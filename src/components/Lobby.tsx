@@ -2,6 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  INVITE_CODE_LENGTH,
+  LEGACY_INVITE_CODE_LENGTH,
+  isSupportedInviteCodeLength,
+} from "@/lib/inviteCode";
 
 export function Lobby() {
   const router = useRouter();
@@ -65,15 +70,17 @@ export function Lobby() {
           placeholder="Enter invite code"
           autoComplete="off"
           inputMode="text"
-          pattern="[A-HJ-NP-Z2-9]{5}"
-          minLength={5}
-          maxLength={5}
+          pattern={`(?:[A-HJ-NP-Z2-9]{${LEGACY_INVITE_CODE_LENGTH}}|[A-HJ-NP-Z2-9]{${INVITE_CODE_LENGTH}})`}
+          minLength={LEGACY_INVITE_CODE_LENGTH}
+          maxLength={INVITE_CODE_LENGTH}
           aria-invalid={Boolean(error)}
           className="field py-4 text-center text-2xl font-bold tracking-[0.3em] placeholder:text-base placeholder:font-normal placeholder:tracking-normal"
         />
         <button
           type="submit"
-          disabled={busy !== null || code.trim().length !== 5}
+          disabled={
+            busy !== null || !isSupportedInviteCodeLength(code.trim().length)
+          }
           className="btn-outline"
         >
           {busy === "join" ? "Joining…" : "Join game"}

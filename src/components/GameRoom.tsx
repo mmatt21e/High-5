@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import Link from "next/link";
 import { useGameSocket } from "./useGameSocket";
 import { DeckToggle } from "./DeckToggle";
@@ -132,8 +138,8 @@ function WaitingRoom({ snapshot }: { snapshot: MatchSnapshot }) {
         <span className="font-semibold">Waiting for your opponent…</span>
       </div>
       <p className="text-sm text-white/60">Share this code to invite a player</p>
-      <div className="panel border-gold/40 px-8 py-6">
-        <div className="text-5xl font-black tracking-[0.35em] text-gold">
+      <div className="panel max-w-full border-gold/40 px-4 py-6 sm:px-8">
+        <div className="font-mono text-3xl font-black tracking-[0.2em] text-gold sm:text-5xl sm:tracking-[0.35em]">
           {snapshot.inviteCode}
         </div>
       </div>
@@ -190,7 +196,8 @@ function Table({
     if (onPlace(selected, rowIndex)) setSelected(null);
   }
 
-  const openSettings = () => setSettingsOpen(true);
+  const openSettings = useCallback(() => setSettingsOpen(true), []);
+  const closeSettings = useCallback(() => setSettingsOpen(false), []);
   let body: ReactNode;
 
   if (gameOver || matchOver) {
@@ -254,7 +261,7 @@ function Table({
       {body}
       {settingsOpen && (
         <SettingsModal
-          onClose={() => setSettingsOpen(false)}
+          onClose={closeSettings}
           onEndMatch={onEndMatch}
           matchOver={matchOver}
         />
@@ -295,17 +302,68 @@ function SettingsModal({
   onEndMatch: () => boolean;
   matchOver: boolean;
 }) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    const previousFocus =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    if (!dialog) return;
+
+    const focusable = () =>
+      Array.from(
+        dialog.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      );
+    (focusable()[0] ?? dialog).focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const controls = focusable();
+      if (controls.length === 0) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+      const first = controls[0];
+      const last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      previousFocus?.focus();
+    };
+  }, [onClose]);
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6"
       onClick={onClose}
     >
       <div
+        ref={dialogRef}
         className="panel w-full max-w-sm"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="settings-title"
+        tabIndex={-1}
       >
         <div className="mb-3 flex items-center justify-between">
           <h2 id="settings-title" className="text-lg font-black text-gold">Settings</h2>
@@ -671,8 +729,7 @@ function GameOver({
 }
 
 function MatchOver({ snapshot, you }: { snapshot: MatchSnapshot; you: PlayerIndex }) {
-  const myId = you === 0 ? snapshot.host.userId : snapshot.guest?.userId;
-  const won = snapshot.matchWinnerId === myId;
+  const won = snapshot.matchWinner === you;
   return (
     <div className="panel flex flex-col items-center gap-2 py-4">
       <div className={`text-2xl font-black ${won ? "text-gold" : "text-rose-300"}`}>

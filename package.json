@@ -3,44 +3,56 @@
   "version": "0.1.0",
   "private": true,
   "description": "Five-O Poker — mobile-first heads-up poker played across two devices.",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "cross-env NODE_ENV=development tsx watch server.ts",
     "build": "prisma generate && next build",
-    "start": "cross-env NODE_ENV=production tsx server.ts",
+    "start": "node scripts/start.mjs",
+    "env:check": "node scripts/validate-production-env.mjs",
+    "db:validate": "prisma validate",
     "db:push": "prisma db push",
+    "db:migrate": "node scripts/deploy-migrations.mjs",
+    "db:migrate:status": "prisma migrate status",
     "db:studio": "prisma studio",
+    "verify:migrations": "node scripts/verify-migrations.mjs",
+    "smoke:start": "node scripts/smoke-production-start.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "eslint . --max-warnings=0"
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "prisma generate && tsc --noEmit --incremental false",
+    "check": "npm run lint && npm run typecheck && npm test && npm run db:validate && npm run verify:migrations"
   },
   "dependencies": {
     "@auth/prisma-adapter": "2.11.3",
+    "@next/env": "15.5.25",
     "@prisma/client": "6.12.0",
     "bcryptjs": "^2.4.3",
     "next": "15.5.25",
     "next-auth": "5.0.0-beta.32",
+    "prisma": "6.12.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "socket.io": "4.8.3",
     "socket.io-client": "4.8.3",
+    "tsx": "4.23.13",
     "web-push": "^3.6.7",
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.0.0",
+    "@tailwindcss/postcss": "4.3.3",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.10.5",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
     "@types/web-push": "^3.6.4",
     "cross-env": "^7.0.3",
-    "eslint": "9.35.0",
+    "eslint": "9.39.5",
     "eslint-config-next": "15.5.25",
-    "prisma": "6.12.0",
-    "tailwindcss": "^4.0.0",
-    "tsx": "^4.19.2",
+    "tailwindcss": "4.3.3",
     "typescript": "^5.7.2",
-    "vitest": "^2.1.8"
+    "vitest": "3.2.6"
   },
   "overrides": {
     "next": {

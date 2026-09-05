@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { KeyedSerialQueue, SingleFlight } from "../keyedCoordination";
+import {
+  KeyedSerialQueue,
+  QueueCapacityExceededError,
+  SingleFlight,
+} from "../keyedCoordination";
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -83,6 +87,50 @@ describe("KeyedSerialQueue", () => {
 
     await expect(first).rejects.toThrow("write failed");
     await expect(second).resolves.toBe("recovered");
+  });
+
+  it("rejects excess work instead of growing one key without bound", async () => {
+    const queue = new KeyedSerialQueue<string>({ maxPendingPerKey: 2 });
+    const gate = deferred<void>();
+    const started = deferred<void>();
+    const first = queue.run("match-1", async () => {
+      started.resolve();
+      await gate.promise;
+    });
+    const second = queue.run("match-1", async () => undefined);
+
+    await started.promise;
+    await expect(
+      queue.run("match-1", async () => undefined),
+    ).rejects.toMatchObject({
+      name: "QueueCapacityExceededError",
+      reason: "key-capacity",
+    } satisfies Partial<QueueCapacityExceededError>);
+
+    gate.resolve();
+    await Promise.all([first, second]);
+    await expect(
+      queue.run("match-1", async () => "accepted"),
+    ).resolves.toBe("accepted");
+  });
+
+  it("bounds the number of simultaneously retained keys", async () => {
+    const queue = new KeyedSerialQueue<string>({ maxActiveKeys: 1 });
+    const gate = deferred<void>();
+    const first = queue.run("match-1", async () => gate.promise);
+
+    await expect(
+      queue.run("match-2", async () => undefined),
+    ).rejects.toMatchObject({
+      name: "QueueCapacityExceededError",
+      reason: "key-count",
+    } satisfies Partial<QueueCapacityExceededError>);
+
+    gate.resolve();
+    await first;
+    await expect(
+      queue.run("match-2", async () => "accepted"),
+    ).resolves.toBe("accepted");
   });
 
   it("allows simultaneous cold joins to load and start a match only once", async () => {

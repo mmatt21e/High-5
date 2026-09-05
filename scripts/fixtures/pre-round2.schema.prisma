@@ -1,0 +1,125 @@
+// Test fixture for databases created with `prisma db push` before the
+// 2026-09-05 atomic game-completion migration. Keep this schema frozen.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  displayName   String    @default("")
+  passwordHash  String?
+  image         String?
+  createdAt     DateTime  @default(now())
+
+  accounts Account[]
+  sessions Session[]
+  stats    Stats?
+
+  hostedMatches Match[]            @relation("HostMatches")
+  guestMatches  Match[]            @relation("GuestMatches")
+  pushSubs      PushSubscription[]
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Stats {
+  userId        String @id
+  gamesPlayed   Int    @default(0)
+  gameWins      Int    @default(0)
+  gameLosses    Int    @default(0)
+  gamePushes    Int    @default(0)
+  fiveOs        Int    @default(0)
+  matchesPlayed Int    @default(0)
+  matchWins     Int    @default(0)
+  currentStreak Int    @default(0)
+  bestStreak    Int    @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Match {
+  id         String   @id @default(cuid())
+  inviteCode String   @unique
+  status     String   @default("lobby")
+  targetWins Int      @default(5)
+  hostId     String
+  guestId    String?
+  scoreHost  Int      @default(0)
+  scoreGuest Int      @default(0)
+  winnerId   String?
+  gameNumber Int      @default(0)
+  gameState  String?
+  readyHost  Boolean  @default(false)
+  readyGuest Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  host  User   @relation("HostMatches", fields: [hostId], references: [id], onDelete: Cascade)
+  guest User?  @relation("GuestMatches", fields: [guestId], references: [id], onDelete: SetNull)
+  games Game[]
+}
+
+model Game {
+  id         String   @id @default(cuid())
+  matchId    String
+  seed       Int
+  winnerSeat Int?
+  isFiveO    Boolean  @default(false)
+  resultJson String
+  boardJson  String
+  createdAt  DateTime @default(now())
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+}

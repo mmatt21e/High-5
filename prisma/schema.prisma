@@ -1,8 +1,8 @@
 // Prisma schema for Five-O Poker.
 //
-// Dev uses SQLite for zero-config local runs. For production, switch the
-// datasource provider to "postgresql" and point DATABASE_URL at your Postgres
-// instance (Railway/Render/Neon) — no model changes required.
+// SQLite is the supported datastore for both local and current production
+// deployments. The committed migration history is SQLite-specific; changing
+// providers requires a separately designed and tested migration history.
 
 generator client {
   provider = "prisma-client-js"
@@ -111,7 +111,7 @@ model Match {
   // Async persistence: the current in-progress game and turn state so players
   // can close the app and resume later.
   gameNumber Int      @default(0)
-  gameSeed   Int? // real shuffle seed for the current/last game
+  gameSeed   Int? // opaque CSPRNG nonce for current-game persistence identity
   gameState  String? // serialized in-progress GameState (JSON), null between games
   readyHost  Boolean  @default(false)
   readyGuest Boolean  @default(false)
@@ -129,7 +129,7 @@ model Game {
   id          String   @id @default(cuid())
   matchId     String
   gameNumber  Int
-  seed        Int
+  seed        Int // opaque shuffle nonce; the persisted snapshot carries deck order
   winnerSeat  Int? // 0 = host, 1 = guest, null = push
   isFiveO     Boolean  @default(false)
   resultJson  String // serialized GameResult

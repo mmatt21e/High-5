@@ -8,9 +8,10 @@ export async function userIdFromCookie(
   cookie: string | undefined,
 ): Promise<string | null> {
   if (!cookie) return null;
-  const secure =
-    process.env.NODE_ENV === "production" ||
-    (process.env.AUTH_URL ?? "").startsWith("https");
+  // Auth.js chooses its secure cookie name from the public URL protocol. Keep
+  // the Socket.IO decoder on the same rule so permitted localhost production
+  // smoke tests do not look for a cookie Auth.js never issued.
+  const secure = (process.env.AUTH_URL ?? "").startsWith("https://");
   const cookieName = secure
     ? "__Secure-authjs.session-token"
     : "authjs.session-token";

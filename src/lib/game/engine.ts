@@ -16,7 +16,15 @@
 //  - At showdown each row and the concealed hand are compared head-to-head with
 //    the opponent's; winning 3+ of the five wins the game. All five is a "Five-O".
 
-import { type Card, buildDeck, cardId, shuffle, seededRng } from "./cards";
+import {
+  type Card,
+  type RandomIndex,
+  buildDeck,
+  cardId,
+  shuffle,
+  shuffleWithRandomIndex,
+  seededRng,
+} from "./cards";
 import { compareScores, evaluateHand } from "./evaluator";
 import {
   CARDS_PER_HAND,
@@ -34,7 +42,10 @@ import {
 } from "./types";
 
 export interface NewGameOptions {
+  /** Deterministic test seed; production should supply randomIndex instead. */
   seed?: number;
+  /** Unbiased integer source used for production Fisher-Yates shuffles. */
+  randomIndex?: RandomIndex;
   /** Which player places the first card of the game. Default 0. */
   firstLead?: PlayerIndex;
 }
@@ -58,9 +69,13 @@ export function createGame(
   playerB: { userId: string; displayName: string },
   opts: NewGameOptions = {},
 ): GameState {
-  const rng = opts.seed !== undefined ? seededRng(opts.seed) : Math.random;
   const firstLead = opts.firstLead ?? 0;
-  const deck = shuffle(buildDeck(), rng);
+  const deck = opts.randomIndex
+    ? shuffleWithRandomIndex(buildDeck(), opts.randomIndex)
+    : shuffle(
+        buildDeck(),
+        opts.seed !== undefined ? seededRng(opts.seed) : Math.random,
+      );
 
   const draw5 = (): Card[] => Array.from({ length: HAND_SIZE }, () => deck.pop()!);
   const players: [PlayerState, PlayerState] = [
@@ -234,7 +249,6 @@ function viewPlayer(
   revealAll: boolean,
 ): PlayerView {
   return {
-    userId: player.userId,
     displayName: player.displayName,
     rows: rowsView(player.rows),
     hand: handView(player.hand, isSelf || revealAll),

@@ -52,22 +52,39 @@ export function buildDeck(): Card[] {
   return deck;
 }
 
+export type RandomIndex = (upperBoundExclusive: number) => number;
+
 /**
- * Fisher-Yates shuffle. Accepts an injectable random source so the engine can
- * be tested deterministically.
+ * Fisher-Yates shuffle driven by an integer sampler. Production supplies
+ * node:crypto.randomInt, which performs rejection sampling rather than
+ * introducing modulo bias.
  */
-export function shuffle<T>(items: T[], rng: () => number = Math.random): T[] {
+export function shuffleWithRandomIndex<T>(
+  items: T[],
+  randomIndex: RandomIndex,
+): T[] {
   const out = items.slice();
   for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
+    const j = randomIndex(i + 1);
+    if (!Number.isSafeInteger(j) || j < 0 || j > i) {
+      throw new Error("Random index source returned an out-of-range value");
+    }
     [out[i], out[j]] = [out[j], out[i]];
   }
   return out;
 }
 
+/** Fisher-Yates shuffle with a floating-point source for deterministic tests. */
+export function shuffle<T>(items: T[], rng: () => number = Math.random): T[] {
+  return shuffleWithRandomIndex(items, (upperBound) =>
+    Math.floor(rng() * upperBound),
+  );
+}
+
 /**
- * Deterministic mulberry32 PRNG. Seeding the deck server-side means a game can
- * be replayed/audited from its seed without storing every card.
+ * Deterministic mulberry32 PRNG used by repeatable engine tests. Production
+ * decks use an operating-system random integer for every shuffle step and are
+ * resumed from the persisted game snapshot, not reconstructed from this seed.
  */
 export function seededRng(seed: number): () => number {
   let a = seed >>> 0;

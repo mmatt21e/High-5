@@ -1,0 +1,71 @@
+name: Quality
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: file:./ci.db
+      AUTH_SECRET: ci-only-random-secret-value-with-at-least-32-characters
+      AUTH_URL: http://localhost:3210
+      NEXT_PUBLIC_GOOGLE_ENABLED: "false"
+      PORT: "3210"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install exact dependencies
+        run: npm ci
+
+      - name: Audit all dependencies
+        run: npm audit --audit-level=low
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Validate Prisma schema
+        run: npm run db:validate
+
+      - name: Test
+        run: npm test
+
+      - name: Verify SQLite migrations
+        run: npm run verify:migrations
+
+      - name: Validate production environment
+        run: npm run env:check
+
+      - name: Build
+        run: npm run build
+
+      - name: Prepare smoke-test database
+        run: npm run db:migrate
+
+      - name: Keep production dependencies only
+        run: npm prune --omit=dev
+
+      - name: Verify production dependency tree
+        run: npm ls --omit=dev
+
+      - name: Smoke-test production start
+        run: npm run smoke:start

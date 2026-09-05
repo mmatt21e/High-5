@@ -1,112 +1,202 @@
 # Five-O Poker
 
-A mobile-first web app for **Five-O Poker** — a heads-up poker variant played
-between two players on two different devices. One player creates a game, shares
-an invite code, and the second player joins to play in real time.
+Five-O Poker is a mobile-first, heads-up poker game played in real time across
+two devices. One authenticated player creates a match and shares an eight-character
+invite code; the other joins that match and both play against a server-authoritative
+deck and game engine. Legacy five-character invite codes remain accepted.
 
-## What is Five-O Poker?
+## Game rules
 
-Two players each build **five poker hands** from a **single shared 52-card
-deck** — four rows the opponent can see, plus one concealed hand only you can
-see:
+Both players build five poker hands from one shared 52-card deck:
 
-- Each player is dealt a **concealed hand of 5 cards** to start.
-- Players alternate turns. On your turn you **draw one card** (now holding six),
-  then place **one card** — the drawn card or a held one — into one of your
-  **four face-up rows** that still has room. You always keep 5 cards concealed.
-- **Once per game** you may **discard** a held card instead of placing it.
-- When both players have filled all four rows, everything is revealed. Your held
-  5 cards are your **concealed 5th hand**.
-- At showdown, each of your five hands is compared head-to-head with the
-  opponent's in the same spot. **Win 3+ of the 5 to win the game.** Winning all
-  five is a **"Five-O"**.
+- Each player starts with a concealed five-card hand.
+- On each turn, draw one card and place either that card or a held card into one
+  of four visible rows. The concealed hand remains at five cards.
+- Each player may discard one held card instead of placing it, once per game.
+- When all four visible rows are complete, the concealed cards become the fifth
+  hand and corresponding hands are compared.
+- Winning at least three hands wins the game. Sweeping all five is a Five-O.
 
-Matches are **first-to-5 game wins** (configurable), and every result feeds your
-lifetime stats.
+Matches default to first-to-five game wins. Results update both match scores and
+lifetime player statistics.
 
-## Tech stack
+## Architecture and support boundary
 
 | Layer | Technology |
 |---|---|
-| Frontend | Next.js (App Router) + React + TypeScript + Tailwind CSS, mobile-first PWA |
-| Realtime | Socket.IO on a custom Node server, **server-authoritative** game engine |
-| Auth | Auth.js (NextAuth) — email/password + optional Google OAuth |
-| Database | Prisma — SQLite for dev, Postgres for production |
+| Web app | Next.js App Router, React, TypeScript, Tailwind CSS |
+| Realtime server | Custom Node.js server with Socket.IO |
+| Authentication | Auth.js credentials and optional Google OAuth |
+| Data | Prisma with SQLite |
+| Tests | Vitest |
 
-The game engine lives entirely on the server, so clients never receive the
-opponent's concealed hand or the deck order. The engine is pure and fully
-unit-tested (`src/lib/game`).
+SQLite is the only supported database provider. The checked-in migrations are
+SQLite-specific; changing providers requires a separately designed and tested
+migration history.
 
-## Getting started
+Game moves, hidden cards, and deck state are authoritative on the server. Each
+production deck is shuffled with an unbiased operating-system random draw at
+every Fisher-Yates step; deterministic numeric seeds exist only for engine
+tests. Active game snapshots, completed games, scores, and stats are persisted
+in SQLite, so a single server process can hydrate a match after restart. Live
+coordination and rate limits remain process-local, so current production
+deployments must use exactly one application replica on durable local storage.
+A serverless or horizontally scaled deployment is not supported.
+
+## Local setup
+
+Node.js 22 is required.
 
 ```bash
-# 1. Install dependencies
-npm install
-
-# 2. Configure environment
+npm ci
 cp .env.example .env
-#   For local dev the defaults work. Generate a real AUTH_SECRET with:
-#   npx auth secret   (or: openssl rand -base64 32)
-
-# 3. Create the database
-npm run db:push
-
-# 4. Run the dev server (custom server: Next.js + Socket.IO)
+npm run db:migrate
 npm run dev
-# -> http://localhost:3000
 ```
 
-Open two browsers (or a phone + laptop), sign up as two users, create a game on
-one, and join with the code on the other.
+Open `http://localhost:3000`, register two users in separate browsers, create a
+match in one, and join it from the other.
 
-## Scripts
+Development binds to `127.0.0.1` by default. If `AUTH_SECRET` is empty (or still
+contains the retired published placeholder), the dev server generates an
+ephemeral secret and sessions expire on restart. Generate and save a unique
+local secret if you want sessions to survive restarts; always inject a unique
+secret in production:
 
-| Command | Description |
+```bash
+node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))"
+```
+
+## Configuration
+
+Required in production:
+
+| Variable | Requirement |
 |---|---|
-| `npm run dev` | Dev server with hot reload |
-| `npm run build` | Production build (`prisma generate` + `next build`) |
-| `npm run start` | Production server |
-| `npm test` | Run the game-engine unit tests (Vitest) |
-| `npm run db:push` | Sync the Prisma schema to the database |
-| `npm run db:studio` | Open Prisma Studio |
+| `DATABASE_URL` | Persistent SQLite `file:` URL, such as `file:/data/five-o.db` |
+| `AUTH_SECRET` | Random value of at least 32 characters; no example placeholder |
+| `AUTH_URL` | Public HTTPS origin, with no path or query |
+| `PORT` | Optional integer from 1 through 65535; defaults to `3000` |
 
-## Project structure
+Google sign-in is optional. Configure `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, and
+`NEXT_PUBLIC_GOOGLE_ENABLED=true` together, or leave credentials empty and the
+flag false. Configure all four web-push values together:
+`VAPID_SUBJECT`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, and
+`NEXT_PUBLIC_VAPID_PUBLIC_KEY`. The two public keys must match. Generate VAPID
+keys with:
 
+```bash
+node -e "console.log(require('web-push').generateVAPIDKeys())"
 ```
-server.ts                     Custom Node server: Next.js + Socket.IO
-prisma/schema.prisma          Users, stats, matches, games
-src/
-  auth.ts                     Auth.js configuration
-  lib/
-    game/                     Pure, tested game engine
-      cards.ts                Deck, shuffle, seeded RNG
-      evaluator.ts            5-card hand evaluation + tie-breaking
-      engine.ts               Five-O state machine + redaction
-      types.ts                Shared game types
-    match.ts                  Invite codes, create/join
-    realtime/events.ts        Shared Socket.IO event contracts
-  server/
-    gameManager.ts            In-memory live matches, scoring, persistence
-    socketAuth.ts             Decodes the Auth.js JWT for socket handshakes
-  app/                        Next.js routes (lobby, auth, play, profile, APIs)
-  components/                 UI: board, cards, lobby, realtime hook
+
+`npm start` loads standard Next.js production env files and validates the
+configuration before starting the server. It reports variable names and rules,
+never secret values. Run the same check independently with `npm run env:check`.
+
+## Database migrations
+
+`npm run db:migrate` is the guarded deployment entry point. For a new database,
+it applies the complete baseline and every later migration. It also recognizes
+two historical SQLite states: a verified pre-migration `db push` database and a
+database already upgraded at commit `11b1f48` with only the atomic-completion
+migration recorded. For those exact states, it safely records the missing
+baseline before applying later migrations. Do not use `prisma db push` in
+production.
+
+Back up an existing database and stop all app processes before upgrading it:
+
+```bash
+# DATABASE_URL must point to the existing SQLite file.
+npm run db:migrate
+npm run db:migrate:status
 ```
+
+The deployment preflight rejects foreign-key violations, unknown or partial
+schemas, unsupported migration histories, unfinished migration records, and
+applied-migration checksum changes before altering the database. The already
+released `20260905150000_atomic_game_completion` migration remains immutable;
+the preflight protects legacy upgrades and the later forward-only integrity
+migration verifies the resulting foreign keys.
+
+That forward migration also assigns the explicit legacy nonce `0` to an active
+persisted game that predates seed storage. Its complete deck is already in
+`gameState`; the sentinel anchors the completion compare-and-swap without
+claiming that the historical deck can be reconstructed from a seed.
+
+`npm run verify:migrations` performs four isolated checks: a fresh migration, a
+seeded legacy `db push` database, the exact delta-only history accepted at
+`11b1f48`, and an orphaned legacy database that must fail before schema or
+history alteration. It also checks schema drift, migration records, migrated
+data, the accepted delta's fixed checksum, and SQLite foreign keys.
 
 ## Production deployment
 
-1. Provision Postgres (Railway, Render, Neon, …).
-2. In `prisma/schema.prisma` set the datasource `provider` to `"postgresql"`.
-3. Set environment variables: `DATABASE_URL`, `AUTH_SECRET`, `AUTH_URL`
-   (your HTTPS URL), and optionally `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` +
-   `NEXT_PUBLIC_GOOGLE_ENABLED=true`.
-4. Deploy to a host that supports **long-running Node + WebSockets**
-   (Railway/Render/Fly) — serverless platforms can't hold persistent socket
-   connections.
-5. `npm run build` then `npm run start`.
+Use a host that supports a long-running Node.js 22 process, WebSockets, and a
+durable filesystem. Configure one replica, mount persistent storage for the
+SQLite file, and include the database in the backup plan. Any reverse proxy
+must preserve WebSocket upgrade requests. Sticky sessions alone do not make a
+multi-replica deployment safe because the live registry and locks are not shared.
+Apply source-address request limits at the edge as well: repository-level
+registration and realtime limits deliberately provide only a process-local
+backstop.
 
-### Note on live state
+```bash
+npm ci
+npm run env:check
+npm run db:migrate
+npm run build
+npm prune --omit=dev
+npm start
+```
 
-Completed games, match scores, and lifetime stats are persisted to the
-database. The *in-progress* game state (deck, hidden cards, current turn) lives
-in server memory, so a server restart abandons any game mid-play — acceptable
-for this version and easy to extend later by snapshotting active games.
+The runtime tools required by the custom TypeScript server, environment loader,
+and migrations are production dependencies, so the final two commands work
+after development dependencies are pruned.
+
+## Quality commands
+
+| Command | Purpose |
+|---|---|
+| `npm run dev` | Start the development server with TypeScript watch mode |
+| `npm run build` | Generate Prisma Client and build Next.js |
+| `npm start` | Validate production config and run the custom server |
+| `npm run env:check` | Validate production configuration without starting |
+| `npm run lint` | Run ESLint with zero warnings allowed |
+| `npm run typecheck` | Run a clean, nonincremental TypeScript check |
+| `npm test` | Run the Vitest suite once |
+| `npm run verify:migrations` | Exercise fresh, legacy, 11b1f48, and invalid SQLite histories |
+| `npm run check` | Run lint, typecheck, tests, and migration verification |
+| `npm run db:migrate` | Apply pending tracked migrations |
+| `npm run db:migrate:status` | Report migration state |
+| `npm run db:push` | Update a disposable local database without migration history |
+| `npm run db:studio` | Open Prisma Studio |
+
+GitHub Actions runs the audit, lint, typecheck, tests, migration verification,
+environment validation, production build, production-only dependency prune,
+and a real startup smoke test on Node.js 22.
+
+## Project map
+
+```text
+server.ts                           Next.js and Socket.IO custom server
+prisma/
+  schema.prisma                    SQLite application schema
+  migrations/                     Tracked baseline and deltas
+scripts/
+  deploy-migrations.mjs           Guarded migration preflight and deployment
+  verify-migrations.mjs           Migration lifecycle regression checks
+  validate-production-env.mjs     Production configuration check
+  start.mjs                       Validated production launcher
+src/
+  auth.ts                         Auth.js configuration
+  lib/game/                       Pure Five-O engine and evaluator
+  lib/match.ts                    Invite-code and seat-claim operations
+  lib/realtime/                   Socket contracts and payload validation
+  server/gameManager.ts           Single-process live-match coordination
+  server/completedGamePersistence.ts  Transactional result persistence
+  app/                            Pages and HTTP routes
+  components/                     Game, lobby, account, and push UI
+```
+
+The dated engineering review is in
+[`docs/PROJECT_REVIEW_2026-09-05.md`](docs/PROJECT_REVIEW_2026-09-05.md).

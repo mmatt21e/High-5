@@ -4,7 +4,6 @@
   "description": "Heads-up Five-O Poker, played across two devices.",
   "start_url": "/",
   "display": "standalone",
-  "orientation": "portrait",
   "background_color": "#0a2a1a",
   "theme_color": "#0a2a1a",
   "icons": [

@@ -12,8 +12,12 @@ describe("realtime payload validation", () => {
     expect(matchJoinPayloadSchema.parse({ code: " abcde " })).toEqual({
       code: "ABCDE",
     });
+    expect(matchJoinPayloadSchema.parse({ code: " abcdefgh " })).toEqual({
+      code: "ABCDEFGH",
+    });
     expect(() => matchJoinPayloadSchema.parse(null)).toThrow();
     expect(() => matchJoinPayloadSchema.parse({ code: "O0I11" })).toThrow();
+    expect(() => matchJoinPayloadSchema.parse({ code: "ABCDEF" })).toThrow();
   });
 
   it("requires bounded integer rows and real card identifiers", () => {

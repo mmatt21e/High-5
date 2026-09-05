@@ -60,7 +60,6 @@ export type CardView =
   | { state: "empty" };
 
 export interface PlayerView {
-  userId: string;
   displayName: string;
   /** Four face-up rows, five slots each. */
   rows: CardView[][];

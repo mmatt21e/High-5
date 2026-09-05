@@ -12,12 +12,16 @@ next-env.d.ts
 /build
 
 # env
-.env
-.env*.local
+.env*
+!.env.example
 
 # database
 *.db
 *.db-journal
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
 /prisma/dev.db
 /prisma/migrations/dev
 
@@ -35,6 +39,7 @@ npm-debug.log*
 *.tsbuildinfo
 
 # AI assistant local files
+/graphify-out/
 .claude/
 .codex/
 .cursor/

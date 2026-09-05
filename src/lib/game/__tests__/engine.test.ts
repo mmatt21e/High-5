@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import {
   createGame,
   placeCard,
@@ -81,6 +81,22 @@ describe("createGame", () => {
     const g1 = playOut(createGame(A, B, { seed: 42 }));
     const g2 = playOut(createGame(A, B, { seed: 42 }));
     expect(g1.result).toEqual(g2.result);
+  });
+
+  it("uses an injected unbiased integer source for every shuffle step", () => {
+    const randomIndex = vi.fn((upperBound: number) => upperBound - 1);
+
+    createGame(A, B, { randomIndex });
+
+    expect(randomIndex).toHaveBeenCalledTimes(51);
+    expect(randomIndex.mock.calls[0]).toEqual([52]);
+    expect(randomIndex.mock.calls.at(-1)).toEqual([2]);
+  });
+
+  it("rejects an out-of-range integer random source", () => {
+    expect(() =>
+      createGame(A, B, { randomIndex: (upperBound) => upperBound }),
+    ).toThrow("Random index source returned an out-of-range value");
   });
 });
 

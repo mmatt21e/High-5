@@ -1,14 +1,22 @@
 import { z } from "zod";
 import { NUM_ROWS } from "../game/types";
+import {
+  INVITE_CODE_LENGTH,
+  LEGACY_INVITE_CODE_LENGTH,
+} from "../inviteCode";
 
 // Invite codes deliberately omit characters that are easy to confuse when
 // read aloud. Keeping this contract shared prevents REST and realtime joins
 // from accepting different identifiers.
+const inviteCodePattern = new RegExp(
+  `^(?:[A-HJ-NP-Z2-9]{${LEGACY_INVITE_CODE_LENGTH}}|[A-HJ-NP-Z2-9]{${INVITE_CODE_LENGTH}})$`,
+);
+
 export const inviteCodeSchema = z
   .string()
   .trim()
   .toUpperCase()
-  .regex(/^[A-HJ-NP-Z2-9]{5}$/, "Enter a valid invite code");
+  .regex(inviteCodePattern, "Enter a valid invite code");
 
 export const matchJoinPayloadSchema = z
   .object({ code: inviteCodeSchema })
