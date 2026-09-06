@@ -1,0 +1,40 @@
+import { readFileSync } from "node:fs";
+import { describe, expect, it } from "vitest";
+
+const landingSource = readFileSync(
+  new URL("../LandingPage.tsx", import.meta.url),
+  "utf8",
+);
+const homeSource = readFileSync(
+  new URL("../../app/page.tsx", import.meta.url),
+  "utf8",
+);
+
+describe("public landing page", () => {
+  it("presents the verified Five-O rules and all public entry points", () => {
+    expect(landingSource).toContain("Build five hands.");
+    expect(landingSource).toContain("Win three.");
+    expect(landingSource).toContain("Call Five-O.");
+    expect(landingSource).toContain("one discard");
+    expect(landingSource).toContain("3 of 5");
+    expect(landingSource).toContain("5 games");
+    expect(landingSource).toContain('href="/register"');
+    expect(landingSource).toContain('href="/login"');
+    expect(landingSource).toContain('href="/how-to-play"');
+  });
+
+  it("keeps the authenticated lobby and gives anonymous visitors the landing page", () => {
+    expect(homeSource).toContain(
+      "if (!session?.user?.id) return <LandingPage />",
+    );
+    expect(homeSource).toContain("<Lobby />");
+    expect(homeSource).not.toContain('redirect("/login")');
+  });
+
+  it("uses five complete card columns from the live card component", () => {
+    expect((landingSource.match(/state: "card"/g) ?? [])).toHaveLength(20);
+    expect(landingSource).toContain("Array.from({ length: 5 }");
+    expect(landingSource).toContain("<FannedColumn");
+    expect(landingSource).toContain('size="sm"');
+  });
+});

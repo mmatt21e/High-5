@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
 import { ServiceWorker } from "@/components/ServiceWorker";
+import { DEFAULT_APPEARANCE, getAppearanceBootScript } from "@/lib/appearance";
 
 export const metadata: Metadata = {
   title: "Five-O Poker",
@@ -22,18 +23,25 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html
+      lang="en"
+      data-interface-style={DEFAULT_APPEARANCE.interfaceStyle}
+      data-card-deck={DEFAULT_APPEARANCE.cardDeck}
+      data-table-theme={DEFAULT_APPEARANCE.tableTheme}
+      data-suit-palette={DEFAULT_APPEARANCE.suitPalette}
+      data-deck={DEFAULT_APPEARANCE.suitPalette}
+      suppressHydrationWarning
+    >
       <body>
-        {/* Apply the saved deck-colour choice before paint to avoid a flash. */}
+        {/* Validate and apply device-local appearance before the first paint. */}
         <script
           dangerouslySetInnerHTML={{
-            __html:
-              "try{var d=localStorage.getItem('fiveo-deck')||'four';document.documentElement.setAttribute('data-deck',d);}catch(e){}",
+            __html: getAppearanceBootScript(),
           }}
         />
         <Providers>
           <ServiceWorker />
-          <div className="mx-auto flex min-h-screen w-full max-w-md flex-col">
+          <div className="app-shell mx-auto flex min-h-screen w-full max-w-md flex-col">
             {children}
           </div>
         </Providers>

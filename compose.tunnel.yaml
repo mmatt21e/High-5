@@ -1,0 +1,48 @@
+x-public-origin: &public-origin
+  AUTH_URL: https://${PUBLIC_HOSTNAME:?Set PUBLIC_HOSTNAME in deploy/docker.env}
+
+services:
+  migrate:
+    environment: *public-origin
+
+  app:
+    environment: *public-origin
+
+  tunnel:
+    image: cloudflare/cloudflared:latest@sha256:51c9cefcb4569df44e1ad403ab1d3d8065aa8e84339bcfc6aee75502e1140339
+    command:
+      - tunnel
+      - --metrics
+      - 127.0.0.1:2000
+      - --no-autoupdate
+      - run
+    environment:
+      TUNNEL_TOKEN_FILE: /run/secrets/cloudflare_tunnel_token
+    init: true
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - cloudflared
+        - --no-autoupdate
+        - tunnel
+        - --metrics
+        - 127.0.0.1:2000
+        - ready
+      interval: 15s
+      timeout: 5s
+      start_period: 20s
+      retries: 6
+    secrets:
+      - cloudflare_tunnel_token
+
+secrets:
+  cloudflare_tunnel_token:
+    file: ${CLOUDFLARE_TUNNEL_TOKEN_FILE:-./deploy/cloudflare-tunnel-token.txt}

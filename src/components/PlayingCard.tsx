@@ -1,44 +1,152 @@
+import type { CSSProperties } from "react";
 import type { Card } from "@/lib/game/cards";
 import { RANK_LABEL, SUIT_LABEL } from "@/lib/game/cards";
 import type { CardView } from "@/lib/game/types";
+import { CARD_GEOMETRY } from "@/lib/cardAppearance";
 
-export type CardSize = "sm" | "md" | "lg";
+export type CardSize = "sm" | "md" | "lg" | "hand";
 
-// Per-size geometry. `hpx`/`peek` drive the fanned overlap; the rest are the
-// corner rank, corner suit, and center pip font sizes. Suit colour comes from
-// the `.suit-*` classes (see globals.css) which honour the deck-colour theme.
-const SIZE = {
-  sm: { box: "h-[62px] w-[44px]", hpx: 62, peek: 26, rank: "text-[13px]", suit: "text-[10px]", pip: "text-lg" },
-  md: { box: "h-20 w-14", hpx: 80, peek: 32, rank: "text-base", suit: "text-xs", pip: "text-2xl" },
-  lg: { box: "h-[88px] w-[62px]", hpx: 88, peek: 34, rank: "text-xl", suit: "text-sm", pip: "text-4xl" },
-} as const;
+const SIZE = CARD_GEOMETRY;
 
-export function CardFace({ card, size = "md" }: { card: Card; size?: CardSize }) {
-  const s = SIZE[size];
+const SUIT_NAMES: Record<Card["suit"], string> = {
+  s: "spades",
+  h: "hearts",
+  d: "diamonds",
+  c: "clubs",
+};
+
+type PipSpot = readonly [x: number, y: number];
+
+// Original code-native layouts follow familiar mirrored card structure. Court
+// cues below are abstract geometry rather than copied commercial artwork.
+const PIP_LAYOUTS: Partial<Record<Card["rank"], readonly PipSpot[]>> = {
+  2: [[50, 22], [50, 78]],
+  3: [[50, 20], [50, 50], [50, 80]],
+  4: [[31, 22], [69, 22], [31, 78], [69, 78]],
+  5: [[31, 21], [69, 21], [50, 50], [31, 79], [69, 79]],
+  6: [[31, 20], [69, 20], [31, 50], [69, 50], [31, 80], [69, 80]],
+  7: [[31, 18], [69, 18], [50, 35], [31, 50], [69, 50], [31, 82], [69, 82]],
+  8: [[31, 17], [69, 17], [50, 33], [31, 50], [69, 50], [50, 67], [31, 83], [69, 83]],
+  9: [[31, 16], [69, 16], [31, 38], [69, 38], [50, 50], [31, 62], [69, 62], [31, 84], [69, 84]],
+  10: [[31, 14], [69, 14], [50, 29], [31, 39], [69, 39], [31, 61], [69, 61], [50, 71], [31, 86], [69, 86]],
+};
+
+export function describePlayingCard(card: Card): string {
+  const ranks: Record<number, string> = {
+    11: "Jack",
+    12: "Queen",
+    13: "King",
+    14: "Ace",
+  };
+  return `${ranks[card.rank] ?? card.rank} of ${SUIT_NAMES[card.suit]}`;
+}
+
+export function CardFace({
+  card,
+  size = "md",
+  decorative = false,
+}: {
+  card: Card;
+  size?: CardSize;
+  decorative?: boolean;
+}) {
+  const sizing = SIZE[size];
+  const suit = `${SUIT_LABEL[card.suit]}\uFE0E`;
+  const isCourt = card.rank >= 11 && card.rank <= 13;
+  const pips = PIP_LAYOUTS[card.rank] ?? [];
+  const faceKind = isCourt ? "court" : card.rank === 14 ? "ace" : "number";
+
   return (
     <div
-      className={`${s.box} suit-${card.suit} relative overflow-hidden rounded-lg border border-black/15 bg-card shadow-sm`}
+      className={`${sizing.box} playing-card playing-card-face suit-${card.suit} relative overflow-hidden`}
+      data-card-size={size}
+      data-rank={card.rank}
+      data-suit={card.suit}
+      data-face-kind={faceKind}
+      style={
+        {
+          "--card-index-top": `${sizing.indexTop}px`,
+          "--card-index-rank-size": `${sizing.rankFont}px`,
+          "--card-index-rank-line": `${sizing.rankLine}px`,
+          "--card-index-suit-size": `${sizing.suitFont}px`,
+          "--card-index-suit-line": `${sizing.suitLine}px`,
+          "--card-index-gap": `${sizing.indexGap}px`,
+        } as CSSProperties
+      }
+      role={decorative ? undefined : "img"}
+      aria-label={decorative ? undefined : describePlayingCard(card)}
+      aria-hidden={decorative || undefined}
     >
-      {/* Corner index — stays visible when cards are fanned. */}
-      <div className="absolute left-1 top-0.5 flex flex-col items-center font-black leading-[0.9]">
-        <span className={s.rank}>{RANK_LABEL[card.rank]}</span>
-        <span className={s.suit}>{SUIT_LABEL[card.suit]}</span>
+      <div aria-hidden="true" className="playing-card-index playing-card-index-top">
+        <span className="playing-card-rank">{RANK_LABEL[card.rank]}</span>
+        <span className="playing-card-suit">{suit}</span>
       </div>
-      {/* Large center pip — shown on whichever card is fully visible. */}
-      <div className={`flex h-full items-end justify-center pb-[8%] font-black ${s.pip}`}>
-        {SUIT_LABEL[card.suit]}
+      <div aria-hidden="true" className="playing-card-index playing-card-index-bottom">
+        <span className="playing-card-rank">{RANK_LABEL[card.rank]}</span>
+        <span className="playing-card-suit">{suit}</span>
+      </div>
+
+      <div aria-hidden="true" className="playing-card-pips">
+        {pips.map(([x, y], index) => (
+          <span
+            className="playing-card-pip"
+            key={`${x}-${y}-${index}`}
+            style={
+              {
+                left: `${x}%`,
+                top: `${y}%`,
+                "--pip-turn": y > 50 ? "180deg" : "0deg",
+              } as CSSProperties
+            }
+          >
+            {suit}
+          </span>
+        ))}
+      </div>
+
+      <div aria-hidden="true" className={`playing-card-center flex h-full items-center justify-center font-black ${sizing.pip}`}>
+        {suit}
+      </div>
+
+      {isCourt && (
+        <div aria-hidden="true" className="playing-card-court">
+          <span className="court-crown"><i /><i /><i /></span>
+          <span className="court-rank">{RANK_LABEL[card.rank]}</span>
+          <span className="court-suit">{suit}</span>
+          <span className="court-rule court-rule-top" />
+          <span className="court-rule court-rule-bottom" />
+        </div>
+      )}
+
+      <div aria-hidden="true" className="playing-card-mobile-id">
+        <span>{RANK_LABEL[card.rank]}</span>
+        <span>{suit}</span>
+      </div>
+
+      <div aria-hidden="true" className="playing-card-ornament">
+        <i /><i /><i /><i />
       </div>
     </div>
   );
 }
 
-export function CardBack({ size = "md" }: { size?: CardSize }) {
-  const s = SIZE[size];
+export function CardBack({
+  size = "md",
+  decorative = false,
+}: {
+  size?: CardSize;
+  decorative?: boolean;
+}) {
+  const sizing = SIZE[size];
   return (
     <div
-      className={`${s.box} flex items-center justify-center rounded-lg border border-black/30 bg-gradient-to-br from-rose-800 to-rose-950 shadow-sm`}
+      className={`${sizing.box} playing-card playing-card-back`}
+      data-card-size={size}
+      role={decorative ? undefined : "img"}
+      aria-label={decorative ? undefined : "Face-down card"}
+      aria-hidden={decorative || undefined}
     >
-      <span className="text-rose-300/60">★</span>
+      <span aria-hidden="true" className="playing-card-back-mark">5O</span>
     </div>
   );
 }
@@ -50,12 +158,14 @@ export function EmptySlot({
   size?: CardSize;
   target?: boolean;
 }) {
-  const s = SIZE[size];
+  const sizing = SIZE[size];
   return (
     <div
-      className={`${s.box} rounded-lg border border-dashed ${
+      aria-hidden="true"
+      className={`${sizing.box} playing-card-slot rounded-lg border border-dashed ${
         target ? "border-gold/70 bg-gold/10" : "border-white/15 bg-black/10"
       }`}
+      data-card-size={size}
     />
   );
 }
@@ -64,41 +174,50 @@ export function CardSlot({
   slot,
   size = "md",
   target = false,
+  decorative = false,
 }: {
   slot: CardView;
   size?: CardSize;
   target?: boolean;
+  decorative?: boolean;
 }) {
-  if (slot.state === "card") return <CardFace card={slot.card} size={size} />;
-  if (slot.state === "hidden") return <CardBack size={size} />;
+  if (slot.state === "card") {
+    return <CardFace card={slot.card} size={size} decorative={decorative} />;
+  }
+  if (slot.state === "hidden") {
+    return <CardBack size={size} decorative={decorative} />;
+  }
   return <EmptySlot size={size} target={target} />;
 }
 
-/**
- * A single hand: card slots fanned vertically so a full hand fits in a fraction
- * of the height while every card's corner index stays readable. `targetIndex`
- * marks the next empty slot to receive a card (when playable).
- */
+/** A five-card row fanned vertically with its next available target marked. */
 export function FannedColumn({
   slots,
   size = "md",
   targetIndex = null,
+  decorative = false,
 }: {
   slots: CardView[];
   size?: CardSize;
   targetIndex?: number | null;
+  decorative?: boolean;
 }) {
-  const s = SIZE[size];
-  const overlap = s.hpx - s.peek;
+  const sizing = SIZE[size];
+  const overlap = sizing.hpx - sizing.peek;
   return (
     <div className="flex flex-col items-center">
-      {slots.map((slot, i) => (
+      {slots.map((slot, index) => (
         <div
-          key={i}
-          style={{ marginTop: i === 0 ? 0 : -overlap, zIndex: i }}
+          key={index}
+          style={{ marginTop: index === 0 ? 0 : -overlap, zIndex: index }}
           className="relative"
         >
-          <CardSlot slot={slot} size={size} target={targetIndex === i} />
+          <CardSlot
+            slot={slot}
+            size={size}
+            target={targetIndex === index}
+            decorative={decorative}
+          />
         </div>
       ))}
     </div>

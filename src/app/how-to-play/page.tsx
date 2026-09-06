@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AppearanceSettings } from "@/components/AppearanceSettings";
 import { FannedColumn } from "@/components/PlayingCard";
 import type { CardView } from "@/lib/game/types";
 
@@ -14,10 +15,10 @@ const exampleHand: CardView[] = [
 
 export default function HowToPlayPage() {
   return (
-    <main className="flex flex-1 flex-col gap-6 p-6">
-      <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-black text-gold">How to play</h1>
-        <Link href="/" className="text-sm text-white/60 underline">
+    <main className="app-screen flex flex-1 flex-col">
+      <header className="app-header flex items-center justify-between">
+        <h1 className="app-title text-2xl font-black">How to play</h1>
+        <Link href="/" className="nav-link px-2 text-sm">
           Back
         </Link>
       </header>
@@ -28,7 +29,7 @@ export default function HowToPlayPage() {
         get scored.
         <div className="mt-3 flex items-end gap-2">
           <FannedColumn slots={exampleHand} size="md" />
-          <span className="pb-1 text-xs text-white/60">
+          <span className="subtle-text pb-1 text-xs">
             A hand: two pair, aces &amp; nines
           </span>
         </div>
@@ -63,8 +64,8 @@ export default function HowToPlayPage() {
       </Step>
 
       <div className="panel">
-        <h2 className="mb-2 font-bold text-gold">Hand rankings (high to low)</h2>
-        <ol className="grid grid-cols-1 gap-1 text-sm text-white/80">
+        <h2 className="app-title mb-2 font-bold">Hand rankings (high to low)</h2>
+        <ol className="supporting-text grid grid-cols-1 gap-1 text-sm">
           {[
             "Straight flush",
             "Four of a kind",
@@ -77,12 +78,23 @@ export default function HowToPlayPage() {
             "High card",
           ].map((h, i) => (
             <li key={h} className="flex gap-2">
-              <span className="w-4 text-white/40">{i + 1}.</span>
+              <span className="subtle-text w-4">{i + 1}.</span>
               {h}
             </li>
           ))}
         </ol>
       </div>
+
+      <details className="panel public-appearance-disclosure">
+        <summary className="tap-target flex cursor-pointer items-center font-bold text-gold">
+          Customize interface &amp; playing cards
+        </summary>
+        <p className="supporting-text mb-4 mt-1 text-xs leading-relaxed">
+          Preview and choose any interface, deck, table, and suit palette before
+          signing in. Choices stay on this device.
+        </p>
+        <AppearanceSettings showHeading={false} />
+      </details>
 
       <Link href="/" className="btn-primary">
         Got it — let’s play
@@ -102,12 +114,12 @@ function Step({
 }) {
   return (
     <section className="flex gap-3">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold font-black text-felt-900">
+      <div className="step-marker">
         {n}
       </div>
       <div>
         <h2 className="font-bold">{title}</h2>
-        <div className="mt-1 text-sm leading-relaxed text-white/75">{children}</div>
+        <div className="supporting-text mt-1 text-sm leading-relaxed">{children}</div>
       </div>
     </section>
   );

@@ -67,6 +67,24 @@ secret in production:
 node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))"
 ```
 
+### Docker quick start
+
+Docker Desktop can run the complete production-style application, guarded
+database migrations, and persistent SQLite storage locally:
+
+```powershell
+.\deploy\Initialize-DockerEnv.ps1
+.\deploy\Start-Docker.ps1 -Mode Local
+```
+
+The local listener is restricted to `127.0.0.1:3000`. Two opt-in public modes
+are also included for a future hostname: direct HTTPS through Caddy, or an
+outbound-only Cloudflare Tunnel. Neither is activated by default, and neither
+publishes the application container's port 3000. See
+[`docs/DOCKER_HOSTING.md`](docs/DOCKER_HOSTING.md) for setup, updates, backups,
+DNS and router requirements, tunnel configuration, and the public-release
+security checklist.
+
 ## Configuration
 
 Required in production:
@@ -153,6 +171,11 @@ The runtime tools required by the custom TypeScript server, environment loader,
 and migrations are production dependencies, so the final two commands work
 after development dependencies are pruned.
 
+The checked-in Docker stack implements this single-replica topology and runs
+the guarded migration as a separate one-shot service before the app starts.
+Use the supplied PowerShell launcher instead of starting additional app
+containers manually.
+
 ## Quality commands
 
 | Command | Purpose |
@@ -173,12 +196,23 @@ after development dependencies are pruned.
 
 GitHub Actions runs the audit, lint, typecheck, tests, migration verification,
 environment validation, production build, production-only dependency prune,
-and a real startup smoke test on Node.js 22.
+and a real startup smoke test on Node.js 22. A dependent Docker job validates
+all three Compose modes and the Caddy configuration, builds the image, starts
+an isolated local stack, and checks its database-backed health endpoint.
 
 ## Project map
 
 ```text
 server.ts                           Next.js and Socket.IO custom server
+Dockerfile                         Pinned Node.js 22 production image
+compose.yaml                       App, migration job, and durable SQLite volume
+compose.local.yaml                 Loopback-only local listener
+compose.public.yaml                Caddy HTTPS gateway (opt in)
+compose.tunnel.yaml                Cloudflare Tunnel gateway (opt in)
+deploy/
+  Start-Docker.ps1                Validated migrate-and-start workflow
+  Stop-Docker.ps1                 Stop containers while retaining volumes
+  Caddyfile                        HTTPS and WebSocket reverse proxy
 prisma/
   schema.prisma                    SQLite application schema
   migrations/                     Tracked baseline and deltas

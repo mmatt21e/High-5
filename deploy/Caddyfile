@@ -1,0 +1,29 @@
+{$PUBLIC_HOSTNAME} {
+	encode zstd gzip
+
+	header {
+		-Server
+		Strict-Transport-Security "max-age=31536000"
+	}
+
+	@service_worker path /sw.js
+	header @service_worker {
+		Cache-Control "no-store, no-cache, must-revalidate"
+		Pragma "no-cache"
+		Expires "0"
+	}
+
+	reverse_proxy app:3000 {
+		health_uri /api/health
+		health_interval 30s
+		health_timeout 5s
+		stream_close_delay 5m
+	}
+}
+
+# This unpublished Docker-network listener lets the container healthcheck verify
+# the complete Caddy -> app proxy path without depending on public DNS, hairpin
+# routing, or certificate issuance from inside the container.
+http://:8080 {
+	reverse_proxy app:3000
+}

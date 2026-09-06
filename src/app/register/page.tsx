@@ -60,10 +60,10 @@ function RegisterForm() {
   }
 
   return (
-    <main className="flex flex-1 flex-col justify-center gap-6 p-6">
-      <header className="text-center">
-        <h1 className="text-3xl font-black text-gold">Create account</h1>
-        <p className="mt-1 text-sm text-white/70">Join Five-O Poker</p>
+    <main className="app-screen flex flex-1 flex-col justify-center">
+      <header className="app-header text-center">
+        <h1 className="app-title text-3xl font-black">Create account</h1>
+        <p className="app-subtitle mt-1 text-sm">Join Five-O Poker</p>
       </header>
 
       <form
@@ -71,7 +71,7 @@ function RegisterForm() {
         className="flex flex-col gap-3"
         aria-describedby={error ? "register-error" : undefined}
       >
-        <label htmlFor="register-name" className="text-sm font-semibold text-white/80">
+        <label htmlFor="register-name" className="form-label text-sm font-semibold">
           Display name
         </label>
         <input
@@ -87,7 +87,7 @@ function RegisterForm() {
           maxLength={20}
           className="field"
         />
-        <label htmlFor="register-email" className="text-sm font-semibold text-white/80">
+        <label htmlFor="register-email" className="form-label text-sm font-semibold">
           Email
         </label>
         <input
@@ -101,7 +101,7 @@ function RegisterForm() {
           required
           className="field"
         />
-        <label htmlFor="register-password" className="text-sm font-semibold text-white/80">
+        <label htmlFor="register-password" className="form-label text-sm font-semibold">
           Password
         </label>
         <input
@@ -117,7 +117,7 @@ function RegisterForm() {
           className="field"
         />
         {error && (
-          <p id="register-error" role="alert" className="text-sm text-rose-400">
+          <p id="register-error" role="alert" className="error-text text-sm">
             {error}
           </p>
         )}
@@ -126,10 +126,15 @@ function RegisterForm() {
         </button>
       </form>
 
-      <p className="text-center text-sm text-white/70">
+      <p className="supporting-text text-center text-sm">
         Already have an account?{" "}
-        <Link href={loginHref} className="font-semibold text-gold underline">
+        <Link href={loginHref} className="nav-link px-2 font-semibold text-gold">
           Sign in
+        </Link>
+      </p>
+      <p className="text-center text-sm">
+        <Link href="/how-to-play" className="nav-link px-2">
+          Preview interfaces &amp; playing cards
         </Link>
       </p>
     </main>
@@ -138,7 +143,7 @@ function RegisterForm() {
 
 function AuthPageFallback({ label }: { label: string }) {
   return (
-    <main className="flex flex-1 items-center justify-center p-6 text-white/70">
+    <main className="app-screen supporting-text flex flex-1 items-center justify-center">
       {label}
     </main>
   );

@@ -161,7 +161,7 @@ export function NotificationToggle() {
 
   if (state === "unsupported") {
     return (
-      <p className="text-xs text-white/45">
+      <p className="subtle-text text-xs">
         Turn notifications aren’t supported on this device.
       </p>
     );
@@ -173,7 +173,7 @@ export function NotificationToggle() {
           Turn off alerts for this device
         </button>
         {error && (
-          <p role="alert" className="text-xs text-rose-300">
+          <p role="alert" className="error-text text-xs">
             {error}
           </p>
         )}
@@ -182,7 +182,7 @@ export function NotificationToggle() {
   }
   if (state === "denied") {
     return (
-      <p className="text-xs text-white/45">
+      <p className="subtle-text text-xs">
         Notifications are blocked — enable them in your browser settings to get
         turn alerts.
       </p>
@@ -208,7 +208,7 @@ export function NotificationToggle() {
             : "🔔 Enable turn notifications"}
       </button>
       {error && (
-        <p role="alert" className="mt-2 text-xs text-rose-300">
+        <p role="alert" className="error-text mt-2 text-xs">
           {error}
         </p>
       )}

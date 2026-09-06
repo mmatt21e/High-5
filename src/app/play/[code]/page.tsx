@@ -30,9 +30,9 @@ export default async function PlayPage({
 
 function InviteError({ message }: { message: string }) {
   return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-5 p-6 text-center">
-      <h1 className="text-2xl font-black text-gold">Unable to join game</h1>
-      <p role="alert" className="text-rose-300">
+    <main className="app-screen flex flex-1 flex-col items-center justify-center text-center">
+      <h1 className="app-title text-2xl font-black">Unable to join game</h1>
+      <p role="alert" className="error-text">
         {message}
       </p>
       <Link href="/" className="btn-primary">

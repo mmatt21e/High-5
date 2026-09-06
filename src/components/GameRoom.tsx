@@ -9,11 +9,15 @@ import {
 } from "react";
 import Link from "next/link";
 import { useGameSocket } from "./useGameSocket";
-import { DeckToggle } from "./DeckToggle";
+import { AppearanceSettings } from "./AppearanceSettings";
 import { NotificationToggle } from "./NotificationToggle";
-import { CardSlot, FannedColumn, type CardSize } from "./PlayingCard";
+import {
+  CardSlot,
+  FannedColumn,
+  describePlayingCard,
+  type CardSize,
+} from "./PlayingCard";
 import { cardId } from "@/lib/game/cards";
-import type { Card } from "@/lib/game/cards";
 import type { CardView, GameView, PlayerIndex } from "@/lib/game/types";
 import type { MatchSnapshot } from "@/lib/realtime/events";
 
@@ -24,7 +28,7 @@ export function GameRoom({ code }: { code: string }) {
   if (error && !snapshot) {
     return (
       <Centered>
-        <p className="text-lg font-semibold text-rose-300">{error}</p>
+        <p className="error-text text-lg font-semibold">{error}</p>
         <Link href="/" className="btn-primary mt-6">
           Back to lobby
         </Link>
@@ -35,7 +39,7 @@ export function GameRoom({ code }: { code: string }) {
     return (
       <Centered>
         <Spinner />
-        <p className="mt-4 text-white/70">
+        <p className="supporting-text mt-4">
           {connected ? "Joining game…" : "Connecting…"}
         </p>
       </Centered>
@@ -68,7 +72,7 @@ export function GameRoom({ code }: { code: string }) {
         {error && <SocketNotice message={error} />}
         <Centered>
           <Spinner />
-          <p className="mt-4 text-white/70">Dealing the cards…</p>
+          <p className="supporting-text mt-4">Dealing the cards…</p>
         </Centered>
       </>
     );
@@ -91,7 +95,7 @@ export function GameRoom({ code }: { code: string }) {
 
 function SocketNotice({ message }: { message: string }) {
   return (
-    <div role="alert" className="bg-rose-950 px-4 py-2 text-center text-sm text-rose-100">
+    <div role="alert" className="error-text border-b border-current bg-black/45 px-4 py-2 text-center text-sm">
       {message}
     </div>
   );
@@ -99,7 +103,7 @@ function SocketNotice({ message }: { message: string }) {
 
 function Centered({ children }: { children: React.ReactNode }) {
   return (
-    <main className="flex flex-1 flex-col items-center justify-center p-6 text-center">
+    <main className="app-screen flex flex-1 flex-col items-center justify-center text-center">
       {children}
     </main>
   );
@@ -132,12 +136,12 @@ function WaitingRoom({ snapshot }: { snapshot: MatchSnapshot }) {
     setTimeout(() => setCopied(false), 2000);
   }
   return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-6 p-6 text-center">
-      <div className="flex items-center gap-3 text-white/70">
+    <main className="app-screen flex flex-1 flex-col items-center justify-center text-center">
+      <div className="supporting-text flex items-center gap-3">
         <Spinner />
         <span className="font-semibold">Waiting for your opponent…</span>
       </div>
-      <p className="text-sm text-white/60">Share this code to invite a player</p>
+      <p className="subtle-text text-sm">Share this code to invite a player</p>
       <div className="panel max-w-full border-gold/40 px-4 py-6 sm:px-8">
         <div className="font-mono text-3xl font-black tracking-[0.2em] text-gold sm:text-5xl sm:tracking-[0.35em]">
           {snapshot.inviteCode}
@@ -146,7 +150,7 @@ function WaitingRoom({ snapshot }: { snapshot: MatchSnapshot }) {
       <button onClick={share} className="btn-primary w-full max-w-xs">
         {copied ? "Copied to clipboard!" : "Share invite"}
       </button>
-      <Link href="/" className="text-sm text-white/60 underline">
+      <Link href="/" className="nav-link px-2 text-sm">
         Cancel
       </Link>
     </main>
@@ -219,39 +223,54 @@ function Table({
     );
   } else {
     body = (
-    <main className="flex flex-1 flex-col gap-2 p-3">
+    <main className="game-table-active" aria-label="Five-O game table">
       <TopBar code={snapshot.inviteCode} onSettings={openSettings} />
 
-      {/* Opponent: 4 face-up hands + concealed hand (hidden) */}
-      <PlayerBar name={oppBoard.displayName} score={oppScore} target={snapshot.targetWins} />
-      <HandsRow board={oppBoard} size="sm" />
-
-      {/* Turn banner */}
-      <TurnBanner view={view} oppName={oppBoard.displayName} selected={selected !== null} />
-
-      {/* Your four rows — drop targets when a card is selected */}
-      <RowsBoard
-        board={myBoard}
-        size="md"
-        legalRows={view.yourTurn && selected ? view.legalRows : []}
-        onRow={tapRow}
+      <MatchHud
+        view={view}
+        opponentName={oppBoard.displayName}
+        opponentScore={oppScore}
+        yourName={myBoard.displayName}
+        yourScore={myScore}
+        target={snapshot.targetWins}
+        selected={selected !== null}
       />
 
-      {/* Your hand — select a card to place or discard */}
-      <YourHand
-        hand={myBoard.hand}
-        selected={selected}
-        yourTurn={view.yourTurn}
-        canDiscard={view.canDiscard}
-        onSelect={(id) => setSelected((s) => (s === id ? null : id))}
-        onDiscard={() => {
-          if (selected) {
-            if (onDiscard(selected)) setSelected(null);
-          }
-        }}
-      />
+      <div className="game-board-scroll" aria-label="Scrollable playing area">
+        <section className="game-board-section" aria-labelledby="opponent-layout-title">
+          <h2 id="opponent-layout-title" className="game-board-label">
+            {oppBoard.displayName}&apos;s layout
+          </h2>
+          <HandsRow board={oppBoard} size="sm" />
+        </section>
 
-      <PlayerBar name={myBoard.displayName} score={myScore} target={snapshot.targetWins} gold you />
+        <section className="game-board-section" aria-labelledby="your-rows-title">
+          <h2 id="your-rows-title" className="game-board-label">
+            Your four rows
+          </h2>
+          <RowsBoard
+            board={myBoard}
+            size="md"
+            legalRows={view.yourTurn && selected ? view.legalRows : []}
+            onRow={tapRow}
+          />
+        </section>
+      </div>
+
+      <div className="game-hand-dock">
+        <YourHand
+          hand={myBoard.hand}
+          selected={selected}
+          yourTurn={view.yourTurn}
+          canDiscard={view.canDiscard}
+          legalRows={view.yourTurn && selected ? view.legalRows : []}
+          onSelect={(id) => setSelected((current) => (current === id ? null : id))}
+          onRow={tapRow}
+          onDiscard={() => {
+            if (selected && onDiscard(selected)) setSelected(null);
+          }}
+        />
+      </div>
     </main>
     );
   }
@@ -272,15 +291,15 @@ function Table({
 
 function TopBar({ code, onSettings }: { code: string; onSettings: () => void }) {
   return (
-    <div className="flex items-center justify-between text-xs text-white/50">
-      <Link href="/" className="rounded px-1 py-0.5 active:text-white">
+    <div className="game-topbar supporting-text flex items-center justify-between text-xs">
+      <Link href="/" className="tap-target -ml-2 rounded-lg px-2 active:text-white">
         ← Leave
       </Link>
       <span className="font-mono tracking-[0.25em]">{code}</span>
       <button
         type="button"
         onClick={onSettings}
-        className="rounded px-1 py-0.5 active:text-white"
+        className="tap-target -mr-2 rounded-lg px-2 active:text-white"
       >
         ⚙ Settings
       </button>
@@ -310,7 +329,9 @@ function SettingsModal({
       document.activeElement instanceof HTMLElement
         ? document.activeElement
         : null;
+    const previousOverflow = document.body.style.overflow;
     if (!dialog) return;
+    document.body.style.overflow = "hidden";
 
     const focusable = () =>
       Array.from(
@@ -347,18 +368,19 @@ function SettingsModal({
     document.addEventListener("keydown", handleKeyDown);
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
       previousFocus?.focus();
     };
   }, [onClose]);
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6"
+        className="settings-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/75"
       onClick={onClose}
     >
       <div
         ref={dialogRef}
-        className="panel w-full max-w-sm"
+        className="settings-dialog panel w-full max-w-sm overflow-y-auto overscroll-contain"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -370,13 +392,13 @@ function SettingsModal({
           <button
             onClick={onClose}
             aria-label="Close settings"
-            className="px-1 text-lg text-white/60"
+            className="tap-target min-w-11 rounded-lg text-lg text-white/60"
           >
             ✕
           </button>
         </div>
-        <DeckToggle />
-        <div className="mt-4 border-t border-white/10 pt-4">
+        <AppearanceSettings />
+        <div className="section-divider mt-4 border-t pt-4">
           <div className="mb-2 text-sm font-bold">Notifications</div>
           <NotificationToggle />
         </div>
@@ -384,11 +406,11 @@ function SettingsModal({
           href="/how-to-play"
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-4 block text-center text-sm text-white/70 underline"
+          className="nav-link mt-4 w-full px-2 text-center text-sm"
         >
           How to play (opens in a new tab)
         </a>
-        <p className="mt-4 rounded-lg bg-black/20 px-3 py-2 text-center text-[11px] text-white/50">
+        <p className="surface-card subtle-text mt-4 px-3 py-2 text-center text-[11px]">
           Your game is saved automatically — close the app and come back
           anytime to continue.
         </p>
@@ -406,7 +428,7 @@ function SettingsModal({
                 if (onEndMatch()) onClose();
               }
             }}
-            className="mt-2 w-full rounded-xl border border-rose-400/40 py-2 text-sm font-bold text-rose-200"
+            className="tap-target error-text mt-2 w-full rounded-xl border border-current px-3 text-sm font-bold"
           >
             End match
           </button>
@@ -431,7 +453,7 @@ function PlayerBar({
 }) {
   return (
     <div className="flex items-center justify-between px-1">
-      <span className={`text-sm font-semibold ${gold ? "text-gold" : "text-white"}`}>
+      <span className={`min-w-0 truncate text-sm font-semibold ${gold ? "text-gold" : ""}`}>
         {name}
         {you && <span className="ml-1 text-white/40">(you)</span>}
       </span>
@@ -446,12 +468,81 @@ function PlayerBar({
             />
           ))}
         </div>
-        <span className="text-xs tabular-nums text-white/50">
+        <span className="subtle-text text-xs tabular-nums">
           {score}/{target}
         </span>
       </div>
     </div>
   );
+}
+
+function MatchHud({
+  view,
+  opponentName,
+  opponentScore,
+  yourName,
+  yourScore,
+  target,
+  selected,
+}: {
+  view: GameView;
+  opponentName: string;
+  opponentScore: number;
+  yourName: string;
+  yourScore: number;
+  target: number;
+  selected: boolean;
+}) {
+  const turnLabel = view.yourTurn ? "Your turn" : `${opponentName}'s turn`;
+  const instruction = view.yourTurn
+    ? selected
+      ? "Choose row or discard"
+      : "Choose a card"
+    : "Waiting";
+
+  return (
+    <div
+      className="game-hud"
+      role="status"
+      aria-live="polite"
+      aria-label={`${turnLabel}. Match score: ${opponentName} ${opponentScore} of ${target}; you ${yourScore} of ${target}. ${view.placed[view.you]} of ${view.total} cards placed. ${instruction}.`}
+    >
+      <div className="game-hud-player">
+        <div className="subtle-text truncate text-[10px] font-bold uppercase tracking-wide">
+          {opponentName}
+        </div>
+        <div className="text-base font-black tabular-nums">
+          {opponentScore}<span className="text-[10px] font-semibold text-white/45">/{target}</span>
+        </div>
+      </div>
+      <div className="game-hud-turn">
+        <div className="text-xs font-black text-gold">{turnLabel}</div>
+        <div className="supporting-text mt-0.5 text-[9px] leading-tight">
+          {view.placed[view.you]}/{view.total} placed · {instruction}
+        </div>
+      </div>
+      <div className="game-hud-player">
+        <div className="truncate text-[10px] font-bold uppercase tracking-wide text-gold">
+          {yourName} · you
+        </div>
+        <div className="text-base font-black tabular-nums text-gold">
+          {yourScore}<span className="text-[10px] font-semibold text-white/45">/{target}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function describeCardViews(cards: CardView[]): string {
+  const visible = cards.flatMap((card) =>
+    card.state === "card" ? [describePlayingCard(card.card)] : [],
+  );
+  const empty = cards.filter((card) => card.state === "empty").length;
+  const hidden = cards.filter((card) => card.state === "hidden").length;
+  const parts = visible.length > 0 ? visible : ["no face-up cards"];
+  if (hidden > 0) parts.push(`${hidden} face-down ${hidden === 1 ? "card" : "cards"}`);
+  if (empty > 0) parts.push(`${empty} empty ${empty === 1 ? "slot" : "slots"}`);
+  return parts.join(", ");
 }
 
 /** Opponent's four face-up hands plus their concealed hand (as card backs). */
@@ -461,15 +552,24 @@ function HandsRow({ board, size }: { board: GameView["players"][0]; size: CardSi
     i < concealedCount ? { state: "hidden" } : { state: "empty" },
   );
   return (
-    <div className="grid grid-cols-5 gap-1.5">
+    <div className="grid grid-cols-5 gap-1.5" role="group" aria-label="Opponent rows">
       {board.rows.map((row, i) => (
-        <div key={i} className="flex flex-col items-center rounded-lg p-1">
-          <FannedColumn slots={row} size={size} />
+        <div
+          key={i}
+          className="flex flex-col items-center rounded-lg p-1"
+          role="group"
+          aria-label={`Opponent row ${i + 1}: ${describeCardViews(row)}`}
+        >
+          <FannedColumn slots={row} size={size} decorative />
         </div>
       ))}
-      <div className="flex flex-col items-center rounded-lg border border-white/10 bg-black/20 p-1">
-        <FannedColumn slots={backs} size={size} />
-        <span className="mt-0.5 text-[8px] uppercase tracking-wide text-white/45">
+      <div
+        className="flex flex-col items-center rounded-lg border border-white/10 bg-black/20 p-1"
+        role="group"
+        aria-label={`Opponent hidden hand: ${concealedCount} face-down ${concealedCount === 1 ? "card" : "cards"}`}
+      >
+        <FannedColumn slots={backs} size={size} decorative />
+        <span className="subtle-text mt-0.5 text-[8px] uppercase tracking-wide">
           hidden
         </span>
       </div>
@@ -490,10 +590,11 @@ function RowsBoard({
   onRow: (row: number) => void;
 }) {
   return (
-    <div className="grid grid-cols-4 gap-1.5">
+    <div className="grid grid-cols-4 gap-1.5" role="group" aria-label="Your placement rows">
       {board.rows.map((row, i) => {
         const playable = legalRows.includes(i);
         const target = playable ? row.findIndex((s) => s.state === "empty") : null;
+        const contents = describeCardViews(row);
         return (
           <button
             key={i}
@@ -502,8 +603,8 @@ function RowsBoard({
             onClick={() => onRow(i)}
             aria-label={
               playable
-                ? `Place selected card in hand ${i + 1}`
-                : `Hand ${i + 1} is not available`
+                ? `Row ${i + 1}: ${contents}. Place selected card here.`
+                : `Row ${i + 1}: ${contents}. No placement action available.`
             }
             className={`flex flex-col items-center rounded-lg p-1 transition ${
               playable
@@ -511,7 +612,7 @@ function RowsBoard({
                 : ""
             }`}
           >
-            <FannedColumn slots={row} size={size} targetIndex={target} />
+            <FannedColumn slots={row} size={size} targetIndex={target} decorative />
           </button>
         );
       })}
@@ -525,18 +626,22 @@ function YourHand({
   selected,
   yourTurn,
   canDiscard,
+  legalRows,
   onSelect,
+  onRow,
   onDiscard,
 }: {
   hand: CardView[];
   selected: string | null;
   yourTurn: boolean;
   canDiscard: boolean;
+  legalRows: number[];
   onSelect: (id: string) => void;
+  onRow: (row: number) => void;
   onDiscard: () => void;
 }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-black/25 p-2">
+    <div className="game-hand-panel">
       <div className="mb-1 flex items-center justify-between px-1">
         <span className="text-[11px] font-semibold uppercase tracking-wide text-white/60">
           Your hidden hand
@@ -544,12 +649,16 @@ function YourHand({
         <button
           onClick={onDiscard}
           disabled={!yourTurn || !canDiscard || !selected}
-          className="rounded-md border border-rose-400/40 px-2 py-1 text-[11px] font-bold text-rose-200 disabled:opacity-40"
+          className="tap-target error-text rounded-lg border border-current px-3 text-xs font-bold disabled:opacity-40"
         >
           Discard{canDiscard ? "" : " ✓"}
         </button>
       </div>
-      <div className="flex flex-wrap justify-center gap-1.5">
+      <div
+        className="game-hand-cards"
+        aria-label="Your cards"
+        role="group"
+      >
         {hand.map((cv, i) => {
           const id = cvId(cv);
           const isSel = selected === id;
@@ -561,75 +670,54 @@ function YourHand({
               onClick={() => id && onSelect(id)}
               aria-label={
                 cv.state === "card"
-                  ? `${isSel ? "Deselect" : "Select"} ${describeCard(cv.card)}`
+                  ? `${isSel ? "Deselect" : "Select"} ${describePlayingCard(cv.card)}`
                   : "Unavailable card"
               }
               aria-pressed={isSel}
-              className={`transition ${isSel ? "-translate-y-2" : ""} ${
-                yourTurn ? "active:scale-95" : "opacity-90"
+              className={`shrink-0 rounded-lg transition ${isSel ? "-translate-y-1" : ""} ${
+                yourTurn ? "active:scale-95" : "hand-card-waiting"
               }`}
             >
               <div className={isSel ? "rounded-lg ring-2 ring-gold" : ""}>
-                <CardSlot slot={cv} size="lg" />
+                <CardSlot slot={cv} size="hand" decorative />
               </div>
             </button>
           );
         })}
       </div>
+      {selected && legalRows.length > 0 && (
+        <div
+          className="mt-2 grid grid-cols-4 gap-1.5 border-t border-white/10 pt-2"
+          role="group"
+          aria-label="Place selected card"
+        >
+          {Array.from({ length: 4 }, (_, row) => {
+            const legal = legalRows.includes(row);
+            return (
+              <button
+                key={row}
+                type="button"
+                className={`tap-target rounded-lg border px-1 text-xs font-black ${
+                  legal
+                    ? "border-gold/70 bg-gold/15 text-gold active:scale-95"
+                    : "border-white/10 text-white/30"
+                }`}
+                disabled={!legal}
+                onClick={() => onRow(row)}
+                aria-label={
+                  legal
+                    ? `Place selected card in row ${row + 1}`
+                    : `Row ${row + 1} is full; no placement action available`
+                }
+              >
+                Row {row + 1}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
-}
-
-function TurnBanner({
-  view,
-  oppName,
-  selected,
-}: {
-  view: GameView;
-  oppName: string;
-  selected: boolean;
-}) {
-  const yours = view.yourTurn;
-  const hint = yours
-    ? selected
-      ? "Tap a highlighted hand to place — or Discard"
-      : "Tap a card in your hand to pick it"
-    : "Waiting…";
-  return (
-    <div
-      role="status"
-      aria-live="polite"
-      className={`flex items-center justify-between rounded-xl px-4 py-2 ${
-        yours ? "bg-gold text-felt-900" : "bg-black/30 text-white"
-      }`}
-    >
-      <div>
-        <div className="text-[11px] font-semibold uppercase tracking-wide opacity-70">
-          {view.placed[view.you]} / {view.total} placed
-        </div>
-        <div className="text-base font-black">
-          {yours ? "Your turn" : `${oppName}’s turn`}
-        </div>
-      </div>
-      <div className="max-w-[55%] text-right text-[11px] opacity-80">{hint}</div>
-    </div>
-  );
-}
-
-function describeCard(card: Card): string {
-  const ranks: Record<number, string> = {
-    11: "Jack",
-    12: "Queen",
-    13: "King",
-    14: "Ace",
-  };
-  const suits: Record<Card["suit"], string> = {
-    s: "spades",
-    h: "hearts",
-    d: "diamonds",
-    c: "clubs",
-  };
-  return `${ranks[card.rank] ?? card.rank} of ${suits[card.suit]}`;
 }
 
 /** Showdown board: 4 rows + the (revealed) concealed hand, with win highlights. */
@@ -653,21 +741,29 @@ function ResultBoard({
         const won = hr?.winner === seat;
         const label = hr?.scores[seat].label ?? "";
         const isHand = i === 4;
+        const outcome = !hr
+          ? "Result unavailable"
+          : hr.winner === null
+            ? "Tied"
+            : won
+              ? "Won"
+              : "Lost";
         return (
           <div
             key={i}
-            className={`flex flex-col items-center rounded-lg p-1 ${
-              won ? "bg-emerald-400/5 ring-2 ring-emerald-400/70" : "opacity-70"
+            role="group"
+            aria-label={`${isHand ? "Hidden hand" : `Row ${i + 1}`}: ${outcome}. ${label || "No hand label"}. ${describeCardViews(slots)}`}
+            className={`result-hand flex flex-col items-center rounded-lg p-1 ${
+              won ? "result-hand-won" : "result-hand-not-won"
             }`}
           >
-            <FannedColumn slots={padTo5(slots)} size={size} />
+            <FannedColumn slots={padTo5(slots)} size={size} decorative />
             <span
               className={`mt-0.5 text-[9px] leading-tight ${
-                won ? "text-emerald-300" : "text-white/55"
+                won ? "success-text" : "supporting-text"
               }`}
             >
-              {isHand ? "★ " : ""}
-              {label}
+              {isHand ? "Hand · " : ""}{outcome} · {label}
             </span>
           </div>
         );
@@ -706,10 +802,10 @@ function GameOver({
       : "Opponent won the game";
   return (
     <div className="panel flex flex-col items-center gap-2 py-3">
-      <div className={`text-lg font-black ${tie ? "text-white" : won ? "text-gold" : "text-rose-300"}`}>
+      <div className={`text-lg font-black ${tie ? "" : won ? "text-gold" : "error-text"}`}>
         {headline}
       </div>
-      <div className="text-xs text-white/60">
+      <div className="supporting-text text-xs">
         Hands won — you {result.handWins[you]} · opponent{" "}
         {result.handWins[(1 - you) as PlayerIndex]}
       </div>
@@ -732,10 +828,10 @@ function MatchOver({ snapshot, you }: { snapshot: MatchSnapshot; you: PlayerInde
   const won = snapshot.matchWinner === you;
   return (
     <div className="panel flex flex-col items-center gap-2 py-4">
-      <div className={`text-2xl font-black ${won ? "text-gold" : "text-rose-300"}`}>
+      <div className={`text-2xl font-black ${won ? "text-gold" : "error-text"}`}>
         {won ? "🏆 You win the match!" : "Match over"}
       </div>
-      <div className="text-sm text-white/60">
+      <div className="supporting-text text-sm">
         Final score {snapshot.scoreHost} – {snapshot.scoreGuest}
       </div>
       <Link href="/" className="btn-primary mt-2 w-full max-w-xs">

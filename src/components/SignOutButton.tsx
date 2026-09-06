@@ -33,7 +33,7 @@ export function SignOutButton() {
     <button
       onClick={() => void handleSignOut()}
       disabled={busy}
-      className="text-sm text-white/60 underline"
+      className="nav-link px-2 text-sm"
     >
       {busy ? "Signing out…" : "Sign out"}
     </button>

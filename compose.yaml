@@ -1,0 +1,74 @@
+name: ${COMPOSE_PROJECT_NAME:-five-o-poker}
+
+x-five-o-image: &five-o-image
+  image: five-o-poker:${FIVEO_IMAGE_TAG:-local}
+  build:
+    context: .
+    dockerfile: Dockerfile
+    args:
+      NEXT_PUBLIC_GOOGLE_ENABLED: ${NEXT_PUBLIC_GOOGLE_ENABLED:-false}
+      NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${NEXT_PUBLIC_VAPID_PUBLIC_KEY:-}
+
+x-five-o-environment: &five-o-environment
+  NODE_ENV: production
+  HOST: 0.0.0.0
+  PORT: "3000"
+  DATABASE_URL: file:/data/five-o.db
+  AUTH_SECRET: ${AUTH_SECRET:?Set AUTH_SECRET in deploy/docker.env}
+  AUTH_URL: ${AUTH_URL:?Set AUTH_URL in deploy/docker.env}
+  AUTH_TRUST_HOST: "true"
+  AUTH_GOOGLE_ID: ${AUTH_GOOGLE_ID:-}
+  AUTH_GOOGLE_SECRET: ${AUTH_GOOGLE_SECRET:-}
+  NEXT_PUBLIC_GOOGLE_ENABLED: ${NEXT_PUBLIC_GOOGLE_ENABLED:-false}
+  VAPID_SUBJECT: ${VAPID_SUBJECT:-}
+  VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+  VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+  NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${NEXT_PUBLIC_VAPID_PUBLIC_KEY:-}
+
+services:
+  migrate:
+    <<: *five-o-image
+    command: ["npm", "run", "db:migrate"]
+    environment: *five-o-environment
+    init: true
+    restart: "no"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    volumes:
+      - fiveo-data:/data
+
+  app:
+    <<: *five-o-image
+    environment: *five-o-environment
+    init: true
+    restart: unless-stopped
+    stop_grace_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    expose:
+      - "3000"
+    volumes:
+      - fiveo-data:/data
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/api/health',{cache:'no-store'}).then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+      interval: 15s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+    deploy:
+      replicas: 1
+
+volumes:
+  fiveo-data:
+    name: ${COMPOSE_PROJECT_NAME:-five-o-poker}-data

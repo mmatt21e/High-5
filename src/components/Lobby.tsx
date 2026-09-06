@@ -49,10 +49,10 @@ export function Lobby() {
         {busy === "create" ? "Creating…" : "Create a game"}
       </button>
 
-      <div className="flex items-center gap-3 text-xs text-white/40">
-        <span className="h-px flex-1 bg-white/15" />
+      <div className="subtle-text flex items-center gap-3 text-xs">
+        <span className="section-divider h-px flex-1 border-t" />
         OR
-        <span className="h-px flex-1 bg-white/15" />
+        <span className="section-divider h-px flex-1 border-t" />
       </div>
 
       <form
@@ -60,7 +60,7 @@ export function Lobby() {
         className="flex flex-col gap-3"
         aria-describedby={error ? "lobby-error" : undefined}
       >
-        <label htmlFor="invite-code" className="text-center text-sm font-semibold text-white/80">
+        <label htmlFor="invite-code" className="form-label text-center text-sm font-semibold">
           Invite code
         </label>
         <input
@@ -88,7 +88,7 @@ export function Lobby() {
       </form>
 
       {error && (
-        <p id="lobby-error" role="alert" className="text-center text-sm text-rose-400">
+        <p id="lobby-error" role="alert" className="error-text text-center text-sm">
           {error}
         </p>
       )}

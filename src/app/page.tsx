@@ -1,15 +1,38 @@
-import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { LandingPage } from "@/components/LandingPage";
 import { Lobby } from "@/components/Lobby";
 import { SignOutButton } from "@/components/SignOutButton";
-import { DeckToggle } from "@/components/DeckToggle";
+import { AppearanceSettings } from "@/components/AppearanceSettings";
 import { NotificationToggle } from "@/components/NotificationToggle";
+
+export const metadata: Metadata = {
+  title: "Five-O Poker | Five Hands. Three to Win.",
+  description:
+    "Play heads-up Five-O Poker across two phones. Build four open poker hands and one concealed hand, then win three of five at showdown.",
+  alternates: { canonical: "https://edgegames.win/" },
+  openGraph: {
+    type: "website",
+    url: "https://edgegames.win/",
+    siteName: "Five-O Poker",
+    title: "Five-O Poker | Five Hands. Three to Win.",
+    description:
+      "Play heads-up Five-O Poker across two phones. Build four open poker hands and one concealed hand, then win three of five at showdown.",
+  },
+  twitter: {
+    card: "summary",
+    title: "Five-O Poker | Five Hands. Three to Win.",
+    description:
+      "Build four open poker hands and one concealed hand, then win three of five at showdown.",
+  },
+  robots: { index: true, follow: true },
+};
 
 export default async function HomePage() {
   const session = await auth();
-  if (!session?.user?.id) redirect("/login");
+  if (!session?.user?.id) return <LandingPage />;
   const uid = session.user.id;
 
   const [stats, activeMatches] = await Promise.all([
@@ -62,11 +85,11 @@ export default async function HomePage() {
   });
 
   return (
-    <main className="flex flex-1 flex-col gap-6 p-6">
-      <header className="flex items-center justify-between">
+    <main className="app-screen flex flex-1 flex-col">
+      <header className="app-header flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-black text-gold">Five-O Poker</h1>
-          <p className="text-sm text-white/70">
+          <h1 className="app-title text-2xl font-black">Five-O Poker</h1>
+          <p className="app-subtitle text-sm">
             Hi, {session.user.displayName}
           </p>
         </div>
@@ -81,13 +104,13 @@ export default async function HomePage() {
               <Link
                 key={g.code}
                 href={`/play/${g.code}`}
-                className="flex items-center justify-between rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 active:scale-[0.99]"
+                className="surface-list-item flex items-center justify-between px-3 py-2.5 active:scale-[0.99]"
               >
                 <div>
                   <div className="text-sm font-semibold">
                     vs {g.opponent ?? "waiting…"}
                   </div>
-                  <div className="text-xs text-white/50">
+                  <div className="subtle-text text-xs">
                     {g.myScore}–{g.oppScore} · code {g.code}
                   </div>
                 </div>
@@ -103,7 +126,7 @@ export default async function HomePage() {
       <section className="panel mt-2">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="font-bold">Your stats</h2>
-          <Link href="/profile" className="text-sm text-gold underline">
+          <Link href="/profile" className="nav-link px-2 text-sm text-gold">
             Details
           </Link>
         </div>
@@ -115,8 +138,8 @@ export default async function HomePage() {
       </section>
 
       <section className="panel flex flex-col gap-4">
-        <DeckToggle />
-        <div className="border-t border-white/10 pt-4">
+        <AppearanceSettings />
+        <div className="section-divider border-t pt-4">
           <div className="mb-2 text-sm font-bold">Notifications</div>
           <NotificationToggle />
         </div>
@@ -124,7 +147,7 @@ export default async function HomePage() {
 
       <Link
         href="/how-to-play"
-        className="mt-auto text-center text-sm text-white/60 underline"
+        className="nav-link mt-auto px-2 text-center text-sm"
       >
         New to Five-O? How to play →
       </Link>
@@ -138,13 +161,13 @@ function TurnBadge({
   turn: "yours" | "theirs" | "waiting" | "next";
 }) {
   const map = {
-    yours: { text: "Your turn", cls: "bg-gold text-felt-900" },
-    theirs: { text: "Their turn", cls: "bg-white/10 text-white/70" },
-    waiting: { text: "Waiting", cls: "bg-white/10 text-white/70" },
-    next: { text: "Next game", cls: "bg-emerald-400/20 text-emerald-200" },
+    yours: { text: "Your turn", cls: "status-chip-current" },
+    theirs: { text: "Their turn", cls: "" },
+    waiting: { text: "Waiting", cls: "" },
+    next: { text: "Next game", cls: "status-chip-success" },
   }[turn];
   return (
-    <span className={`rounded-full px-3 py-1 text-xs font-bold ${map.cls}`}>
+    <span className={`status-chip text-xs font-bold ${map.cls}`}>
       {map.text}
     </span>
   );
@@ -152,9 +175,9 @@ function TurnBadge({
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-lg bg-white/5 py-3">
+    <div className="stat-cell py-3">
       <div className="text-2xl font-black text-gold">{value}</div>
-      <div className="text-xs text-white/60">{label}</div>
+      <div className="metric-label text-xs">{label}</div>
     </div>
   );
 }

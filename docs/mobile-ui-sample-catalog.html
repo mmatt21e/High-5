@@ -1,0 +1,3565 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Five-O Poker mobile interface, table-theme, and playing-card customization catalog for design approval.">
+  <title>Five-O Poker Mobile UI Sample Catalog</title>
+  <style>
+    :root {
+      --ink: #f5f2e8;
+      --muted: #b9c1bc;
+      --quiet: #85908a;
+      --page: #07120e;
+      --page-2: #0a1d15;
+      --panel: #10251b;
+      --panel-2: #153126;
+      --line: rgba(255, 255, 255, 0.12);
+      --line-strong: rgba(255, 255, 255, 0.23);
+      --gold: #e8c46a;
+      --gold-dark: #7b6227;
+      --focus: #ffdc7d;
+      --cream: #f7f5ef;
+      --red: #c62828;
+      --black: #141414;
+      --blue: #1565c0;
+      --green: #2e7d32;
+      --radius: 18px;
+      --shadow: 0 18px 46px rgba(0, 0, 0, 0.28);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 1rem;
+    }
+
+    body {
+      min-width: 280px;
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 50% -8%, rgba(42, 103, 75, 0.32), transparent 34rem),
+        linear-gradient(180deg, var(--page-2), var(--page) 30rem);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button,
+    select,
+    .button-link {
+      min-height: 44px;
+    }
+
+    a {
+      color: #f6d98a;
+    }
+
+    a:hover {
+      color: #fff0bd;
+    }
+
+    :focus-visible {
+      outline: 3px solid var(--focus);
+      outline-offset: 3px;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .skip-link {
+      position: fixed;
+      top: 0.5rem;
+      left: 0.5rem;
+      z-index: 100;
+      padding: 0.65rem 0.9rem;
+      color: #07120e;
+      background: var(--focus);
+      border-radius: 8px;
+      font-weight: 800;
+      transform: translateY(-160%);
+    }
+
+    .skip-link:focus {
+      transform: none;
+    }
+
+    .wrap {
+      width: min(1180px, calc(100% - 2rem));
+      margin-inline: auto;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(3.25rem, 8vw, 6.5rem) 0 3rem;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.2;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+      background-size: 32px 32px;
+      mask-image: linear-gradient(to bottom, black, transparent);
+    }
+
+    .hero-grid {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    .eyebrow {
+      margin: 0 0 0.7rem;
+      color: var(--gold);
+      font-size: 0.77rem;
+      font-weight: 850;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    h1 {
+      max-width: 780px;
+      margin-bottom: 1rem;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(2.4rem, 7vw, 5.2rem);
+      font-weight: 600;
+      line-height: 0.98;
+      letter-spacing: -0.045em;
+    }
+
+    h2 {
+      margin-bottom: 0.7rem;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(1.8rem, 4vw, 2.7rem);
+      font-weight: 600;
+      line-height: 1.1;
+      letter-spacing: -0.025em;
+    }
+
+    h3 {
+      margin-bottom: 0.45rem;
+      font-size: 1.15rem;
+      line-height: 1.25;
+    }
+
+    .hero-copy {
+      max-width: 700px;
+      margin-bottom: 1.25rem;
+      color: #d7ded9;
+      font-size: clamp(1rem, 2.5vw, 1.18rem);
+    }
+
+    .concept-notice {
+      display: inline-flex;
+      align-items: flex-start;
+      gap: 0.65rem;
+      max-width: 720px;
+      margin: 0;
+      padding: 0.8rem 1rem;
+      color: #f5ead0;
+      background: rgba(239, 201, 105, 0.08);
+      border: 1px solid rgba(239, 201, 105, 0.3);
+      border-radius: 12px;
+      font-size: 0.9rem;
+    }
+
+    .concept-notice::before {
+      content: "◇";
+      flex: 0 0 auto;
+      color: var(--gold);
+      font-size: 1.1rem;
+      line-height: 1.35;
+    }
+
+    .hero-mark {
+      position: relative;
+      width: 180px;
+      height: 190px;
+    }
+
+    .hero-card {
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      width: 84px;
+      aspect-ratio: 5 / 7;
+      color: var(--black);
+      background: var(--cream);
+      border: 1px solid #cbc2af;
+      border-radius: 8px;
+      box-shadow: 0 18px 30px rgba(0,0,0,0.34);
+      transform-origin: 50% 100%;
+    }
+
+    .hero-card:nth-child(1) {
+      transform: translateX(-50%) rotate(-28deg);
+    }
+
+    .hero-card:nth-child(2) {
+      transform: translateX(-50%) rotate(-14deg);
+    }
+
+    .hero-card:nth-child(3) {
+      color: var(--red);
+      transform: translateX(-50%);
+    }
+
+    .hero-card:nth-child(4) {
+      transform: translateX(-50%) rotate(14deg);
+    }
+
+    .hero-card:nth-child(5) {
+      color: var(--red);
+      transform: translateX(-50%) rotate(28deg);
+    }
+
+    .hero-card span {
+      display: block;
+      padding: 0.45rem;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.25rem;
+      font-weight: 800;
+      line-height: 0.85;
+    }
+
+    .hero-card small {
+      display: block;
+      font-size: 1rem;
+    }
+
+    .section-nav {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: rgba(7, 18, 14, 0.9);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(16px);
+    }
+
+    .section-nav .wrap {
+      display: flex;
+      gap: 0.35rem;
+      overflow-x: auto;
+      padding-block: 0.6rem;
+      scrollbar-width: none;
+    }
+
+    .section-nav .wrap::-webkit-scrollbar {
+      display: none;
+    }
+
+    .section-nav a {
+      flex: 0 0 auto;
+      min-height: 44px;
+      padding: 0.55rem 0.8rem;
+      color: #dce2de;
+      border-radius: 9px;
+      font-size: 0.88rem;
+      font-weight: 750;
+      text-decoration: none;
+    }
+
+    .section-nav a:hover {
+      color: white;
+      background: rgba(255,255,255,0.07);
+    }
+
+    main {
+      padding-bottom: 9rem;
+    }
+
+    section {
+      padding-block: clamp(3rem, 7vw, 5.5rem);
+    }
+
+    section + section {
+      border-top: 1px solid var(--line);
+    }
+
+    .section-heading {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(240px, 0.5fr);
+      align-items: end;
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .section-heading p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .quick-steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+    }
+
+    .quick-step {
+      padding: 1.2rem;
+      background: rgba(255,255,255,0.035);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+    }
+
+    .step-number {
+      display: inline-grid;
+      width: 2rem;
+      height: 2rem;
+      margin-bottom: 0.8rem;
+      color: #102016;
+      background: var(--gold);
+      border-radius: 50%;
+      place-items: center;
+      font-weight: 900;
+    }
+
+    .quick-step p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .baseline-note {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 1rem;
+      align-items: center;
+      margin-top: 1rem;
+      padding: 1rem 1.2rem;
+      background: #0e2018;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+    }
+
+    .baseline-score {
+      display: grid;
+      width: 4.2rem;
+      height: 4.2rem;
+      color: var(--gold);
+      background: #07120e;
+      border: 1px solid var(--gold-dark);
+      border-radius: 50%;
+      place-items: center;
+      font-size: 1.15rem;
+      font-weight: 900;
+    }
+
+    .baseline-note p {
+      margin: 0;
+      color: #d4dbd7;
+      font-size: 0.92rem;
+    }
+
+    .option-stack {
+      display: grid;
+      gap: 1.5rem;
+    }
+
+    .concept {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(150deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .concept.is-selected {
+      border-color: rgba(239, 201, 105, 0.85);
+      box-shadow: 0 0 0 2px rgba(239, 201, 105, 0.22), var(--shadow);
+    }
+
+    .concept-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1.2rem 1.25rem;
+      background: rgba(0,0,0,0.13);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .select-line {
+      display: flex;
+      min-width: 0;
+      align-items: flex-start;
+      gap: 0.8rem;
+      cursor: pointer;
+    }
+
+    .select-line > span {
+      min-width: 0;
+    }
+
+    .select-line input {
+      flex: 0 0 auto;
+      width: 1.25rem;
+      height: 1.25rem;
+      margin: 0.13rem 0 0;
+      accent-color: var(--gold);
+    }
+
+    .option-kicker {
+      display: block;
+      margin-bottom: 0.2rem;
+      color: var(--gold);
+      font-size: 0.74rem;
+      font-weight: 850;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .option-title {
+      display: block;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(1.35rem, 3vw, 1.8rem);
+      font-weight: 650;
+      line-height: 1.15;
+      overflow-wrap: anywhere;
+    }
+
+    .tag {
+      flex: 0 0 auto;
+      padding: 0.34rem 0.55rem;
+      color: #0b1811;
+      background: var(--gold);
+      border-radius: 7px;
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .concept-body {
+      display: grid;
+      grid-template-columns: minmax(0, 1.65fr) minmax(250px, 0.75fr);
+      gap: 1.5rem;
+      padding: clamp(1rem, 3vw, 1.5rem);
+    }
+
+    .phone-pair {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(220px, 1fr));
+      gap: 1rem;
+      min-width: 0;
+    }
+
+    .swipe-cue {
+      display: none;
+    }
+
+    .phone-figure {
+      min-width: 0;
+      margin: 0;
+    }
+
+    .phone-figure figcaption {
+      margin-top: 0.55rem;
+      color: var(--muted);
+      font-size: 0.78rem;
+      text-align: center;
+    }
+
+    .phone {
+      width: min(100%, 250px);
+      margin-inline: auto;
+      padding: 8px;
+      background: #050706;
+      border: 1px solid #4b534e;
+      border-radius: 34px;
+      box-shadow: 0 16px 36px rgba(0,0,0,0.35);
+    }
+
+    .phone-screen {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 490px;
+      overflow: hidden;
+      color: #f8faf9;
+      background: #113b27;
+      border-radius: 27px;
+      isolation: isolate;
+    }
+
+    .phone-screen::after {
+      content: "";
+      position: absolute;
+      right: 50%;
+      bottom: 5px;
+      z-index: 10;
+      width: 72px;
+      height: 4px;
+      background: rgba(255,255,255,0.55);
+      border-radius: 999px;
+      transform: translateX(50%);
+    }
+
+    .phone-status {
+      position: relative;
+      z-index: 5;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      min-height: 29px;
+      padding: 5px 13px 3px;
+      font-size: 0.58rem;
+      font-weight: 750;
+      letter-spacing: 0.03em;
+    }
+
+    .phone-status::before {
+      content: "";
+      position: absolute;
+      top: 5px;
+      left: 50%;
+      width: 66px;
+      height: 17px;
+      background: #040605;
+      border-radius: 12px;
+      transform: translateX(-50%);
+    }
+
+    .signal {
+      letter-spacing: 0.08em;
+    }
+
+    .screen-content {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex: 1;
+      min-height: 0;
+      flex-direction: column;
+      padding: 9px 11px 18px;
+    }
+
+    .screen-brand {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 28px;
+      margin-bottom: 10px;
+    }
+
+    .screen-brand strong {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.05rem;
+      letter-spacing: -0.02em;
+    }
+
+    .tiny-icon {
+      display: grid;
+      width: 34px;
+      height: 28px;
+      color: var(--gold);
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 50%;
+      place-items: center;
+      font-size: 0.56rem;
+    }
+
+    .screen-eyebrow {
+      margin: 0 0 4px;
+      color: rgba(255,255,255,0.65);
+      font-size: 0.53rem;
+      font-weight: 850;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+    }
+
+    .screen-title {
+      margin: 0 0 4px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.35rem;
+      font-weight: 650;
+      line-height: 1.05;
+    }
+
+    .screen-subtitle {
+      margin: 0 0 12px;
+      color: rgba(255,255,255,0.68);
+      font-size: 0.62rem;
+      line-height: 1.35;
+    }
+
+    .mock-field {
+      display: flex;
+      align-items: center;
+      min-height: 39px;
+      padding: 0 10px;
+      color: rgba(255,255,255,0.72);
+      background: rgba(0,0,0,0.18);
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 9px;
+      font-size: 0.68rem;
+      letter-spacing: 0.05em;
+    }
+
+    .mock-button {
+      display: grid;
+      min-height: 39px;
+      padding: 0 10px;
+      color: #102016;
+      background: var(--gold);
+      border: 0;
+      border-radius: 9px;
+      place-items: center;
+      font-size: 0.69rem;
+      font-weight: 850;
+    }
+
+    .mock-button.secondary {
+      color: white;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.16);
+    }
+
+    .mock-action-stack {
+      display: grid;
+      gap: 7px;
+    }
+
+    .screen-divider {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin: 10px 0;
+      color: rgba(255,255,255,0.52);
+      font-size: 0.55rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .screen-divider::before,
+    .screen-divider::after {
+      content: "";
+      height: 1px;
+      background: rgba(255,255,255,0.12);
+      flex: 1;
+    }
+
+    .room-list {
+      display: grid;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .room-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 6px;
+      min-height: 44px;
+      padding: 7px 9px;
+      background: rgba(0,0,0,0.14);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 9px;
+    }
+
+    .room-item strong,
+    .room-item small {
+      display: block;
+    }
+
+    .room-item strong {
+      font-size: 0.67rem;
+    }
+
+    .room-item small {
+      color: rgba(255,255,255,0.58);
+      font-size: 0.52rem;
+    }
+
+    .room-badge {
+      padding: 3px 5px;
+      color: var(--gold);
+      background: rgba(239,201,105,0.08);
+      border-radius: 5px;
+      font-size: 0.5rem;
+      font-weight: 800;
+    }
+
+    .bottom-nav {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+      margin-top: auto;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .bottom-nav span {
+      color: rgba(255,255,255,0.56);
+      font-size: 0.5rem;
+      text-align: center;
+    }
+
+    .bottom-nav .active {
+      color: var(--gold);
+    }
+
+    .score-strip {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .game-progress {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      margin: -1px 1px 6px;
+      color: rgba(255,255,255,0.62);
+      font-size: 0.48rem;
+      font-weight: 750;
+    }
+
+    .score-pips {
+      display: flex;
+      gap: 3px;
+    }
+
+    .score-pips i {
+      display: block;
+      width: 5px;
+      height: 5px;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.35);
+      border-radius: 50%;
+    }
+
+    .score-pips i.won {
+      background: var(--gold);
+      border-color: var(--gold);
+    }
+
+    .score-side {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 32px;
+      padding: 5px 7px;
+      background: rgba(0,0,0,0.18);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+    }
+
+    .score-side span {
+      color: rgba(255,255,255,0.66);
+      font-size: 0.52rem;
+    }
+
+    .score-side strong {
+      color: var(--gold);
+      font-size: 0.8rem;
+    }
+
+    .turn-banner {
+      margin-bottom: 6px;
+      padding: 6px 8px;
+      color: #162317;
+      background: var(--gold);
+      border-radius: 7px;
+      font-size: 0.58rem;
+      font-weight: 850;
+      text-align: center;
+    }
+
+    .turn-hint {
+      margin: -2px 0 6px;
+      color: rgba(255,255,255,0.66);
+      font-size: 0.48rem;
+      text-align: center;
+    }
+
+    .table-zone {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+      flex-direction: column;
+      justify-content: space-around;
+      padding: 6px 4px;
+      background:
+        radial-gradient(circle, rgba(255,255,255,0.055) 1px, transparent 1.5px),
+        radial-gradient(ellipse at center, rgba(40,107,74,0.7), rgba(4,36,22,0.2));
+      background-size: 9px 9px, auto;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 38% / 12%;
+    }
+
+    .seat {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      color: rgba(255,255,255,0.68);
+      font-size: 0.5rem;
+    }
+
+    .seat-dot {
+      display: grid;
+      width: 18px;
+      height: 18px;
+      color: white;
+      background: #314b3d;
+      border: 1px solid rgba(255,255,255,0.17);
+      border-radius: 50%;
+      place-items: center;
+      font-size: 0.48rem;
+      font-weight: 850;
+    }
+
+    .table-cards {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 3px;
+      padding: 0 4px;
+    }
+
+    .stack {
+      display: grid;
+      justify-items: center;
+      gap: 2px;
+    }
+
+    .stack-label {
+      color: rgba(255,255,255,0.54);
+      font-size: 0.45rem;
+    }
+
+    .micro-card {
+      position: relative;
+      display: grid;
+      width: 30px;
+      aspect-ratio: 5 / 7;
+      color: var(--black);
+      background: #fbf8f0;
+      border: 1px solid #d4ccbc;
+      border-radius: 3px;
+      place-items: center;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 0.7rem;
+      font-weight: 850;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.25);
+    }
+
+    .micro-card.red {
+      color: var(--red);
+    }
+
+    .micro-card::before {
+      content: attr(data-rank);
+      position: absolute;
+      top: 2px;
+      left: 3px;
+      font-size: 0.42rem;
+      line-height: 1;
+    }
+
+    .micro-card.target {
+      background: transparent;
+      border: 1px dashed rgba(239,201,105,0.72);
+      box-shadow: inset 0 0 0 1px rgba(239,201,105,0.12);
+    }
+
+    .micro-card.back {
+      background:
+        repeating-linear-gradient(45deg, transparent 0 3px, rgba(255,255,255,0.15) 3px 4px),
+        #84333c;
+      border: 2px solid #f5eee0;
+      box-shadow: inset 0 0 0 1px #84333c, inset 0 0 0 2px #f5eee0;
+    }
+
+    .micro-card.back::before {
+      content: "";
+      position: absolute;
+      inset: 4px;
+      border: 1px solid rgba(255,255,255,0.62);
+      background: repeating-linear-gradient(45deg, transparent 0 3px, rgba(255,255,255,0.14) 3px 4px);
+    }
+
+    .placement-actions {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      margin-top: 6px;
+    }
+
+    .hidden-hand-label {
+      margin-top: 4px;
+      color: rgba(255,255,255,0.54);
+      font-size: 0.46rem;
+      text-align: center;
+    }
+
+    .placement-actions span {
+      display: grid;
+      min-height: 28px;
+      color: rgba(255,255,255,0.72);
+      background: rgba(0,0,0,0.17);
+      border: 1px solid rgba(255,255,255,0.13);
+      border-radius: 6px;
+      place-items: center;
+      font-size: 0.48rem;
+      font-weight: 750;
+    }
+
+    .placement-actions .legal {
+      color: #172318;
+      background: var(--gold);
+      border-color: var(--gold);
+    }
+
+    .hand-rail {
+      display: flex;
+      justify-content: center;
+      gap: 3px;
+      min-height: 65px;
+      margin: 6px -2px 0;
+      padding: 7px 4px 3px;
+      background: rgba(0,0,0,0.24);
+      border-top: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .hand-card {
+      position: relative;
+      display: grid;
+      width: 31px;
+      height: 45px;
+      color: var(--black);
+      background: var(--cream);
+      border: 1px solid #d1c8b7;
+      border-radius: 4px;
+      place-items: center;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 0.75rem;
+      font-weight: 850;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.28);
+    }
+
+    .hand-card.red {
+      color: var(--red);
+    }
+
+    .hand-card.selected {
+      outline: 2px solid var(--gold);
+      transform: translateY(-6px);
+    }
+
+    .hand-card::before {
+      content: attr(data-rank);
+      position: absolute;
+      top: 2px;
+      left: 3px;
+      font-size: 0.45rem;
+      line-height: 1;
+    }
+
+    .concept-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .concept-copy > p {
+      margin: 0;
+      color: #d4dcd7;
+      font-size: 0.95rem;
+    }
+
+    .mini-list {
+      margin: 0;
+      padding-left: 1.15rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .mini-list li + li {
+      margin-top: 0.45rem;
+    }
+
+    .tradeoff {
+      margin-top: auto;
+      padding: 0.85rem;
+      color: #d6ddd9;
+      background: rgba(0,0,0,0.16);
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      font-size: 0.84rem;
+    }
+
+    .tradeoff strong {
+      color: var(--gold);
+    }
+
+    .inspiration {
+      margin: 0;
+      color: var(--quiet);
+      font-size: 0.75rem;
+    }
+
+    .inspiration a {
+      color: #c7aa65;
+    }
+
+    /* Interface A: familiar felt-and-brass cardroom. */
+    .concept-a .phone-screen {
+      background:
+        radial-gradient(ellipse at 50% 38%, #235f3e, #0c2d1c 73%),
+        #0c2d1c;
+      font-family: Georgia, "Times New Roman", serif;
+    }
+
+    .concept-a .screen-content {
+      border: 1px solid rgba(239,201,105,0.2);
+      border-radius: 22px;
+      margin: 2px;
+    }
+
+    .concept-a .mock-button,
+    .concept-a .turn-banner {
+      color: #f8ecd2;
+      background: #783b34;
+      border: 1px solid #b07760;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+    }
+
+    .concept-a .room-item,
+    .concept-a .score-side {
+      background: rgba(13,28,19,0.42);
+      border-color: rgba(239,201,105,0.2);
+    }
+
+    /* Interface B: compact modern tournament surface. */
+    .concept-b .phone-screen {
+      background: #071a13;
+    }
+
+    .concept-b .screen-content {
+      padding-inline: 9px;
+    }
+
+    .concept-b .screen-brand strong {
+      font-family: inherit;
+      font-weight: 900;
+      letter-spacing: -0.045em;
+    }
+
+    .concept-b .screen-title {
+      font-family: inherit;
+      font-weight: 880;
+      letter-spacing: -0.035em;
+    }
+
+    .concept-b .mock-button,
+    .concept-b .turn-banner {
+      color: #08130e;
+      background: #f1cb6a;
+      border-radius: 6px;
+    }
+
+    .concept-b .table-zone {
+      background:
+        radial-gradient(ellipse at center, #1b5b3a, #0f3725 72%);
+      border-radius: 14px;
+    }
+
+    .concept-b .score-strip {
+      grid-template-columns: 1fr auto 1fr;
+    }
+
+    .concept-b .score-strip::after {
+      content: "G4";
+      grid-column: 2;
+      grid-row: 1;
+      align-self: center;
+      color: rgba(255,255,255,0.58);
+      font-size: 0.48rem;
+      font-weight: 850;
+    }
+
+    /* Interface C: restrained dark premium. */
+    .concept-c .phone-screen {
+      color: #f0ede4;
+      background:
+        linear-gradient(160deg, rgba(185,151,89,0.08), transparent 34%),
+        #161817;
+    }
+
+    .concept-c .screen-content {
+      padding-inline: 14px;
+    }
+
+    .concept-c .screen-brand strong,
+    .concept-c .screen-title {
+      font-family: Georgia, "Times New Roman", serif;
+      font-weight: 500;
+      letter-spacing: 0;
+    }
+
+    .concept-c .mock-button,
+    .concept-c .turn-banner {
+      color: #f3efe5;
+      background: #5d5140;
+      border: 1px solid #87765c;
+      border-radius: 2px;
+    }
+
+    .concept-c .mock-button.secondary,
+    .concept-c .room-item,
+    .concept-c .score-side {
+      background: transparent;
+      border-color: rgba(230,215,184,0.16);
+      border-radius: 2px;
+    }
+
+    .concept-c .table-zone {
+      background: #202522;
+      border-color: rgba(230,215,184,0.12);
+      border-radius: 2px;
+    }
+
+    .concept-c .micro-card,
+    .concept-c .hand-card {
+      background: #eee8dc;
+      border-radius: 2px;
+    }
+
+    .concept-c .placement-actions span {
+      border-radius: 2px;
+    }
+
+    .theme-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+      gap: 1rem;
+    }
+
+    .theme-option {
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+    }
+
+    .theme-option .concept-top {
+      min-height: 92px;
+    }
+
+    .theme-preview {
+      --theme-felt: #155b3b;
+      --theme-felt-edge: #083522;
+      --theme-rail: #5b311d;
+      --theme-accent: #e8c46a;
+      --theme-ink: #fff8df;
+      position: relative;
+      min-height: 190px;
+      margin: 1rem;
+      overflow: hidden;
+      color: var(--theme-ink);
+      background: var(--theme-rail);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 18px;
+      box-shadow: inset 0 0 0 5px rgba(0,0,0,0.19);
+      isolation: isolate;
+    }
+
+    .theme-preview::before {
+      content: "";
+      position: absolute;
+      inset: 16px;
+      background:
+        radial-gradient(circle at 50% 42%, rgba(255,255,255,0.08), transparent 45%),
+        linear-gradient(145deg, var(--theme-felt), var(--theme-felt-edge));
+      border: 2px solid color-mix(in srgb, var(--theme-accent) 58%, transparent);
+      border-radius: 44% / 26%;
+      box-shadow: inset 0 0 28px rgba(0,0,0,0.28);
+    }
+
+    .theme-preview::after {
+      content: "FIVE-O";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      color: color-mix(in srgb, var(--theme-accent) 80%, white);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 0.86rem;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      transform: translate(-50%, -50%);
+    }
+
+    .theme-seat,
+    .theme-chip,
+    .theme-mini-card {
+      position: absolute;
+      z-index: 2;
+    }
+
+    .theme-seat {
+      left: 50%;
+      width: 30px;
+      height: 30px;
+      background: color-mix(in srgb, var(--theme-felt-edge) 78%, black);
+      border: 1px solid color-mix(in srgb, var(--theme-accent) 48%, transparent);
+      border-radius: 50%;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+      transform: translateX(-50%);
+    }
+
+    .theme-seat.top { top: 25px; }
+    .theme-seat.bottom { bottom: 25px; }
+
+    .theme-chip {
+      top: 50%;
+      width: 14px;
+      height: 14px;
+      background: var(--theme-accent);
+      border: 3px dashed color-mix(in srgb, var(--theme-felt-edge) 60%, black);
+      border-radius: 50%;
+      transform: translateY(-50%);
+    }
+
+    .theme-chip.left { left: 31px; }
+    .theme-chip.right { right: 31px; }
+
+    .theme-mini-card {
+      top: calc(50% - 23px);
+      left: calc(50% - 42px);
+      width: 31px;
+      aspect-ratio: 5 / 7;
+      color: #bb2026;
+      background: #fffaf0;
+      border: 1px solid rgba(0,0,0,0.32);
+      border-radius: 3px;
+      box-shadow: 10px 3px 0 #fffaf0, 10px 3px 0 1px rgba(0,0,0,0.28), 20px 6px 0 #fffaf0, 20px 6px 0 1px rgba(0,0,0,0.25);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 0.75rem;
+      font-weight: 900;
+      text-align: center;
+    }
+
+    .theme-mini-card::before {
+      content: "A\A\2665";
+      white-space: pre;
+      line-height: 0.8;
+    }
+
+    .theme-name {
+      position: absolute;
+      right: 8px;
+      bottom: 6px;
+      left: 8px;
+      z-index: 3;
+      overflow: hidden;
+      color: var(--theme-ink);
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-align: center;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .theme-green { --theme-felt: #17613e; --theme-felt-edge: #07351f; --theme-rail: #5e3420; --theme-accent: #e5bd60; }
+    .theme-navy { --theme-felt: #15375d; --theme-felt-edge: #07192f; --theme-rail: #111923; --theme-accent: #61b5dc; }
+    .theme-burgundy { --theme-felt: #792f3b; --theme-felt-edge: #3d111a; --theme-rail: #241417; --theme-accent: #e2b55f; }
+    .theme-oled { --theme-felt: #0b1712; --theme-felt-edge: #000000; --theme-rail: #000000; --theme-accent: #63efaa; }
+    .theme-walnut { --theme-felt: #315c38; --theme-felt-edge: #18331e; --theme-rail: #75452a; --theme-accent: #e8d4a6; }
+    .theme-retro { --theme-felt: #087d82; --theme-felt-edge: #063d52; --theme-rail: #302055; --theme-accent: #ffdc3a; }
+    .theme-retro .theme-preview::after { font-family: "Courier New", monospace; text-shadow: 2px 2px 0 #d02978; }
+
+    .theme-art-note {
+      margin: 1rem 0 0;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .cards-intro {
+      max-width: 790px;
+      color: var(--muted);
+    }
+
+    .deck-option .concept-body {
+      grid-template-columns: minmax(0, 1.6fr) minmax(240px, 0.7fr);
+    }
+
+    .card-stage {
+      min-width: 0;
+      padding: clamp(0.9rem, 3vw, 1.3rem);
+      background:
+        radial-gradient(circle at center, rgba(45,108,75,0.35), transparent 70%),
+        #0a1912;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+    }
+
+    .sample-label {
+      display: block;
+      margin-bottom: 0.55rem;
+      color: #9da8a2;
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .card-row {
+      display: flex;
+      align-items: flex-end;
+      gap: clamp(0.45rem, 1.6vw, 0.8rem);
+      min-width: 0;
+      overflow-x: auto;
+      padding: 11px 5px 13px;
+      scrollbar-color: rgba(239,201,105,0.55) transparent;
+      scrollbar-width: thin;
+    }
+
+    .card-row + .sample-label {
+      margin-top: 0.9rem;
+    }
+
+    .playing-card {
+      --suit-color: var(--black);
+      position: relative;
+      display: grid;
+      flex: 0 0 66px;
+      width: 66px;
+      aspect-ratio: 5 / 7;
+      overflow: hidden;
+      color: var(--suit-color);
+      background: var(--cream);
+      border: 1px solid #c8c0b2;
+      border-radius: 6px;
+      box-shadow: 0 5px 12px rgba(0,0,0,0.3);
+      place-items: center;
+      isolation: isolate;
+    }
+
+    .playing-card.suit-h,
+    .playing-card.suit-d {
+      --suit-color: var(--red);
+    }
+
+    .playing-card.suit-s,
+    .playing-card.suit-c {
+      --suit-color: var(--black);
+    }
+
+    .playing-card .index {
+      position: absolute;
+      z-index: 2;
+      top: 4px;
+      left: 5px;
+      display: grid;
+      justify-items: center;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 0.89rem;
+      font-weight: 900;
+      line-height: 0.78;
+    }
+
+    .playing-card .index small {
+      margin-top: 3px;
+      font-size: 0.69rem;
+    }
+
+    .playing-card .index.bottom {
+      inset: auto 5px 4px auto;
+      transform: rotate(180deg);
+    }
+
+    .playing-card .center-art {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      width: 70%;
+      height: 64%;
+      place-items: center;
+      font-family: Georgia, "Times New Roman", serif;
+    }
+
+    .playing-card .center-suit {
+      font-size: 2rem;
+      line-height: 1;
+    }
+
+    .playing-card .pip-layout {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      align-content: space-around;
+      justify-items: center;
+      width: 100%;
+      height: 100%;
+      font-size: 0.74rem;
+      line-height: 1;
+    }
+
+    .playing-card .court-frame {
+      position: relative;
+      display: grid;
+      width: 72%;
+      height: 67%;
+      color: var(--suit-color);
+      background:
+        linear-gradient(135deg, transparent 0 44%, rgba(20,25,22,0.08) 44% 56%, transparent 56%),
+        #efe5cc;
+      border: 1px solid currentColor;
+      place-items: center;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.45rem;
+      font-weight: 900;
+    }
+
+    .playing-card .court-frame::before,
+    .playing-card .court-frame::after {
+      content: attr(data-suit);
+      position: absolute;
+      font-size: 0.64rem;
+    }
+
+    .playing-card .court-frame::before {
+      top: 3px;
+      right: 4px;
+    }
+
+    .playing-card .court-frame::after {
+      bottom: 3px;
+      left: 4px;
+      transform: rotate(180deg);
+    }
+
+    .playing-card.is-selected {
+      outline: 3px solid var(--gold);
+      outline-offset: 2px;
+      transform: translateY(-7px);
+      box-shadow: 0 8px 18px rgba(0,0,0,0.42);
+    }
+
+    .playing-card.is-disabled {
+      opacity: 0.52;
+      filter: grayscale(0.72);
+    }
+
+    .state-chip {
+      position: absolute;
+      z-index: 5;
+      right: 3px;
+      bottom: 3px;
+      padding: 2px 3px;
+      color: #0a160f;
+      background: var(--gold);
+      border-radius: 3px;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 0.42rem;
+      font-weight: 900;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    .is-disabled .state-chip {
+      color: white;
+      background: #4b514d;
+    }
+
+    .card-back {
+      position: relative;
+      display: grid;
+      flex: 0 0 66px;
+      width: 66px;
+      aspect-ratio: 5 / 7;
+      overflow: hidden;
+      color: white;
+      background: #79343c;
+      border: 3px solid #f5efe3;
+      border-radius: 6px;
+      box-shadow:
+        inset 0 0 0 1px #79343c,
+        inset 0 0 0 3px #f5efe3,
+        0 5px 12px rgba(0,0,0,0.3);
+      place-items: center;
+    }
+
+    .card-back::before {
+      content: "";
+      position: absolute;
+      inset: 6px;
+      background:
+        radial-gradient(circle, rgba(255,255,255,0.5) 0 1px, transparent 1.5px) 0 0 / 8px 8px,
+        linear-gradient(45deg, transparent 43%, rgba(255,255,255,0.16) 44% 56%, transparent 57%) 0 0 / 11px 11px;
+      border: 1px solid rgba(255,255,255,0.75);
+    }
+
+    .card-back::after {
+      content: "5";
+      position: relative;
+      display: grid;
+      width: 28px;
+      height: 28px;
+      background: #79343c;
+      border: 1px solid rgba(255,255,255,0.78);
+      border-radius: 50%;
+      place-items: center;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 0.7rem;
+      font-weight: 900;
+      letter-spacing: 0;
+    }
+
+    .card-back.blue {
+      background: #284c6a;
+      box-shadow:
+        inset 0 0 0 1px #284c6a,
+        inset 0 0 0 3px #f5efe3,
+        0 5px 12px rgba(0,0,0,0.3);
+    }
+
+    .card-back.blue::after {
+      background: #284c6a;
+    }
+
+    .card-back.charcoal {
+      background: #303532;
+      box-shadow:
+        inset 0 0 0 1px #303532,
+        inset 0 0 0 3px #d7cdb8,
+        0 5px 12px rgba(0,0,0,0.3);
+    }
+
+    .card-back.charcoal::before {
+      background:
+        repeating-linear-gradient(45deg, rgba(214,198,164,0.22) 0 1px, transparent 1px 6px),
+        repeating-linear-gradient(-45deg, rgba(214,198,164,0.15) 0 1px, transparent 1px 6px);
+      border-color: #bca87c;
+    }
+
+    .card-back.charcoal::after {
+      color: #e5d6b3;
+      background: #303532;
+      border-color: #bca87c;
+    }
+
+    /* Deck 1: classic jumbo index. */
+    .deck-classic .playing-card::after {
+      content: "";
+      position: absolute;
+      inset: 2px;
+      pointer-events: none;
+      border: 1px solid rgba(40,35,28,0.12);
+      border-radius: 4px;
+    }
+
+    .deck-classic .playing-card .index {
+      font-size: 1rem;
+    }
+
+    .deck-classic .playing-card .center-suit {
+      font-size: 1.75rem;
+    }
+
+    /* Deck 2: fuller pip/court treatment. */
+    .deck-authentic .playing-card {
+      border-radius: 5px;
+    }
+
+    .deck-authentic .playing-card .center-suit {
+      display: none;
+    }
+
+    .deck-authentic .playing-card .index {
+      font-size: 0.82rem;
+    }
+
+    /* Deck 3: shape-first, four-color suits. */
+    .deck-four .playing-card.suit-d {
+      --suit-color: var(--blue);
+    }
+
+    .deck-four .playing-card.suit-c {
+      --suit-color: var(--green);
+    }
+
+    .deck-four .playing-card .index {
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 0.96rem;
+      font-weight: 950;
+    }
+
+    .deck-four .playing-card {
+      background: #fffefa;
+      border-color: #aeb8b0;
+    }
+
+    /* Deck 4: minimal mobile. */
+    .deck-minimal .playing-card {
+      background: #ffffff;
+      border: 0;
+      border-radius: 9px;
+    }
+
+    .deck-minimal .playing-card .index {
+      top: 6px;
+      left: 7px;
+      align-items: baseline;
+      grid-template-columns: auto auto;
+      gap: 2px;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 1.05rem;
+      line-height: 1;
+    }
+
+    .deck-minimal .playing-card .index small {
+      font-size: 0.8rem;
+    }
+
+    .deck-minimal .playing-card .index.bottom {
+      display: none;
+    }
+
+    .deck-minimal .playing-card .center-art {
+      width: 100%;
+      height: 100%;
+      opacity: 0.14;
+    }
+
+    .deck-minimal .playing-card .center-suit {
+      font-size: 3.4rem;
+    }
+
+    .deck-minimal .playing-card .court-frame {
+      width: 48px;
+      height: 48px;
+      color: var(--suit-color);
+      background: transparent;
+      border: 0;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 2.8rem;
+      opacity: 0.16;
+    }
+
+    /* Deck 5: maximum-distance rank recognition. */
+    .deck-index .playing-card {
+      border-radius: 7px;
+    }
+
+    .deck-index .playing-card .index {
+      top: 8px;
+      left: 8px;
+      display: flex;
+      align-items: baseline;
+      gap: 3px;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 1.45rem;
+      letter-spacing: -0.08em;
+    }
+
+    .deck-index .playing-card .index small {
+      font-size: 0.94rem;
+    }
+
+    .deck-index .playing-card .index.bottom {
+      display: none;
+    }
+
+    .deck-index .playing-card .center-art {
+      align-self: end;
+      justify-self: end;
+      width: auto;
+      height: auto;
+      margin: 0 8px 7px 0;
+      opacity: 0.17;
+    }
+
+    .deck-index .playing-card .center-suit {
+      font-size: 3.25rem;
+    }
+
+    .deck-index .playing-card .court-frame {
+      width: auto;
+      height: auto;
+      background: none;
+      border: 0;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 3.4rem;
+      opacity: 0.18;
+    }
+
+    .deck-index .playing-card .court-frame::before,
+    .deck-index .playing-card .court-frame::after {
+      display: none;
+    }
+
+    /* Deck 6: compact bridge proportions with a jumbo mirrored index. */
+    .deck-bridge .playing-card,
+    .deck-bridge .card-back {
+      flex-basis: 58px;
+      width: 58px;
+      aspect-ratio: 9 / 14;
+      border-radius: 5px;
+    }
+
+    .deck-bridge .playing-card .index {
+      font-size: 1.02rem;
+    }
+
+    .deck-bridge .playing-card .center-suit {
+      font-size: 1.55rem;
+    }
+
+    .deck-bridge .playing-card .pip-layout {
+      font-size: 0.66rem;
+    }
+
+    .deck-bridge .card-back::before {
+      background:
+        repeating-linear-gradient(0deg, transparent 0 4px, rgba(255,255,255,0.18) 4px 5px),
+        repeating-linear-gradient(90deg, transparent 0 4px, rgba(255,255,255,0.13) 4px 5px);
+    }
+
+    /* Deck 7: maximum-contrast accessibility treatment. */
+    .deck-magnum .playing-card {
+      flex-basis: 72px;
+      width: 72px;
+      background: white;
+      border: 3px solid #101412;
+      border-radius: 5px;
+      box-shadow: 0 6px 0 rgba(0,0,0,0.35);
+    }
+
+    .deck-magnum .playing-card .index {
+      top: 5px;
+      left: 6px;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 1.45rem;
+      line-height: 0.72;
+    }
+
+    .deck-magnum .playing-card .index small {
+      font-size: 1rem;
+    }
+
+    .deck-magnum .playing-card .index.bottom {
+      right: 6px;
+      bottom: 5px;
+    }
+
+    .deck-magnum .playing-card .center-art {
+      opacity: 0.16;
+    }
+
+    .deck-magnum .playing-card .center-suit,
+    .deck-magnum .playing-card .court-frame {
+      font-size: 3.1rem;
+    }
+
+    .deck-magnum .card-back::after {
+      width: 34px;
+      height: 34px;
+      border-width: 2px;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 1rem;
+    }
+
+    /* Deck 8: dark card stock for low-light play. */
+    .deck-night .playing-card {
+      background: #151917;
+      border-color: #677069;
+      box-shadow: inset 0 0 0 1px #050706, 0 5px 12px rgba(0,0,0,0.46);
+    }
+
+    .deck-night .playing-card.suit-s,
+    .deck-night .playing-card.suit-c {
+      --suit-color: #f2f0e8;
+    }
+
+    .deck-night .playing-card.suit-h,
+    .deck-night .playing-card.suit-d {
+      --suit-color: #ff7878;
+    }
+
+    .deck-night .playing-card .index {
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 1.08rem;
+    }
+
+    .deck-night .playing-card .court-frame {
+      background: #202824;
+    }
+
+    .deck-night .card-back {
+      background: #0a0d0c;
+      border-color: #80cfa8;
+      box-shadow: inset 0 0 0 1px #0a0d0c, inset 0 0 0 3px #80cfa8, 0 5px 12px rgba(0,0,0,0.5);
+    }
+
+    .deck-night .card-back::after {
+      color: #9be1b8;
+      background: #0a0d0c;
+      border-color: #9be1b8;
+    }
+
+    /* Deck 9: original low-resolution-inspired pixel geometry. */
+    .deck-pixel .playing-card {
+      background:
+        linear-gradient(90deg, rgba(20,20,20,0.035) 50%, transparent 50%) 0 0 / 6px 6px,
+        #fff8df;
+      border: 2px solid #1d2630;
+      border-radius: 0;
+      box-shadow: 4px 4px 0 #07120e;
+    }
+
+    .deck-pixel .playing-card .index,
+    .deck-pixel .playing-card .court-frame {
+      font-family: "Courier New", Courier, monospace;
+      font-weight: 900;
+    }
+
+    .deck-pixel .playing-card .center-suit {
+      filter: contrast(1.4);
+    }
+
+    .deck-pixel .playing-card .court-frame {
+      background: #f5df9b;
+      border-width: 2px;
+    }
+
+    .deck-pixel .card-back {
+      background: #3d2b75;
+      border-radius: 0;
+      box-shadow: inset 0 0 0 1px #3d2b75, inset 0 0 0 3px #ffe14a, 4px 4px 0 #07120e;
+    }
+
+    .deck-pixel .card-back::before {
+      background:
+        linear-gradient(45deg, #e53888 25%, transparent 25% 75%, #e53888 75%) 0 0 / 8px 8px,
+        linear-gradient(45deg, #16b6bc 25%, #3d2b75 25% 75%, #16b6bc 75%) 4px 4px / 8px 8px;
+      border-color: #ffe14a;
+    }
+
+    .deck-pixel .card-back::after {
+      color: #ffe14a;
+      background: #3d2b75;
+      border-radius: 0;
+    }
+
+    /* Deck 10: geometric Art Deco linework with familiar faces. */
+    .deck-deco .playing-card {
+      background: #faf2dc;
+      border: 2px solid #202521;
+      border-radius: 3px;
+      box-shadow: inset 0 0 0 3px #faf2dc, inset 0 0 0 4px #b38a39, 0 5px 12px rgba(0,0,0,0.32);
+    }
+
+    .deck-deco .playing-card .index {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.04rem;
+    }
+
+    .deck-deco .playing-card .center-art::before,
+    .deck-deco .playing-card .center-art::after {
+      content: "";
+      position: absolute;
+      inset-inline: 3px;
+      height: 1px;
+      background: #b38a39;
+    }
+
+    .deck-deco .playing-card .center-art::before { top: 4px; }
+    .deck-deco .playing-card .center-art::after { bottom: 4px; }
+
+    .deck-deco .playing-card .court-frame {
+      color: var(--suit-color);
+      background:
+        linear-gradient(135deg, transparent 43%, #c7a75c 44% 48%, transparent 49%),
+        linear-gradient(45deg, transparent 43%, #202521 44% 48%, transparent 49%),
+        #f0dfb6;
+      border: 2px double #b38a39;
+    }
+
+    .deck-deco .card-back {
+      background: #162d33;
+      border-color: #f4e6c4;
+      box-shadow: inset 0 0 0 1px #162d33, inset 0 0 0 3px #b99548, 0 5px 12px rgba(0,0,0,0.35);
+    }
+
+    .deck-deco .card-back::before {
+      background:
+        linear-gradient(135deg, transparent 40%, rgba(226,190,105,0.62) 41% 44%, transparent 45%) 0 0 / 12px 12px,
+        linear-gradient(45deg, transparent 40%, rgba(226,190,105,0.38) 41% 44%, transparent 45%) 0 0 / 12px 12px;
+      border-color: #d6b668;
+    }
+
+    .deck-deco .card-back::after {
+      color: #edcf85;
+      background: #162d33;
+      border-color: #d6b668;
+      border-radius: 2px;
+      transform: rotate(45deg);
+    }
+
+    .matrix-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+    }
+
+    table {
+      width: 100%;
+      min-width: 720px;
+      border-collapse: collapse;
+      background: rgba(255,255,255,0.025);
+    }
+
+    th,
+    td {
+      padding: 0.9rem 1rem;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--gold);
+      background: rgba(0,0,0,0.16);
+      font-size: 0.75rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    td {
+      color: #d5dcd8;
+      font-size: 0.88rem;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .check {
+      color: #9fd4af;
+      font-weight: 850;
+    }
+
+    .decision-panel {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(270px, 0.65fr);
+      gap: 1.25rem;
+      padding: clamp(1.2rem, 4vw, 2rem);
+      background: #10251b;
+      border: 1px solid rgba(239,201,105,0.32);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .decision-panel p {
+      color: var(--muted);
+    }
+
+    .decision-controls {
+      display: grid;
+      gap: 0.8rem;
+      align-content: start;
+    }
+
+    .field-label {
+      display: grid;
+      gap: 0.4rem;
+      color: #d7ded9;
+      font-size: 0.83rem;
+      font-weight: 750;
+    }
+
+    .field-label select {
+      width: 100%;
+      padding: 0.6rem 2.3rem 0.6rem 0.75rem;
+      color: white;
+      background: #081811;
+      border: 1px solid var(--line-strong);
+      border-radius: 9px;
+    }
+
+    .check-line {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.65rem;
+      min-height: 44px;
+      padding: 0.65rem 0.75rem;
+      color: #d8dfdb;
+      background: rgba(0,0,0,0.14);
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      cursor: pointer;
+      font-size: 0.84rem;
+    }
+
+    .check-line input {
+      width: 1.1rem;
+      height: 1.1rem;
+      margin-top: 0.1rem;
+      accent-color: var(--gold);
+    }
+
+    .decision-panel .summary-box {
+      margin: 1rem 0 0;
+      padding: 1rem;
+      color: #101a13;
+      background: var(--cream);
+      border-left: 5px solid var(--gold);
+      border-radius: 8px;
+      font-size: clamp(1rem, 2.7vw, 1.28rem);
+      font-weight: 850;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+    }
+
+    .action-button,
+    .button-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.65rem 1rem;
+      color: #0a160f;
+      background: var(--gold);
+      border: 1px solid var(--gold);
+      border-radius: 9px;
+      cursor: pointer;
+      font-weight: 850;
+      text-decoration: none;
+    }
+
+    .action-button.secondary,
+    .button-link.secondary {
+      color: white;
+      background: transparent;
+      border-color: var(--line-strong);
+    }
+
+    .copy-status {
+      min-height: 1.3rem;
+      margin: 0;
+      color: #b3d8be;
+      font-size: 0.8rem;
+    }
+
+    .approval-note {
+      margin: 1rem 0 0;
+      color: var(--quiet);
+      font-size: 0.79rem;
+    }
+
+    .sticky-decision {
+      position: fixed;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 60;
+      padding: 0.65rem max(1rem, env(safe-area-inset-right)) max(0.65rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+      background: rgba(7, 18, 14, 0.95);
+      border-top: 1px solid rgba(239,201,105,0.36);
+      box-shadow: 0 -10px 34px rgba(0,0,0,0.3);
+      backdrop-filter: blur(16px);
+    }
+
+    .sticky-inner {
+      display: flex;
+      width: min(1180px, 100%);
+      margin-inline: auto;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .sticky-label {
+      display: block;
+      color: var(--gold);
+      font-size: 0.66rem;
+      font-weight: 850;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .sticky-summary {
+      display: block;
+      overflow: hidden;
+      max-width: 720px;
+      color: white;
+      font-size: 0.88rem;
+      font-weight: 750;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .sticky-actions {
+      display: flex;
+      flex: 0 0 auto;
+      gap: 0.45rem;
+    }
+
+    .sticky-actions .action-button,
+    .sticky-actions .button-link {
+      min-height: 44px;
+      padding: 0.48rem 0.7rem;
+      font-size: 0.77rem;
+    }
+
+    footer {
+      padding: 2rem 0 8rem;
+      color: var(--quiet);
+      border-top: 1px solid var(--line);
+      font-size: 0.78rem;
+      text-align: center;
+    }
+
+    noscript {
+      display: block;
+      width: min(1180px, calc(100% - 2rem));
+      margin: 1rem auto;
+      padding: 1rem;
+      color: #2a160d;
+      background: #ffe1a7;
+      border-radius: 9px;
+    }
+
+    @media (max-width: 880px) {
+      .hero-grid,
+      .section-heading,
+      .concept-body,
+      .deck-option .concept-body,
+      .decision-panel {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-mark {
+        display: none;
+      }
+
+      .concept-copy {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .concept-copy > p,
+      .concept-copy .inspiration {
+        grid-column: 1 / -1;
+      }
+
+      .tradeoff {
+        margin-top: 0;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .wrap {
+        width: min(100% - 1rem, 1180px);
+      }
+
+      .hero {
+        padding-top: 2.7rem;
+      }
+
+      .hero-copy {
+        font-size: 0.98rem;
+      }
+
+      .quick-steps,
+      .phone-pair,
+      .concept-copy {
+        grid-template-columns: 1fr;
+      }
+
+      .phone-pair {
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        scrollbar-width: thin;
+      }
+
+      .swipe-cue {
+        display: block;
+        margin: 0 0 -0.55rem;
+        color: var(--gold);
+        font-size: 0.75rem;
+        font-weight: 800;
+      }
+
+      .phone-figure {
+        flex: 0 0 min(calc(100% - 28px), 280px);
+        scroll-snap-align: center;
+      }
+
+      .concept-top {
+        padding: 1rem;
+      }
+
+      .tag {
+        font-size: 0.62rem;
+      }
+
+      .baseline-note {
+        align-items: start;
+      }
+
+      .playing-card,
+      .card-back {
+        flex-basis: 62px;
+        width: 62px;
+      }
+
+      .sticky-inner {
+        align-items: stretch;
+      }
+
+      .sticky-summary {
+        max-width: 58vw;
+        font-size: 0.76rem;
+      }
+
+      .sticky-actions .button-link {
+        display: none;
+      }
+
+      .decision-panel {
+        padding: 1rem;
+      }
+    }
+
+    @media (max-width: 340px) {
+      .wrap {
+        width: calc(100% - 0.75rem);
+      }
+
+      h1 {
+        font-size: 2.22rem;
+      }
+
+      .concept-top {
+        gap: 0.5rem;
+      }
+
+      .option-title {
+        font-size: 1.23rem;
+      }
+
+      .tag {
+        max-width: 78px;
+        text-align: center;
+      }
+
+      .phone-figure {
+        flex-basis: calc(100% - 28px);
+      }
+
+      .phone {
+        width: 100%;
+      }
+
+      .sticky-summary {
+        max-width: 52vw;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+      }
+    }
+
+    @media print {
+      :root {
+        color-scheme: light;
+      }
+
+      * {
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+      }
+
+      body {
+        color: #172019;
+        background: white;
+      }
+
+      .hero {
+        padding-block: 1.5rem;
+        color: white;
+        background: #0f3422;
+      }
+
+      .section-nav,
+      .sticky-decision,
+      .action-button,
+      .button-link,
+      .hero-mark {
+        display: none !important;
+      }
+
+      main {
+        padding-bottom: 0;
+      }
+
+      section {
+        padding-block: 1.5rem;
+      }
+
+      .concept,
+      .decision-panel,
+      .quick-step,
+      .baseline-note {
+        break-inside: avoid;
+        box-shadow: none;
+      }
+
+      .concept {
+        color: white;
+        background: #10251b;
+      }
+
+      .concept-body,
+      .deck-option .concept-body {
+        grid-template-columns: 1.6fr 0.8fr;
+      }
+
+      .phone-pair {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .phone {
+        transform: scale(0.82);
+        transform-origin: top center;
+        margin-bottom: -85px;
+      }
+
+      .concept-copy {
+        display: block;
+      }
+
+      .concept-copy > * + * {
+        margin-top: 0.75rem;
+      }
+
+      .matrix-wrap {
+        overflow: visible;
+      }
+
+      table {
+        min-width: 0;
+      }
+
+      footer {
+        padding-bottom: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to concepts</a>
+
+  <header class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <p class="eyebrow">Five-O Poker · Mobile UI approval catalog</p>
+        <h1>Choose the interface. Build your table.</h1>
+        <p class="hero-copy">Mix any of three complete mobile interfaces, six table themes, and ten original playing-card systems for heads-up Five-O Poker. Interface A, Deck 1, Classic Green, and four-color suits are the familiar default—not a locked combination.</p>
+        <p class="concept-notice"><strong>Interactive reference catalog.</strong>&nbsp;These samples document the interface, table, deck, and suit-color choices now available in the application. Mock game content is illustrative, and appearance choices do not alter game behavior.</p>
+      </div>
+      <div class="hero-mark" aria-hidden="true">
+        <div class="hero-card"><span>A<small>♠</small></span></div>
+        <div class="hero-card"><span>5<small>♣</small></span></div>
+        <div class="hero-card"><span>Q<small>♥</small></span></div>
+        <div class="hero-card"><span>10<small>♠</small></span></div>
+        <div class="hero-card"><span>K<small>♦</small></span></div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="section-nav" aria-label="Catalog sections">
+    <div class="wrap">
+      <a href="#how-to-choose">How to choose</a>
+      <a href="#interfaces">Interface samples</a>
+      <a href="#table-themes">Table themes</a>
+      <a href="#cards">Card samples</a>
+      <a href="#comparison">Comparison</a>
+      <a href="#decision">Your decision</a>
+    </div>
+  </nav>
+
+  <noscript>The visual samples remain available, but JavaScript is required to draw the card faces and generate a copyable selection summary.</noscript>
+
+  <main id="main">
+    <section id="how-to-choose">
+      <div class="wrap">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">A small decision with a large effect</p>
+            <h2>How to use this catalog</h2>
+          </div>
+          <p>Judge the interface, table atmosphere, and card face separately. Every interface can combine with every theme, deck, and optional suit palette.</p>
+        </div>
+
+        <div class="quick-steps">
+          <article class="quick-step">
+            <span class="step-number">1</span>
+            <h3>Pick an interface</h3>
+            <p>Compare the lobby and active-game mockups. Focus on hierarchy, atmosphere, and one-thumb play.</p>
+          </article>
+          <article class="quick-step">
+            <span class="step-number">2</span>
+            <h3>Pick a table theme</h3>
+            <p>Choose the felt, rail, and accent atmosphere independently from screen layout.</p>
+          </article>
+          <article class="quick-step">
+            <span class="step-number">3</span>
+            <h3>Pick a deck</h3>
+            <p>Compare rank and suit recognition, familiar card character, selected states, and card backs.</p>
+          </article>
+          <article class="quick-step">
+            <span class="step-number">4</span>
+            <h3>Copy your choice</h3>
+            <p>Choose a suit palette and rounds, then copy the complete approval sentence.</p>
+          </article>
+        </div>
+
+        <div class="baseline-note">
+          <span class="baseline-score" aria-label="Starting baseline score: 39 out of 100">39/100</span>
+          <p><strong>Starting audited baseline.</strong> The improvement loop targeted a stable mobile hand rail, nearby placement actions, clearer score and turn hierarchy, familiar card anatomy, and larger interaction targets.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="interfaces">
+      <div class="wrap">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Step 1</p>
+            <h2 id="interface-options-heading">Interface samples</h2>
+          </div>
+          <p>Each direction shows the same two moments: entering a table and taking a turn. The game screen keeps score, turn state, legal rows, and the local hand continuously clear.</p>
+        </div>
+
+        <div class="option-stack" role="radiogroup" aria-labelledby="interface-options-heading">
+          <article class="concept concept-a" data-option-group="interface" data-option-value="A">
+            <div class="concept-top">
+              <label class="select-line">
+                <input type="radio" name="interface" value="A" checked>
+                <span>
+                  <span class="option-kicker">Interface A</span>
+                  <span class="option-title">Classic Cardroom</span>
+                </span>
+              </label>
+              <span class="tag">Default</span>
+            </div>
+            <div class="concept-body">
+              <p class="swipe-cue">Swipe screens: lobby → active game</p>
+              <div class="phone-pair" aria-label="Classic Cardroom lobby and gameplay concept screens">
+                <figure class="phone-figure">
+                  <div class="phone" aria-hidden="true">
+                    <div class="phone-screen">
+                      <div class="phone-status"><span>9:41</span><span class="signal">● ◒ ▰</span></div>
+                      <div class="screen-content">
+                        <div class="screen-brand"><strong>FIVE-O</strong><span class="tiny-icon">5♠♥</span></div>
+                        <p class="screen-eyebrow">Welcome back, Matt</p>
+                        <h4 class="screen-title">Take a seat.</h4>
+                        <p class="screen-subtitle">Five-O poker with the pace of a cardroom table.</p>
+                        <div class="mock-action-stack">
+                          <div class="mock-button">Create a game</div>
+                          <div class="mock-field">Invite code · K7MP4Q2H</div>
+                          <div class="mock-button secondary">Join game</div>
+                        </div>
+                        <div class="screen-divider">Your games</div>
+                        <div class="room-list">
+                          <div class="room-item"><span><strong>vs Alex</strong><small>Game 4 · your turn</small></span><span class="room-badge">Rejoin</span></div>
+                          <div class="room-item"><span><strong>Waiting for opponent</strong><small>Invite · K7MP4Q2H</small></span><span class="room-badge">Share</span></div>
+                        </div>
+                        <div class="bottom-nav"><span class="active">Your games</span><span>Rules</span><span>Your stats</span></div>
+                      </div>
+                    </div>
+                  </div>
+                  <figcaption>Lobby sample<span class="sr-only">: a traditional cardroom lobby with private create and invite-code join controls, plus Your games showing an active game versus Alex and a waiting invite.</span></figcaption>
+                </figure>
+                <figure class="phone-figure">
+                  <div class="phone" aria-hidden="true">
+                    <div class="phone-screen">
+                      <div class="phone-status"><span>9:41</span><span class="signal">● ◒ ▰</span></div>
+                      <div class="screen-content">
+                        <div class="screen-brand"><strong>Game 4</strong><span class="tiny-icon">⚙</span></div>
+                        <div class="score-strip"><div class="score-side"><span>You</span><strong>2/5</strong></div><div class="score-side"><span>Alex</span><strong>1/5</strong></div></div>
+                        <div class="game-progress"><span>12 / 20 placed</span><span class="score-pips" aria-hidden="true"><i class="won"></i><i class="won"></i><i></i><i></i><i></i></span></div>
+                        <div class="turn-banner">Your turn</div>
+                        <div class="turn-hint">Tap a card in your hand to pick it</div>
+                        <div class="table-zone">
+                          <div class="seat"><span class="seat-dot">A</span><span>Alex's four rows + hidden hand</span></div>
+                          <div class="table-cards">
+                            <div class="stack"><span class="stack-label">1</span><span class="micro-card red" data-rank="8">♥</span></div>
+                            <div class="stack"><span class="stack-label">2</span><span class="micro-card" data-rank="K">♣</span></div>
+                            <div class="stack"><span class="stack-label">3</span><span class="micro-card red" data-rank="4">♦</span></div>
+                            <div class="stack"><span class="stack-label">4</span><span class="micro-card target" data-rank=""></span></div>
+                            <div class="stack"><span class="stack-label">hidden</span><span class="micro-card back" data-rank=""></span></div>
+                          </div>
+                          <div class="seat"><span class="seat-dot">M</span><span>Your four public rows</span></div>
+                        </div>
+                        <div class="placement-actions"><span>Hand 1</span><span>Hand 2</span><span>Hand 3</span><span class="legal">Hand 4</span></div>
+                        <div class="hidden-hand-label">Your hidden hand · Discard available</div>
+                        <div class="hand-rail">
+                          <span class="hand-card" data-rank="A">♠</span><span class="hand-card red" data-rank="7">♥</span><span class="hand-card selected" data-rank="Q">♣</span><span class="hand-card red" data-rank="10">♦</span><span class="hand-card" data-rank="5">♠</span><span class="hand-card red" data-rank="3">♥</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <figcaption>Active gameplay sample<span class="sr-only">: a felt cardroom table with a 2 to 1 score, 12 of 20 cards placed, a prominent Your turn banner, four direct hand actions, an opponent hidden-hand back, and a six-card local hand.</span></figcaption>
+                </figure>
+              </div>
+              <div class="concept-copy">
+                <p>A warm, traditional cardroom built from green felt, burgundy, brass, serif type, and visible table rails.</p>
+                <div>
+                  <h3>Best qualities</h3>
+                  <ul class="mini-list">
+                    <li>Most familiar tabletop atmosphere.</li>
+                    <li>Strong emotional link to physical card play.</li>
+                    <li>Ornament supports the game theme without changing rules.</li>
+                  </ul>
+                </div>
+                <div class="tradeoff"><strong>Tradeoff:</strong> Decorative details consume more visual space and require discipline to stay crisp on a 320px screen.</div>
+                <p class="inspiration">Influenced by classic cardrooms and the table composition of <a href="https://www.trickstercards.com/" target="_blank" rel="noopener noreferrer">Trickster Cards</a> and <a href="https://apps.apple.com/us/app/euchre-3d/id364909474" target="_blank" rel="noopener noreferrer">Euchre 3D</a>. Commercial references are inspiration only; no artwork is copied.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="concept concept-b" data-option-group="interface" data-option-value="B">
+            <div class="concept-top">
+              <label class="select-line">
+                <input type="radio" name="interface" value="B">
+                <span>
+                  <span class="option-kicker">Interface B</span>
+                  <span class="option-title">Modern Tournament</span>
+                </span>
+              </label>
+            </div>
+            <div class="concept-body">
+              <p class="swipe-cue">Swipe screens: lobby → active game</p>
+              <div class="phone-pair" aria-label="Modern Tournament lobby and gameplay concept screens">
+                <figure class="phone-figure">
+                  <div class="phone" aria-hidden="true">
+                    <div class="phone-screen">
+                      <div class="phone-status"><span>9:41</span><span class="signal">● ◒ ▰</span></div>
+                      <div class="screen-content">
+                        <div class="screen-brand"><strong>FIVE-O</strong><span class="tiny-icon">5♠♥</span></div>
+                        <p class="screen-eyebrow">Ready to play?</p>
+                        <h4 class="screen-title">Your next table is one tap away.</h4>
+                        <p class="screen-subtitle">Fast setup, clear turns, and nothing between you and the cards.</p>
+                        <div class="mock-action-stack">
+                          <div class="mock-button">Create a game</div>
+                          <div class="mock-field">Invite code · K7MP4Q2H</div>
+                          <div class="mock-button secondary">Join game</div>
+                        </div>
+                        <div class="screen-divider">Your games</div>
+                        <div class="room-list">
+                          <div class="room-item"><span><strong>vs Alex</strong><small>Game 4 · your turn</small></span><span class="room-badge">Play</span></div>
+                          <div class="room-item"><span><strong>Waiting for opponent</strong><small>Invite · K7MP4Q2H</small></span><span class="room-badge">Share</span></div>
+                        </div>
+                        <div class="bottom-nav"><span class="active">Your games</span><span>Rules</span><span>Your stats</span></div>
+                      </div>
+                    </div>
+                  </div>
+                  <figcaption>Lobby sample<span class="sr-only">: a high-contrast tournament lobby with private create and invite-code join controls, plus Your games showing an active game versus Alex and a waiting invite.</span></figcaption>
+                </figure>
+                <figure class="phone-figure">
+                  <div class="phone" aria-hidden="true">
+                    <div class="phone-screen">
+                      <div class="phone-status"><span>9:41</span><span class="signal">● ◒ ▰</span></div>
+                      <div class="screen-content">
+                        <div class="screen-brand"><strong>GAME 4</strong><span class="tiny-icon">•••</span></div>
+                        <div class="score-strip"><div class="score-side"><span>You</span><strong>2/5</strong></div><div class="score-side"><span>Alex</span><strong>1/5</strong></div></div>
+                        <div class="game-progress"><span>12 / 20 placed</span><span>First to 5 games</span></div>
+                        <div class="turn-banner">Your turn</div>
+                        <div class="turn-hint">Tap a highlighted hand to place — or Discard</div>
+                        <div class="table-zone">
+                          <div class="seat"><span class="seat-dot">A</span><span>Alex's four rows + hidden</span></div>
+                          <div class="table-cards">
+                            <div class="stack"><span class="stack-label">1</span><span class="micro-card red" data-rank="8">♥</span></div>
+                            <div class="stack"><span class="stack-label">2</span><span class="micro-card" data-rank="K">♣</span></div>
+                            <div class="stack"><span class="stack-label">3</span><span class="micro-card red" data-rank="4">♦</span></div>
+                            <div class="stack"><span class="stack-label">4</span><span class="micro-card target" data-rank=""></span></div>
+                            <div class="stack"><span class="stack-label">hidden</span><span class="micro-card back" data-rank=""></span></div>
+                          </div>
+                          <div class="seat"><span class="seat-dot">M</span><span>Your four rows · row 4 is open</span></div>
+                        </div>
+                        <div class="placement-actions"><span>Row 1</span><span>Row 2</span><span>Row 3</span><span class="legal">Row 4</span></div>
+                        <div class="hidden-hand-label">Your hidden hand · Discard</div>
+                        <div class="hand-rail">
+                          <span class="hand-card" data-rank="A">♠</span><span class="hand-card red" data-rank="7">♥</span><span class="hand-card selected" data-rank="Q">♣</span><span class="hand-card red" data-rank="10">♦</span><span class="hand-card" data-rank="5">♠</span><span class="hand-card red" data-rank="3">♥</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <figcaption>Active gameplay sample<span class="sr-only">: a compact tournament table with persistent 2 to 1 score and turn status, four row actions directly above a stable six-card hand rail, and the opponent hidden hand shown face-down.</span></figcaption>
+                </figure>
+              </div>
+              <div class="concept-copy">
+                <p>A focused competitive surface with bold hierarchy, compact scorekeeping, and a stable bottom action rail built for one thumb.</p>
+                <div>
+                  <h3>Best qualities</h3>
+                  <ul class="mini-list">
+                    <li>Fastest scanning during active play.</li>
+                    <li>Score, turn, target rows, and hand stay continuously visible.</li>
+                    <li>Clean system scales well from 320px to larger phones.</li>
+                  </ul>
+                </div>
+                <div class="tradeoff"><strong>Tradeoff:</strong> The restrained treatment feels more like a modern game app than a richly decorated physical cardroom.</div>
+                <p class="inspiration">Combines the distraction-free table of <a href="https://www.trickstercards.com/" target="_blank" rel="noopener noreferrer">Trickster Cards</a>, persistent readability of <a href="https://apps.apple.com/us/app/hearts/id378332032" target="_blank" rel="noopener noreferrer">Hearts</a>, and familiar-modern restraint of <a href="https://apps.apple.com/us/app/solitaire-by-mobilityware/id284791396" target="_blank" rel="noopener noreferrer">MobilityWare Solitaire</a>. Inspiration only.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="concept concept-c" data-option-group="interface" data-option-value="C">
+            <div class="concept-top">
+              <label class="select-line">
+                <input type="radio" name="interface" value="C">
+                <span>
+                  <span class="option-kicker">Interface C</span>
+                  <span class="option-title">Quiet Premium</span>
+                </span>
+              </label>
+            </div>
+            <div class="concept-body">
+              <p class="swipe-cue">Swipe screens: lobby → active game</p>
+              <div class="phone-pair" aria-label="Quiet Premium lobby and gameplay concept screens">
+                <figure class="phone-figure">
+                  <div class="phone" aria-hidden="true">
+                    <div class="phone-screen">
+                      <div class="phone-status"><span>9:41</span><span class="signal">● ◒ ▰</span></div>
+                      <div class="screen-content">
+                        <div class="screen-brand"><strong>Five—O</strong><span class="tiny-icon">5♠♥</span></div>
+                        <div style="height: 38px"></div>
+                        <p class="screen-eyebrow">Private card play</p>
+                        <h4 class="screen-title">A table for two.</h4>
+                        <p class="screen-subtitle">Unhurried presentation. Every decision receives space.</p>
+                        <div class="mock-action-stack">
+                          <div class="mock-button">Create a game</div>
+                          <div class="mock-field">Invite code · K7MP4Q2H</div>
+                          <div class="mock-button secondary">Join game</div>
+                        </div>
+                        <div class="screen-divider">Your games</div>
+                        <div class="room-list">
+                          <div class="room-item"><span><strong>vs Alex</strong><small>Game 3 · match score 2 to 1</small></span><span class="room-badge">Open</span></div>
+                        </div>
+                        <div class="bottom-nav"><span class="active">Your games</span><span>Rules</span><span>Your stats</span></div>
+                      </div>
+                    </div>
+                  </div>
+                  <figcaption>Lobby sample<span class="sr-only">: a quiet premium lobby with private create and invite-code join controls, followed by a restrained Your games area showing game three versus Alex.</span></figcaption>
+                </figure>
+                <figure class="phone-figure">
+                  <div class="phone" aria-hidden="true">
+                    <div class="phone-screen">
+                      <div class="phone-status"><span>9:41</span><span class="signal">● ◒ ▰</span></div>
+                      <div class="screen-content">
+                        <div class="screen-brand"><strong>Game 4</strong><span class="tiny-icon">••</span></div>
+                        <div class="score-strip"><div class="score-side"><span>You</span><strong>2/5</strong></div><div class="score-side"><span>Alex</span><strong>1/5</strong></div></div>
+                        <div class="game-progress"><span>12 / 20 placed</span><span>Game 4</span></div>
+                        <div class="turn-banner">Your turn</div>
+                        <div class="turn-hint">Tap a highlighted hand to place — or Discard</div>
+                        <div class="table-zone">
+                          <div class="seat"><span class="seat-dot">A</span><span>Alex's four rows + hidden</span></div>
+                          <div class="table-cards">
+                            <div class="stack"><span class="stack-label">I</span><span class="micro-card red" data-rank="8">♥</span></div>
+                            <div class="stack"><span class="stack-label">II</span><span class="micro-card" data-rank="K">♣</span></div>
+                            <div class="stack"><span class="stack-label">III</span><span class="micro-card red" data-rank="4">♦</span></div>
+                            <div class="stack"><span class="stack-label">IV</span><span class="micro-card target" data-rank=""></span></div>
+                            <div class="stack"><span class="stack-label">hidden</span><span class="micro-card back" data-rank=""></span></div>
+                          </div>
+                          <div class="seat"><span class="seat-dot">M</span><span>Your four public rows</span></div>
+                        </div>
+                        <div class="placement-actions"><span>I</span><span>II</span><span>III</span><span class="legal">IV</span></div>
+                        <div class="hidden-hand-label">Your hidden hand · Discard</div>
+                        <div class="hand-rail">
+                          <span class="hand-card" data-rank="A">♠</span><span class="hand-card red" data-rank="7">♥</span><span class="hand-card selected" data-rank="Q">♣</span><span class="hand-card red" data-rank="10">♦</span><span class="hand-card" data-rank="5">♠</span><span class="hand-card red" data-rank="3">♥</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <figcaption>Active gameplay sample<span class="sr-only">: a quiet editorial table where the cards remain brightest, with persistent 2 to 1 score and turn state, four direct row actions, and a stable six-card local hand.</span></figcaption>
+                </figure>
+              </div>
+              <div class="concept-copy">
+                <p>A low-noise, editorial direction using charcoal, warm ivory, muted metal accents, square geometry, and deliberate spacing.</p>
+                <div>
+                  <h3>Best qualities</h3>
+                  <ul class="mini-list">
+                    <li>Most distinctive and sophisticated visual identity.</li>
+                    <li>Cards become the brightest and clearest objects.</li>
+                    <li>Strong fit for calm asynchronous play.</li>
+                  </ul>
+                </div>
+                <div class="tradeoff"><strong>Tradeoff:</strong> The quieter palette offers less energetic turn feedback and can feel formal if animation and copy are too restrained.</div>
+                <p class="inspiration">Draws on premium tabletop materials and restrained editorial interfaces. It is an original code-native composition with no borrowed commercial artwork.</p>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="table-themes">
+      <div class="wrap">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Step 2</p>
+            <h2 id="theme-options-heading">Table-theme samples</h2>
+          </div>
+          <p>The table theme changes felt, rail, and accent materials without changing navigation, card anatomy, scoring, or game behavior.</p>
+        </div>
+
+        <div class="theme-grid" role="radiogroup" aria-labelledby="theme-options-heading">
+          <article class="concept theme-option" data-option-group="theme" data-option-value="classic-green">
+            <div class="concept-top">
+              <label class="select-line">
+                <input type="radio" name="theme" value="classic-green" checked>
+                <span><span class="option-kicker">Table theme</span><span class="option-title">Classic Green</span></span>
+              </label>
+              <span class="tag">Default</span>
+            </div>
+            <div class="theme-preview theme-green" role="img" aria-label="Classic green felt table with walnut rail and brass accents">
+              <span class="theme-seat top" aria-hidden="true"></span><span class="theme-seat bottom" aria-hidden="true"></span><span class="theme-chip left" aria-hidden="true"></span><span class="theme-chip right" aria-hidden="true"></span><span class="theme-mini-card" aria-hidden="true"></span><span class="theme-name" aria-hidden="true">Felt · walnut · brass</span>
+            </div>
+          </article>
+
+          <article class="concept theme-option" data-option-group="theme" data-option-value="midnight-navy">
+            <div class="concept-top">
+              <label class="select-line">
+                <input type="radio" name="theme" value="midnight-navy">
+                <span><span class="option-kicker">Table theme</span><span class="option-title">Midnight Navy</span></span>
+              </label>
+            </div>
+            <div class="theme-preview theme-navy" role="img" aria-label="Midnight navy table with black rail and cool blue accents">
+              <span class="theme-seat top" aria-hidden="true"></span><span class="theme-seat bottom" aria-hidden="true"></span><span class="theme-chip left" aria-hidden="true"></span><span class="theme-chip right" aria-hidden="true"></span><span class="theme-mini-card" aria-hidden="true"></span><span class="theme-name" aria-hidden="true">Navy · black · ice blue</span>
+            </div>
+          </article>
+
+          <article class="concept theme-option" data-option-group="theme" data-option-value="burgundy-club">
+            <div class="concept-top">
+              <label class="select-line">
+                <input type="radio" name="theme" value="burgundy-club">
+                <span><span class="option-kicker">Table theme</span><span class="option-title">Burgundy Club</span></span>
+              </label>
+            </div>
+            <div class="theme-preview theme-burgundy" role="img" aria-label="Burgundy club table with dark rail and warm gold accents">
+              <span class="theme-seat top" aria-hidden="true"></span><span class="theme-seat bottom" aria-hidden="true"></span><span class="theme-chip left" aria-hidden="true"></span><span class="theme-chip right" aria-hidden="true"></span><span class="theme-mini-card" aria-hidden="true"></span><span class="theme-name" aria-hidden="true">Burgundy · oxblood · gold</span>
+            </div>
+          </article>
+
+          <article class="concept theme-option" data-option-group="theme" data-option-value="oled-night">
+            <div class="concept-top">
+              <label class="select-line">
+                <input type="radio" name="theme" value="oled-night">
+                <span><span class="option-kicker">Table theme</span><span class="option-title">OLED Night</span></span>
+              </label>
+            </div>
+            <div class="theme-preview theme-oled" role="img" aria-label="Near-black OLED table with dark green felt and bright mint accents">
+              <span class="theme-seat top" aria-hidden="true"></span><span class="theme-seat bottom" aria-hidden="true"></span><span class="theme-chip left" aria-hidden="true"></span><span class="theme-chip right" aria-hidden="true"></span><span class="theme-mini-card" aria-hidden="true"></span><span class="theme-name" aria-hidden="true">Black · deep green · mint</span>
+            </div>
+          </article>
+
+          <article class="concept theme-option" data-option-group="theme" data-option-value="warm-walnut">
+            <div class="concept-top">
+              <label class="select-line">
+                <input type="radio" name="theme" value="warm-walnut">
+                <span><span class="option-kicker">Table theme</span><span class="option-title">Warm Walnut Home Game</span></span>
+              </label>
+            </div>
+            <div class="theme-preview theme-walnut" role="img" aria-label="Home-game green table with broad warm walnut rail and cream accents">
+              <span class="theme-seat top" aria-hidden="true"></span><span class="theme-seat bottom" aria-hidden="true"></span><span class="theme-chip left" aria-hidden="true"></span><span class="theme-chip right" aria-hidden="true"></span><span class="theme-mini-card" aria-hidden="true"></span><span class="theme-name" aria-hidden="true">Moss · walnut · cream</span>
+            </div>
+          </article>
+
+          <article class="concept theme-option" data-option-group="theme" data-option-value="retro-90s">
+            <div class="concept-top">
+              <label class="select-line">
+                <input type="radio" name="theme" value="retro-90s">
+                <span><span class="option-kicker">Table theme</span><span class="option-title">Retro 90s</span></span>
+              </label>
+            </div>
+            <div class="theme-preview theme-retro" role="img" aria-label="Retro 1990s teal table with purple rail and yellow accents">
+              <span class="theme-seat top" aria-hidden="true"></span><span class="theme-seat bottom" aria-hidden="true"></span><span class="theme-chip left" aria-hidden="true"></span><span class="theme-chip right" aria-hidden="true"></span><span class="theme-mini-card" aria-hidden="true"></span><span class="theme-name" aria-hidden="true">Teal · purple · arcade yellow</span>
+            </div>
+          </article>
+        </div>
+
+        <p class="theme-art-note">These are original, code-native theme studies based on familiar casino, home-game, dark-mode, and retro-digital categories. Product names, logos, textures, and artwork from commercial references are not included; any future third-party asset must be license-verified and attributed before use.</p>
+      </div>
+    </section>
+
+    <section id="cards">
+      <div class="wrap">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Step 3</p>
+            <h2 id="card-options-heading">Playing-card samples</h2>
+          </div>
+          <p>Every direction keeps a familiar physical-card silhouette, redundant suit shapes, strong contrast, and exposed corner indexes for fanned hands.</p>
+        </div>
+        <p class="cards-intro">Each face row includes numeric and court ranks across all four suits. The second row demonstrates selected and unavailable states plus original Five-O back patterns. Scroll a row horizontally on a narrow phone.</p>
+
+        <div class="option-stack" role="radiogroup" aria-labelledby="card-options-heading">
+          <article class="concept deck-option" data-option-group="card" data-option-value="1">
+            <div class="concept-top">
+              <label class="select-line">
+                <input type="radio" name="card" value="1" checked>
+                <span>
+                  <span class="option-kicker">Deck 1</span>
+                  <span class="option-title">Classic Jumbo Index</span>
+                </span>
+              </label>
+              <span class="tag">Default</span>
+            </div>
+            <div class="concept-body">
+              <div class="card-stage deck-classic">
+                <span class="sample-label">Face recognition · all suits</span>
+                <div class="card-row face-row" tabindex="0" aria-label="Classic Jumbo Index face-card samples">
+                  <div class="playing-card suit-s" data-rank="A" data-suit="s"></div>
+                  <div class="playing-card suit-h" data-rank="7" data-suit="h"></div>
+                  <div class="playing-card suit-d" data-rank="10" data-suit="d"></div>
+                  <div class="playing-card suit-c" data-rank="J" data-suit="c"></div>
+                  <div class="playing-card suit-h" data-rank="Q" data-suit="h"></div>
+                  <div class="playing-card suit-s" data-rank="K" data-suit="s"></div>
+                </div>
+                <span class="sample-label">Interaction and backs</span>
+                <div class="card-row" tabindex="0" aria-label="Classic Jumbo Index selected, unavailable, and card-back samples">
+                  <div class="playing-card suit-c is-selected" data-rank="Q" data-suit="c" data-state="Selected"></div>
+                  <div class="playing-card suit-d is-disabled" data-rank="6" data-suit="d" data-state="Unavailable"></div>
+                  <div class="card-back" role="img" aria-label="Burgundy geometric Five-O card back"></div>
+                  <div class="card-back blue" role="img" aria-label="Blue geometric Five-O card back"></div>
+                </div>
+              </div>
+              <div class="concept-copy">
+                <p>Traditional off-white stock, mirrored oversized indexes, restrained center pips, fine edges, and original double-keyline backs.</p>
+                <div>
+                  <h3>Why choose it</h3>
+                  <ul class="mini-list">
+                    <li>Best balance of familiarity and mobile recognition.</li>
+                    <li>Large index survives overlap and small board sizes.</li>
+                    <li>Works in default four-color or traditional two-color mode.</li>
+                  </ul>
+                </div>
+                <div class="tradeoff"><strong>Tradeoff:</strong> Less illustrative than a full court deck, but clearer during actual play.</div>
+                <p class="inspiration">Original Five-O artwork informed by common jumbo-index geometry and <a href="https://www.copagusa.com/products/poker-size-jumbo-index" target="_blank" rel="noopener noreferrer">Copag Jumbo Index</a>. Commercial artwork and branding are inspiration only and will not be copied.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="concept deck-option" data-option-group="card" data-option-value="2">
+            <div class="concept-top">
+              <label class="select-line">
+                <input type="radio" name="card" value="2">
+                <span>
+                  <span class="option-kicker">Deck 2</span>
+                  <span class="option-title">Authentic Pip &amp; Court</span>
+                </span>
+              </label>
+            </div>
+            <div class="concept-body">
+              <div class="card-stage deck-authentic">
+                <span class="sample-label">Face recognition · all suits</span>
+                <div class="card-row face-row" tabindex="0" aria-label="Authentic Pip and Court face-card samples">
+                  <div class="playing-card suit-s" data-rank="A" data-suit="s"></div>
+                  <div class="playing-card suit-h" data-rank="7" data-suit="h"></div>
+                  <div class="playing-card suit-d" data-rank="10" data-suit="d"></div>
+                  <div class="playing-card suit-c" data-rank="J" data-suit="c"></div>
+                  <div class="playing-card suit-h" data-rank="Q" data-suit="h"></div>
+                  <div class="playing-card suit-s" data-rank="K" data-suit="s"></div>
+                </div>
+                <span class="sample-label">Interaction and backs</span>
+                <div class="card-row" tabindex="0" aria-label="Authentic Pip and Court selected, unavailable, and card-back samples">
+                  <div class="playing-card suit-c is-selected" data-rank="Q" data-suit="c" data-state="Selected"></div>
+                  <div class="playing-card suit-d is-disabled" data-rank="6" data-suit="d" data-state="Unavailable"></div>
+                  <div class="card-back" role="img" aria-label="Burgundy geometric Five-O card back"></div>
+                  <div class="card-back charcoal" role="img" aria-label="Charcoal lattice Five-O card back"></div>
+                </div>
+              </div>
+              <div class="concept-copy">
+                <p>Conventional pip layouts and framed mirrored court monograms make this the closest visual match to a complete physical deck.</p>
+                <div>
+                  <h3>Why choose it</h3>
+                  <ul class="mini-list">
+                    <li>Strongest traditional playing-card character.</li>
+                    <li>Numeric cards remain countable at a glance.</li>
+                    <li>Courts create visual variety and collectability.</li>
+                  </ul>
+                </div>
+                <div class="tradeoff"><strong>Tradeoff:</strong> Highest art, rendering, and QA effort. Fine face detail is less valuable on the smallest opponent cards.</div>
+                <p class="inspiration">Production can use wholly original court motifs or adapt a verified CC0 base such as <a href="https://github.com/letele/playing-cards" target="_blank" rel="noopener noreferrer">letele SVG Playing Cards</a>. Any reused source will retain its license record.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="concept deck-option" data-option-group="card" data-option-value="3">
+            <div class="concept-top">
+              <label class="select-line">
+                <input type="radio" name="card" value="3">
+                <span>
+                  <span class="option-kicker">Deck 3</span>
+                  <span class="option-title">Four-Color Tournament</span>
+                </span>
+              </label>
+            </div>
+            <div class="concept-body">
+              <div class="card-stage deck-four">
+                <span class="sample-label">Face recognition · black, red, blue, green</span>
+                <div class="card-row face-row" tabindex="0" aria-label="Four-Color Tournament face-card samples">
+                  <div class="playing-card suit-s" data-rank="A" data-suit="s"></div>
+                  <div class="playing-card suit-h" data-rank="7" data-suit="h"></div>
+                  <div class="playing-card suit-d" data-rank="10" data-suit="d"></div>
+                  <div class="playing-card suit-c" data-rank="J" data-suit="c"></div>
+                  <div class="playing-card suit-h" data-rank="Q" data-suit="h"></div>
+                  <div class="playing-card suit-s" data-rank="K" data-suit="s"></div>
+                </div>
+                <span class="sample-label">Interaction and backs</span>
+                <div class="card-row" tabindex="0" aria-label="Four-Color Tournament selected, unavailable, and card-back samples">
+                  <div class="playing-card suit-c is-selected" data-rank="Q" data-suit="c" data-state="Selected"></div>
+                  <div class="playing-card suit-d is-disabled" data-rank="6" data-suit="d" data-state="Unavailable"></div>
+                  <div class="card-back blue" role="img" aria-label="Blue geometric Five-O card back"></div>
+                  <div class="card-back charcoal" role="img" aria-label="Charcoal lattice Five-O card back"></div>
+                </div>
+              </div>
+              <div class="concept-copy">
+                <p>A casino-clear deck where spades stay black, hearts red, diamonds blue, and clubs green. Shape remains the primary cue.</p>
+                <div>
+                  <h3>Why choose it</h3>
+                  <ul class="mini-list">
+                    <li>Fastest suit separation in dense mobile layouts.</li>
+                    <li>Particularly helpful in a multi-row strategy game.</li>
+                    <li>Preserves a conventional card silhouette and mirrored index.</li>
+                  </ul>
+                </div>
+                <div class="tradeoff"><strong>Tradeoff:</strong> Less familiar to players expecting red-and-black cards; best retained as a setting even if it is not the default.</div>
+                <p class="inspiration">Original geometry informed by four-color trick-taking decks such as <a href="https://www.copagusa.com/collections/class-series/products/copag-4-color-poker-size-jumbo-index-playing-cards-blue-red" target="_blank" rel="noopener noreferrer">Copag four-color jumbo</a>. Commercial art is inspiration only.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="concept deck-option" data-option-group="card" data-option-value="4">
+            <div class="concept-top">
+              <label class="select-line">
+                <input type="radio" name="card" value="4">
+                <span>
+                  <span class="option-kicker">Deck 4</span>
+                  <span class="option-title">Minimal Mobile</span>
+                </span>
+              </label>
+            </div>
+            <div class="concept-body">
+              <div class="card-stage deck-minimal">
+                <span class="sample-label">Face recognition · all suits</span>
+                <div class="card-row face-row" tabindex="0" aria-label="Minimal Mobile face-card samples">
+                  <div class="playing-card suit-s" data-rank="A" data-suit="s"></div>
+                  <div class="playing-card suit-h" data-rank="7" data-suit="h"></div>
+                  <div class="playing-card suit-d" data-rank="10" data-suit="d"></div>
+                  <div class="playing-card suit-c" data-rank="J" data-suit="c"></div>
+                  <div class="playing-card suit-h" data-rank="Q" data-suit="h"></div>
+                  <div class="playing-card suit-s" data-rank="K" data-suit="s"></div>
+                </div>
+                <span class="sample-label">Interaction and backs</span>
+                <div class="card-row" tabindex="0" aria-label="Minimal Mobile selected, unavailable, and card-back samples">
+                  <div class="playing-card suit-c is-selected" data-rank="Q" data-suit="c" data-state="Selected"></div>
+                  <div class="playing-card suit-d is-disabled" data-rank="6" data-suit="d" data-state="Unavailable"></div>
+                  <div class="card-back" role="img" aria-label="Burgundy geometric Five-O card back"></div>
+                  <div class="card-back blue" role="img" aria-label="Blue geometric Five-O card back"></div>
+                </div>
+              </div>
+              <div class="concept-copy">
+                <p>A clean sans-serif index, generous white space, and an oversized translucent suit watermark for fast recognition.</p>
+                <div>
+                  <h3>Why choose it</h3>
+                  <ul class="mini-list">
+                    <li>Cleanest match for a modern application UI.</li>
+                    <li>Easy to scale and render consistently.</li>
+                    <li>Strong hierarchy with very little visual noise.</li>
+                  </ul>
+                </div>
+                <div class="tradeoff"><strong>Tradeoff:</strong> Feels more like a digital game tile and less like a card taken from a physical deck.</div>
+                <p class="inspiration">Original Five-O treatment. A verified CC0 resource such as the <a href="https://kenney.nl/assets/playing-cards-pack" target="_blank" rel="noopener noreferrer">Kenney Playing Cards Pack</a> could provide implementation scaffolding, but this sample does not copy its art.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="concept deck-option" data-option-group="card" data-option-value="5">
+            <div class="concept-top">
+              <label class="select-line">
+                <input type="radio" name="card" value="5">
+                <span>
+                  <span class="option-kicker">Deck 5</span>
+                  <span class="option-title">Mobile Index-First</span>
+                </span>
+              </label>
+            </div>
+            <div class="concept-body">
+              <div class="card-stage deck-index">
+                <span class="sample-label">Face recognition · all suits</span>
+                <div class="card-row face-row" tabindex="0" aria-label="Mobile Index-First face-card samples">
+                  <div class="playing-card suit-s" data-rank="A" data-suit="s"></div>
+                  <div class="playing-card suit-h" data-rank="7" data-suit="h"></div>
+                  <div class="playing-card suit-d" data-rank="10" data-suit="d"></div>
+                  <div class="playing-card suit-c" data-rank="J" data-suit="c"></div>
+                  <div class="playing-card suit-h" data-rank="Q" data-suit="h"></div>
+                  <div class="playing-card suit-s" data-rank="K" data-suit="s"></div>
+                </div>
+                <span class="sample-label">Interaction and backs</span>
+                <div class="card-row" tabindex="0" aria-label="Mobile Index-First selected, unavailable, and card-back samples">
+                  <div class="playing-card suit-c is-selected" data-rank="Q" data-suit="c" data-state="Selected"></div>
+                  <div class="playing-card suit-d is-disabled" data-rank="6" data-suit="d" data-state="Unavailable"></div>
+                  <div class="card-back blue" role="img" aria-label="Blue geometric Five-O card back"></div>
+                  <div class="card-back charcoal" role="img" aria-label="Charcoal lattice Five-O card back"></div>
+                </div>
+              </div>
+              <div class="concept-copy">
+                <p>The largest rank in the catalog, paired with a bold suit and pale watermark. This is the distance-reading benchmark.</p>
+                <div>
+                  <h3>Why choose it</h3>
+                  <ul class="mini-list">
+                    <li>Fastest rank recognition at arm's length.</li>
+                    <li>Excellent when card overlap exposes only the upper corner.</li>
+                    <li>Simple geometry is robust at every game scale.</li>
+                  </ul>
+                </div>
+                <div class="tradeoff"><strong>Tradeoff:</strong> Least traditional option; it prioritizes functional recognition over the familiar composition of a physical card face.</div>
+                <p class="inspiration">Entirely original code-native artwork. Standard suit symbols provide recognition, while the layout is specific to this Five-O concept.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="concept deck-option" data-option-group="card" data-option-value="6">
+            <div class="concept-top">
+              <label class="select-line">
+                <input type="radio" name="card" value="6">
+                <span><span class="option-kicker">Deck 6</span><span class="option-title">Bridge Compact Jumbo</span></span>
+              </label>
+            </div>
+            <div class="concept-body">
+              <div class="card-stage deck-bridge">
+                <span class="sample-label">Narrow bridge proportion · jumbo index</span>
+                <div class="card-row face-row" tabindex="0" aria-label="Bridge Compact Jumbo face-card samples">
+                  <div class="playing-card suit-s" data-rank="A" data-suit="s"></div><div class="playing-card suit-h" data-rank="7" data-suit="h"></div><div class="playing-card suit-d" data-rank="10" data-suit="d"></div><div class="playing-card suit-c" data-rank="J" data-suit="c"></div><div class="playing-card suit-h" data-rank="Q" data-suit="h"></div><div class="playing-card suit-s" data-rank="K" data-suit="s"></div>
+                </div>
+                <span class="sample-label">Interaction and backs</span>
+                <div class="card-row" tabindex="0" aria-label="Bridge Compact Jumbo selected, unavailable, and card-back samples">
+                  <div class="playing-card suit-c is-selected" data-rank="Q" data-suit="c" data-state="Selected"></div><div class="playing-card suit-d is-disabled" data-rank="6" data-suit="d" data-state="Unavailable"></div><div class="card-back blue" role="img" aria-label="Blue grid Five-O card back"></div><div class="card-back" role="img" aria-label="Burgundy grid Five-O card back"></div>
+                </div>
+              </div>
+              <div class="concept-copy">
+                <p>A narrower, familiar bridge-size silhouette fits more cards across a small screen while keeping a large mirrored corner index.</p>
+                <div><h3>Why choose it</h3><ul class="mini-list"><li>More breathing room in five-column rows.</li><li>Comfortable for fanned or overlapping hands.</li><li>Retains traditional proportions and two-corner reading.</li></ul></div>
+                <div class="tradeoff"><strong>Tradeoff:</strong> The narrower center gives detailed pip and court art less room.</div>
+                <p class="inspiration">Original Five-O artwork based only on the established bridge-size format and jumbo-index convention. No branded deck art is reproduced.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="concept deck-option" data-option-group="card" data-option-value="7">
+            <div class="concept-top">
+              <label class="select-line">
+                <input type="radio" name="card" value="7">
+                <span><span class="option-kicker">Deck 7</span><span class="option-title">Magnum Accessibility</span></span>
+              </label>
+              <span class="tag">Largest index</span>
+            </div>
+            <div class="concept-body">
+              <div class="card-stage deck-magnum">
+                <span class="sample-label">Maximum rank and suit contrast</span>
+                <div class="card-row face-row" tabindex="0" aria-label="Magnum Accessibility face-card samples">
+                  <div class="playing-card suit-s" data-rank="A" data-suit="s"></div><div class="playing-card suit-h" data-rank="7" data-suit="h"></div><div class="playing-card suit-d" data-rank="10" data-suit="d"></div><div class="playing-card suit-c" data-rank="J" data-suit="c"></div><div class="playing-card suit-h" data-rank="Q" data-suit="h"></div><div class="playing-card suit-s" data-rank="K" data-suit="s"></div>
+                </div>
+                <span class="sample-label">Interaction and backs</span>
+                <div class="card-row" tabindex="0" aria-label="Magnum Accessibility selected, unavailable, and card-back samples">
+                  <div class="playing-card suit-c is-selected" data-rank="Q" data-suit="c" data-state="Selected"></div><div class="playing-card suit-d is-disabled" data-rank="6" data-suit="d" data-state="Unavailable"></div><div class="card-back charcoal" role="img" aria-label="Charcoal high-contrast Five-O card back"></div><div class="card-back blue" role="img" aria-label="Blue high-contrast Five-O card back"></div>
+                </div>
+              </div>
+              <div class="concept-copy">
+                <p>Extra-heavy borders and the catalog's largest mirrored rank-and-suit indexes prioritize recognition at arm's length.</p>
+                <div><h3>Why choose it</h3><ul class="mini-list"><li>Best option for reduced vision or glare-prone screens.</li><li>Shape and rank remain primary, independent of color.</li><li>Very clear in selected and unavailable states.</li></ul></div>
+                <div class="tradeoff"><strong>Tradeoff:</strong> Bold anatomy leaves little room for decorative faces. It is an accessibility aid, not a substitute for screen-reader and contrast testing.</div>
+                <p class="inspiration">Entirely original code-native art informed by large-print and low-vision deck categories; no commercial accessibility deck is copied or implied to endorse this concept.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="concept deck-option" data-option-group="card" data-option-value="8">
+            <div class="concept-top">
+              <label class="select-line">
+                <input type="radio" name="card" value="8">
+                <span><span class="option-kicker">Deck 8</span><span class="option-title">Night Deck</span></span>
+              </label>
+            </div>
+            <div class="concept-body">
+              <div class="card-stage deck-night">
+                <span class="sample-label">Dark stock · light indexes</span>
+                <div class="card-row face-row" tabindex="0" aria-label="Night Deck face-card samples">
+                  <div class="playing-card suit-s" data-rank="A" data-suit="s"></div><div class="playing-card suit-h" data-rank="7" data-suit="h"></div><div class="playing-card suit-d" data-rank="10" data-suit="d"></div><div class="playing-card suit-c" data-rank="J" data-suit="c"></div><div class="playing-card suit-h" data-rank="Q" data-suit="h"></div><div class="playing-card suit-s" data-rank="K" data-suit="s"></div>
+                </div>
+                <span class="sample-label">Interaction and backs</span>
+                <div class="card-row" tabindex="0" aria-label="Night Deck selected, unavailable, and card-back samples">
+                  <div class="playing-card suit-c is-selected" data-rank="Q" data-suit="c" data-state="Selected"></div><div class="playing-card suit-d is-disabled" data-rank="6" data-suit="d" data-state="Unavailable"></div><div class="card-back" role="img" aria-label="Black and mint Five-O card back"></div><div class="card-back charcoal" role="img" aria-label="Charcoal lattice Five-O card back"></div>
+                </div>
+              </div>
+              <div class="concept-copy">
+                <p>Near-black card stock, warm-white black suits, and coral red suits reduce the bright-paper effect during low-light play.</p>
+                <div><h3>Why choose it</h3><ul class="mini-list"><li>Pairs naturally with OLED Night and Midnight Navy.</li><li>Still uses conventional mirrored indexes and suit shapes.</li><li>Reduces large white areas without hiding state outlines.</li></ul></div>
+                <div class="tradeoff"><strong>Tradeoff:</strong> Less physical-card familiarity, and every text/state combination needs contrast validation.</div>
+                <p class="inspiration">Original Five-O dark-deck treatment. “Night” describes the color category only; it does not reference or reproduce a branded deck.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="concept deck-option" data-option-group="card" data-option-value="9">
+            <div class="concept-top">
+              <label class="select-line">
+                <input type="radio" name="card" value="9">
+                <span><span class="option-kicker">Deck 9</span><span class="option-title">Retro Pixel</span></span>
+              </label>
+            </div>
+            <div class="concept-body">
+              <div class="card-stage deck-pixel">
+                <span class="sample-label">Pixel-inspired geometry · all suits</span>
+                <div class="card-row face-row" tabindex="0" aria-label="Retro Pixel face-card samples">
+                  <div class="playing-card suit-s" data-rank="A" data-suit="s"></div><div class="playing-card suit-h" data-rank="7" data-suit="h"></div><div class="playing-card suit-d" data-rank="10" data-suit="d"></div><div class="playing-card suit-c" data-rank="J" data-suit="c"></div><div class="playing-card suit-h" data-rank="Q" data-suit="h"></div><div class="playing-card suit-s" data-rank="K" data-suit="s"></div>
+                </div>
+                <span class="sample-label">Interaction and backs</span>
+                <div class="card-row" tabindex="0" aria-label="Retro Pixel selected, unavailable, and card-back samples">
+                  <div class="playing-card suit-c is-selected" data-rank="Q" data-suit="c" data-state="Selected"></div><div class="playing-card suit-d is-disabled" data-rank="6" data-suit="d" data-state="Unavailable"></div><div class="card-back" role="img" aria-label="Purple teal and pink pixel Five-O card back"></div><div class="card-back blue" role="img" aria-label="Blue pixel Five-O card back"></div>
+                </div>
+              </div>
+              <div class="concept-copy">
+                <p>Square corners, monospace ranks, block shadows, and a hand-built geometric back recall 1990s card-game software.</p>
+                <div><h3>Why choose it</h3><ul class="mini-list"><li>Strong nostalgic identity without changing card semantics.</li><li>Pairs with the Retro 90s table theme.</li><li>Simple shapes remain crisp at small sizes.</li></ul></div>
+                <div class="tradeoff"><strong>Tradeoff:</strong> The intentionally digital look is less like a physical casino deck.</div>
+                <p class="inspiration">Original code-native shapes inspired by a broad software era. No game sprites, trademarks, or commercial pixel assets are used.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="concept deck-option" data-option-group="card" data-option-value="10">
+            <div class="concept-top">
+              <label class="select-line">
+                <input type="radio" name="card" value="10">
+                <span><span class="option-kicker">Deck 10</span><span class="option-title">Art Deco Casino</span></span>
+              </label>
+            </div>
+            <div class="concept-body">
+              <div class="card-stage deck-deco">
+                <span class="sample-label">Geometric linework · familiar indexes</span>
+                <div class="card-row face-row" tabindex="0" aria-label="Art Deco Casino face-card samples">
+                  <div class="playing-card suit-s" data-rank="A" data-suit="s"></div><div class="playing-card suit-h" data-rank="7" data-suit="h"></div><div class="playing-card suit-d" data-rank="10" data-suit="d"></div><div class="playing-card suit-c" data-rank="J" data-suit="c"></div><div class="playing-card suit-h" data-rank="Q" data-suit="h"></div><div class="playing-card suit-s" data-rank="K" data-suit="s"></div>
+                </div>
+                <span class="sample-label">Interaction and backs</span>
+                <div class="card-row" tabindex="0" aria-label="Art Deco Casino selected, unavailable, and card-back samples">
+                  <div class="playing-card suit-c is-selected" data-rank="Q" data-suit="c" data-state="Selected"></div><div class="playing-card suit-d is-disabled" data-rank="6" data-suit="d" data-state="Unavailable"></div><div class="card-back" role="img" aria-label="Teal and gold geometric Five-O card back"></div><div class="card-back charcoal" role="img" aria-label="Charcoal and gold geometric Five-O card back"></div>
+                </div>
+              </div>
+              <div class="concept-copy">
+                <p>Warm stock, double keylines, fan geometry, and teal-and-gold backs add casino ceremony around a conventional card structure.</p>
+                <div><h3>Why choose it</h3><ul class="mini-list"><li>Most decorative original deck direction.</li><li>Traditional mirrored indexes remain easy to scan.</li><li>Works especially well with Burgundy Club or Classic Green.</li></ul></div>
+                <div class="tradeoff"><strong>Tradeoff:</strong> Fine linework should be simplified on the smallest opponent cards.</div>
+                <p class="inspiration">Original Five-O geometric artwork informed by public-domain Art Deco vocabulary, not a specific casino, artist, or commercial deck.</p>
+              </div>
+            </div>
+          </article>
+        </div>
+        <p class="theme-art-note">All card names identify original design directions, not licensed products. Linked commercial examples elsewhere in this catalog are reference-only; no brand identity or protected artwork may ship without a separate rights review.</p>
+      </div>
+    </section>
+
+    <section id="comparison">
+      <div class="wrap">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">At a glance</p>
+            <h2>Decision matrix</h2>
+          </div>
+          <p>The ratings describe the design direction, not completed product performance. Accessibility and behavior gates still apply to every choice.</p>
+        </div>
+
+        <div class="matrix-wrap" role="region" aria-label="Interface comparison table" tabindex="0">
+          <table>
+            <thead>
+              <tr><th scope="col">Interface</th><th scope="col">Mobile clarity</th><th scope="col">Physical atmosphere</th><th scope="col">Visual restraint</th><th scope="col">Best fit</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">A · Classic Cardroom</th><td class="check">Strong</td><td class="check">Highest</td><td>Moderate</td><td>Players who want a recognizable card-table setting</td></tr>
+              <tr><th scope="row">B · Modern Tournament</th><td class="check">Highest</td><td>Strong</td><td class="check">Strong</td><td>Fast competitive turns across the widest phone range</td></tr>
+              <tr><th scope="row">C · Quiet Premium</th><td class="check">Strong</td><td>Moderate</td><td class="check">Highest</td><td>A distinctive, calm, editorial product identity</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="height: 1rem"></div>
+
+        <div class="matrix-wrap" role="region" aria-label="Table-theme comparison table" tabindex="0">
+          <table>
+            <thead>
+              <tr><th scope="col">Table theme</th><th scope="col">Brightness</th><th scope="col">Atmosphere</th><th scope="col">Best fit</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Classic Green</th><td>Balanced</td><td class="check">Traditional cardroom</td><td>Familiar all-purpose default</td></tr>
+              <tr><th scope="row">Midnight Navy</th><td>Dark</td><td>Modern tournament</td><td>Cool, competitive sessions</td></tr>
+              <tr><th scope="row">Burgundy Club</th><td>Medium-dark</td><td>Private club</td><td>Warm premium character</td></tr>
+              <tr><th scope="row">OLED Night</th><td class="check">Darkest</td><td>Focused low-light</td><td>OLED screens and evening play</td></tr>
+              <tr><th scope="row">Warm Walnut Home Game</th><td>Balanced</td><td class="check">Relaxed and tactile</td><td>Friendly asynchronous play</td></tr>
+              <tr><th scope="row">Retro 90s</th><td>Bright accents</td><td>Playful digital nostalgia</td><td>A more expressive optional skin</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="height: 1rem"></div>
+
+        <div class="matrix-wrap" role="region" aria-label="Playing-card comparison table" tabindex="0">
+          <table>
+            <thead>
+              <tr><th scope="col">Card</th><th scope="col">Rank recognition</th><th scope="col">Traditional feel</th><th scope="col">Implementation effort</th><th scope="col">Best fit</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">1 · Classic Jumbo</th><td class="check">Excellent</td><td class="check">Excellent</td><td>Moderate</td><td>Best overall balance</td></tr>
+              <tr><th scope="row">2 · Authentic Pip/Court</th><td>Strong</td><td class="check">Highest</td><td>Highest</td><td>Players who value full traditional detail</td></tr>
+              <tr><th scope="row">3 · Four-Color Tournament</th><td class="check">Excellent</td><td>Strong</td><td>Moderate</td><td>Fast suit recognition and optional accessibility mode</td></tr>
+              <tr><th scope="row">4 · Minimal Mobile</th><td class="check">Strong</td><td>Moderate</td><td>Lowest</td><td>A clean, unmistakably digital interface</td></tr>
+              <tr><th scope="row">5 · Mobile Index-First</th><td class="check">Highest</td><td>Lowest</td><td>Low</td><td>Maximum readability at arm's length</td></tr>
+              <tr><th scope="row">6 · Bridge Compact Jumbo</th><td class="check">Excellent</td><td class="check">Strong</td><td>Moderate</td><td>More cards across compact phones</td></tr>
+              <tr><th scope="row">7 · Magnum Accessibility</th><td class="check">Highest</td><td>Moderate</td><td>Low</td><td>Maximum index size and contrast</td></tr>
+              <tr><th scope="row">8 · Night Deck</th><td class="check">Strong</td><td>Low</td><td>Moderate</td><td>Reduced bright area in low light</td></tr>
+              <tr><th scope="row">9 · Retro Pixel</th><td>Strong</td><td>Lowest</td><td>Moderate</td><td>Nostalgic digital personality</td></tr>
+              <tr><th scope="row">10 · Art Deco Casino</th><td>Strong</td><td class="check">Strong</td><td>High</td><td>Decorative casino atmosphere</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="decision">
+      <div class="wrap">
+        <div class="decision-panel">
+          <div>
+            <p class="eyebrow">Step 4</p>
+            <h2>Your design approval</h2>
+            <p>Every player may independently combine any interface, table theme, deck, and suit palette. The familiar default is Interface A + Deck 1 + Classic Green with four-color tournament suits.</p>
+            <p class="summary-box" id="summaryText" aria-live="polite">Interface A (Classic Cardroom) + Deck 1 (Classic Jumbo Index) + Classic Green + four-color tournament suit palette + 3 rounds</p>
+            <p class="approval-note">Copy this sentence into the project conversation to approve the direction. Production implementation will still be evaluated against mobile, accessibility, behavior-preservation, and regression gates.</p>
+          </div>
+          <div class="decision-controls">
+            <label class="field-label" for="rounds">Improvement rounds
+              <select id="rounds">
+                <option value="2">2 rounds</option>
+                <option value="3" selected>3 rounds · recommended</option>
+                <option value="4">4 rounds</option>
+                <option value="5">5 rounds</option>
+              </select>
+            </label>
+            <label class="field-label" for="suitPalette">Optional suit palette
+              <select id="suitPalette">
+                <option value="two">Traditional two-color</option>
+                <option value="four" selected>Four-color tournament · default</option>
+              </select>
+            </label>
+            <div class="button-row">
+              <button class="action-button" id="copyChoice" type="button">Copy choice</button>
+              <button class="action-button secondary" id="resetChoice" type="button">Reset to A-1 / Classic Green</button>
+              <button class="action-button secondary" id="printCatalog" type="button">Print catalog</button>
+            </div>
+            <p class="copy-status" id="copyStatus" aria-live="polite"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <aside class="sticky-decision" aria-label="Current design selection">
+    <div class="sticky-inner">
+      <div>
+        <span class="sticky-label">Current choice</span>
+        <span class="sticky-summary" id="stickySummary">Interface A (Classic Cardroom) + Deck 1 (Classic Jumbo Index) + Classic Green + four-color tournament suit palette + 3 rounds</span>
+      </div>
+      <div class="sticky-actions">
+        <a class="button-link secondary" href="#decision">Review</a>
+        <button class="action-button" id="copyChoiceSticky" type="button">Copy</button>
+      </div>
+    </div>
+  </aside>
+
+  <footer>
+    <div class="wrap">Five-O Poker mobile UI concept catalog · Independently mix interfaces, tables, decks, and suit palettes · Original code-native mockups · Commercial references are inspiration only</div>
+  </footer>
+
+  <script>
+    (function () {
+      'use strict';
+
+      var suits = {
+        s: { symbol: '♠', name: 'spades' },
+        h: { symbol: '♥', name: 'hearts' },
+        d: { symbol: '♦', name: 'diamonds' },
+        c: { symbol: '♣', name: 'clubs' }
+      };
+
+      var rankNames = {
+        A: 'Ace',
+        J: 'Jack',
+        Q: 'Queen',
+        K: 'King'
+      };
+
+      function cardName(rank, suitKey) {
+        return (rankNames[rank] || rank) + ' of ' + suits[suitKey].name;
+      }
+
+      function buildIndex(rank, symbol, bottom) {
+        var index = document.createElement('span');
+        index.className = 'index' + (bottom ? ' bottom' : '');
+        var rankSpan = document.createElement('span');
+        rankSpan.textContent = rank;
+        var suitSpan = document.createElement('small');
+        suitSpan.textContent = symbol;
+        index.appendChild(rankSpan);
+        index.appendChild(suitSpan);
+        return index;
+      }
+
+      function buildCenter(rank, symbol) {
+        var center = document.createElement('span');
+        center.className = 'center-art';
+        var numeric = /^\d+$/.test(rank);
+        var court = rank === 'J' || rank === 'Q' || rank === 'K';
+
+        if (court) {
+          var frame = document.createElement('span');
+          frame.className = 'court-frame';
+          frame.setAttribute('data-suit', symbol);
+          frame.textContent = rank;
+          center.appendChild(frame);
+          return center;
+        }
+
+        if (numeric) {
+          var layout = document.createElement('span');
+          layout.className = 'pip-layout';
+          var count = Math.min(parseInt(rank, 10), 10);
+          for (var i = 0; i < count; i += 1) {
+            var pip = document.createElement('span');
+            pip.textContent = symbol;
+            layout.appendChild(pip);
+          }
+          center.appendChild(layout);
+          return center;
+        }
+
+        var suit = document.createElement('span');
+        suit.className = 'center-suit';
+        suit.textContent = symbol;
+        center.appendChild(suit);
+        return center;
+      }
+
+      document.querySelectorAll('.playing-card[data-rank][data-suit]').forEach(function (card) {
+        var rank = card.getAttribute('data-rank');
+        var suitKey = card.getAttribute('data-suit');
+        var state = card.getAttribute('data-state');
+        var symbol = suits[suitKey].symbol;
+        var accessibleName = cardName(rank, suitKey);
+
+        if (state) {
+          accessibleName += ', ' + state.toLowerCase();
+        }
+
+        card.setAttribute('role', 'img');
+        card.setAttribute('aria-label', accessibleName);
+        card.appendChild(buildIndex(rank, symbol, false));
+        card.appendChild(buildIndex(rank, symbol, true));
+        card.appendChild(buildCenter(rank, symbol));
+
+        if (state) {
+          var chip = document.createElement('span');
+          chip.className = 'state-chip';
+          chip.setAttribute('aria-hidden', 'true');
+          chip.textContent = state;
+          card.appendChild(chip);
+        }
+      });
+
+      var names = {
+        interface: {
+          A: 'Interface A (Classic Cardroom)',
+          B: 'Interface B (Modern Tournament)',
+          C: 'Interface C (Quiet Premium)'
+        },
+        card: {
+          1: 'Deck 1 (Classic Jumbo Index)',
+          2: 'Deck 2 (Authentic Pip & Court)',
+          3: 'Deck 3 (Four-Color Tournament)',
+          4: 'Deck 4 (Minimal Mobile)',
+          5: 'Deck 5 (Mobile Index-First)',
+          6: 'Deck 6 (Bridge Compact Jumbo)',
+          7: 'Deck 7 (Magnum Accessibility)',
+          8: 'Deck 8 (Night Deck)',
+          9: 'Deck 9 (Retro Pixel)',
+          10: 'Deck 10 (Art Deco Casino)'
+        },
+        theme: {
+          'classic-green': 'Classic Green',
+          'midnight-navy': 'Midnight Navy',
+          'burgundy-club': 'Burgundy Club',
+          'oled-night': 'OLED Night',
+          'warm-walnut': 'Warm Walnut Home Game',
+          'retro-90s': 'Retro 90s'
+        },
+        palette: {
+          two: 'traditional two-color suit palette',
+          four: 'four-color tournament suit palette'
+        }
+      };
+
+      var summaryText = document.getElementById('summaryText');
+      var stickySummary = document.getElementById('stickySummary');
+      var rounds = document.getElementById('rounds');
+      var suitPalette = document.getElementById('suitPalette');
+      var copyStatus = document.getElementById('copyStatus');
+
+      function getChoice(group) {
+        var selected = document.querySelector('input[name="' + group + '"]:checked');
+        return selected ? selected.value : '';
+      }
+
+      function buildSummary() {
+        var interfaceChoice = getChoice('interface');
+        var cardChoice = getChoice('card');
+        var themeChoice = getChoice('theme');
+        return names.interface[interfaceChoice] + ' + ' + names.card[cardChoice] + ' + ' + names.theme[themeChoice] + ' + ' + names.palette[suitPalette.value] + ' + ' + rounds.value + ' rounds';
+      }
+
+      function updateSelection() {
+        document.querySelectorAll('[data-option-group]').forEach(function (option) {
+          var group = option.getAttribute('data-option-group');
+          var value = option.getAttribute('data-option-value');
+          option.classList.toggle('is-selected', getChoice(group) === value);
+        });
+
+        var value = buildSummary();
+        summaryText.textContent = value;
+        stickySummary.textContent = value;
+        copyStatus.textContent = '';
+      }
+
+      document.querySelectorAll('input[name="interface"], input[name="theme"], input[name="card"], #suitPalette, #rounds').forEach(function (control) {
+        control.addEventListener('change', updateSelection);
+      });
+
+      document.getElementById('resetChoice').addEventListener('click', function () {
+        document.querySelector('input[name="interface"][value="A"]').checked = true;
+        document.querySelector('input[name="theme"][value="classic-green"]').checked = true;
+        document.querySelector('input[name="card"][value="1"]').checked = true;
+        suitPalette.value = 'four';
+        rounds.value = '3';
+        updateSelection();
+        copyStatus.textContent = 'Reset to Interface A, Deck 1, Classic Green, four-color tournament suits, and 3 rounds.';
+      });
+
+      function fallbackCopy(text) {
+        var area = document.createElement('textarea');
+        area.value = text;
+        area.setAttribute('readonly', '');
+        area.style.position = 'fixed';
+        area.style.opacity = '0';
+        document.body.appendChild(area);
+        area.select();
+        var succeeded = document.execCommand('copy');
+        document.body.removeChild(area);
+        return succeeded;
+      }
+
+      function copyChoice(trigger) {
+        var value = buildSummary();
+        var original = trigger.textContent;
+
+        function success() {
+          trigger.textContent = 'Copied';
+          copyStatus.textContent = 'Choice copied: ' + value;
+          window.setTimeout(function () {
+            trigger.textContent = original;
+          }, 1800);
+        }
+
+        function failure() {
+          if (fallbackCopy(value)) {
+            success();
+          } else {
+            copyStatus.textContent = 'Copy was unavailable. Select the approval sentence and copy it manually.';
+          }
+        }
+
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(value).then(success, failure);
+        } else {
+          failure();
+        }
+      }
+
+      document.getElementById('copyChoice').addEventListener('click', function (event) {
+        copyChoice(event.currentTarget);
+      });
+
+      document.getElementById('copyChoiceSticky').addEventListener('click', function (event) {
+        copyChoice(event.currentTarget);
+      });
+
+      document.getElementById('printCatalog').addEventListener('click', function () {
+        window.print();
+      });
+
+      updateSelection();
+    }());
+  </script>
+</body>
+</html>

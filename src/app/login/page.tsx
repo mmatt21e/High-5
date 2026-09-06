@@ -49,10 +49,10 @@ function LoginForm() {
   }
 
   return (
-    <main className="flex flex-1 flex-col justify-center gap-6 p-6">
-      <header className="text-center">
-        <h1 className="text-3xl font-black text-gold">Five-O Poker</h1>
-        <p className="mt-1 text-sm text-white/70">Sign in to play</p>
+    <main className="app-screen flex flex-1 flex-col justify-center">
+      <header className="app-header text-center">
+        <h1 className="app-title text-3xl font-black">Five-O Poker</h1>
+        <p className="app-subtitle mt-1 text-sm">Sign in to play</p>
       </header>
 
       <form
@@ -60,7 +60,7 @@ function LoginForm() {
         className="flex flex-col gap-3"
         aria-describedby={error ? "login-error" : undefined}
       >
-        <label htmlFor="login-email" className="text-sm font-semibold text-white/80">
+        <label htmlFor="login-email" className="form-label text-sm font-semibold">
           Email
         </label>
         <input
@@ -74,7 +74,7 @@ function LoginForm() {
           required
           className="field"
         />
-        <label htmlFor="login-password" className="text-sm font-semibold text-white/80">
+        <label htmlFor="login-password" className="form-label text-sm font-semibold">
           Password
         </label>
         <input
@@ -89,7 +89,7 @@ function LoginForm() {
           className="field"
         />
         {error && (
-          <p id="login-error" role="alert" className="text-sm text-rose-400">
+          <p id="login-error" role="alert" className="error-text text-sm">
             {error}
           </p>
         )}
@@ -107,15 +107,15 @@ function LoginForm() {
         </button>
       )}
 
-      <p className="text-center text-sm text-white/70">
+      <p className="supporting-text text-center text-sm">
         New here?{" "}
-        <Link href={registerHref} className="font-semibold text-gold underline">
+        <Link href={registerHref} className="nav-link px-2 font-semibold text-gold">
           Create an account
         </Link>
       </p>
       <p className="text-center text-sm">
-        <Link href="/how-to-play" className="text-white/60 underline">
-          How to play Five-O
+        <Link href="/how-to-play" className="nav-link px-2">
+          How to play &amp; customize cards
         </Link>
       </p>
     </main>
@@ -124,7 +124,7 @@ function LoginForm() {
 
 function AuthPageFallback({ label }: { label: string }) {
   return (
-    <main className="flex flex-1 items-center justify-center p-6 text-white/70">
+    <main className="app-screen supporting-text flex flex-1 items-center justify-center">
       {label}
     </main>
   );

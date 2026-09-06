@@ -69,3 +69,191 @@ jobs:
 
       - name: Smoke-test production start
         run: npm run smoke:start
+
+  docker:
+    name: Docker packaging
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare isolated Docker smoke environment
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cp deploy/docker.env.example deploy/docker.env
+          ci_secret="$(openssl rand -hex 32)"
+          echo "::add-mask::${ci_secret}"
+
+          sed -i \
+            -e "s|^COMPOSE_PROJECT_NAME=.*$|COMPOSE_PROJECT_NAME=five-o-poker-ci-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}|" \
+            -e "s|^FIVEO_IMAGE_TAG=.*$|FIVEO_IMAGE_TAG=ci-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}|" \
+            -e "s|^FIVEO_LOCAL_PORT=.*$|FIVEO_LOCAL_PORT=3210|" \
+            -e "s|^AUTH_SECRET=.*$|AUTH_SECRET=${ci_secret}|" \
+            -e "s|^AUTH_URL=.*$|AUTH_URL=http://localhost:3210|" \
+            -e "s|^PUBLIC_HOSTNAME=.*$|PUBLIC_HOSTNAME=play.example.test|" \
+            -e "s|^CLOUDFLARE_TUNNEL_TOKEN_FILE=.*$|CLOUDFLARE_TUNNEL_TOKEN_FILE=./deploy/docker.env.example|" \
+            deploy/docker.env
+
+          git check-ignore --quiet deploy/docker.env
+
+      - name: Validate Compose configurations
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          docker compose --env-file deploy/docker.env \
+            -f compose.yaml -f compose.local.yaml config --quiet
+          docker compose --env-file deploy/docker.env \
+            -f compose.yaml -f compose.public.yaml config --quiet
+          docker compose --env-file deploy/docker.env \
+            -f compose.yaml -f compose.tunnel.yaml config --quiet
+
+          docker compose --env-file deploy/docker.env \
+            -f compose.yaml -f compose.local.yaml config --format json \
+            > "${RUNNER_TEMP}/five-o-local.json"
+          docker compose --env-file deploy/docker.env \
+            -f compose.yaml -f compose.public.yaml config --format json \
+            > "${RUNNER_TEMP}/five-o-public.json"
+          docker compose --env-file deploy/docker.env \
+            -f compose.yaml -f compose.tunnel.yaml config --format json \
+            > "${RUNNER_TEMP}/five-o-tunnel.json"
+
+          python3 - \
+            "${RUNNER_TEMP}/five-o-local.json" \
+            "${RUNNER_TEMP}/five-o-public.json" \
+            "${RUNNER_TEMP}/five-o-tunnel.json" <<'PY'
+          import json
+          import sys
+
+          local, public, tunnel = (
+              json.load(open(path, encoding="utf-8")) for path in sys.argv[1:]
+          )
+
+          local_port = local["services"]["app"]["ports"]
+          assert len(local_port) == 1
+          assert local_port[0]["host_ip"] == "127.0.0.1"
+          assert str(local_port[0]["published"]) == "3210"
+
+          assert not public["services"]["app"].get("ports")
+          assert public["services"]["app"]["environment"]["AUTH_URL"] == (
+              "https://play.example.test"
+          )
+          assert public["services"]["caddy"].get("healthcheck")
+          caddy_ports = {
+              (str(port["published"]), port["protocol"])
+              for port in public["services"]["caddy"]["ports"]
+          }
+          assert caddy_ports == {("80", "tcp"), ("443", "tcp"), ("443", "udp")}
+
+          assert not tunnel["services"]["app"].get("ports")
+          assert not tunnel["services"]["tunnel"].get("ports")
+          assert tunnel["services"]["tunnel"].get("healthcheck")
+          assert tunnel["services"]["app"]["environment"]["AUTH_URL"] == (
+              "https://play.example.test"
+          )
+          PY
+
+      - name: Validate pinned Caddy configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          caddy_image="$(
+            docker compose --env-file deploy/docker.env \
+              -f compose.yaml -f compose.public.yaml config --images \
+              | grep '^caddy:'
+          )"
+          [[ "${caddy_image}" == *@sha256:* ]]
+
+          docker run --rm \
+            --env PUBLIC_HOSTNAME=play.example.test \
+            --volume "${PWD}/deploy/Caddyfile:/etc/caddy/Caddyfile:ro" \
+            "${caddy_image}" \
+            caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+
+      - name: Build Docker application image
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          docker compose --env-file deploy/docker.env \
+            -f compose.yaml -f compose.local.yaml build app
+
+      - name: Start and verify local Docker stack
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          compose=(
+            docker compose --env-file deploy/docker.env
+            -f compose.yaml -f compose.local.yaml
+          )
+
+          "${compose[@]}" up --detach --no-build app
+
+          app_id="$("${compose[@]}" ps --quiet app)"
+          if [[ -z "${app_id}" ]]; then
+            echo "The app container was not created." >&2
+            exit 1
+          fi
+
+          healthy=false
+          for _ in $(seq 1 60); do
+            status="$(
+              docker inspect \
+                --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' \
+                "${app_id}"
+            )"
+            if [[ "${status}" == "healthy" ]]; then
+              healthy=true
+              break
+            fi
+            if [[ "${status}" == "unhealthy" || "${status}" == "exited" || "${status}" == "dead" ]]; then
+              echo "The app container entered state: ${status}" >&2
+              exit 1
+            fi
+            sleep 2
+          done
+
+          if [[ "${healthy}" != "true" ]]; then
+            echo "The app container did not become healthy within 120 seconds." >&2
+            exit 1
+          fi
+
+          health_body="$(
+            curl --fail --silent --show-error \
+              --retry 10 --retry-all-errors --retry-delay 2 \
+              http://127.0.0.1:3210/api/health
+          )"
+          python3 - "${health_body}" <<'PY'
+          import json
+          import sys
+
+          payload = json.loads(sys.argv[1])
+          if payload.get("status") != "ok":
+              raise SystemExit(f"Unexpected health response: {payload!r}")
+          PY
+
+      - name: Show Docker diagnostics after failure
+        if: failure()
+        shell: bash
+        run: |
+          docker compose --env-file deploy/docker.env \
+            -f compose.yaml -f compose.local.yaml ps --all || true
+          docker compose --env-file deploy/docker.env \
+            -f compose.yaml -f compose.local.yaml \
+            logs --no-color --timestamps app migrate || true
+
+      - name: Clean up Docker smoke stack
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f deploy/docker.env ]]; then
+            docker compose --env-file deploy/docker.env \
+              -f compose.yaml -f compose.local.yaml \
+              down --volumes --remove-orphans --timeout 10 || true
+          fi
