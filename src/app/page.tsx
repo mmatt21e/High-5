@@ -55,33 +55,37 @@ export default async function HomePage() {
   const games = activeMatches.map((m) => {
     const seat = m.hostId === uid ? 0 : 1;
     const opponent =
-      seat === 0 ? m.guest?.displayName ?? null : m.host.displayName;
+      seat === 0 ? (m.guest ? publicPlayer(m.guest).displayName : null) : m.host.displayName;
     const myScore = seat === 0 ? m.scoreHost : m.scoreGuest;
     const oppScore = seat === 0 ? m.scoreGuest : m.scoreHost;
-    let turn: "yours" | "theirs" | "waiting" | "next";
+    let turn: "yours" | "theirs" | "waiting" | "next" | "trick";
     if (!m.guest || m.status === "lobby") turn = "waiting";
     else {
       let toMove: number | null = null;
       let playing = false;
+      let trickWaiting = false;
       if (m.gameState) {
         try {
           const s = JSON.parse(m.gameState) as {
             toMove: number;
             phase: string;
+            exhibition?: { pending?: unknown };
           };
           toMove = s.toMove;
           playing = s.phase === "playing";
+          trickWaiting = m.guest.computerLevel === "wildcard" && Boolean(s.exhibition?.pending);
         } catch {
           /* ignore */
         }
       }
       if (!playing) turn = "next";
-      else turn = toMove === seat ? "yours" : "theirs";
+      else turn = trickWaiting ? "trick" : toMove === seat ? "yours" : "theirs";
     }
     return {
       code: m.inviteCode,
       opponent,
       computer: Boolean(m.guest?.computerLevel),
+      exhibition: m.guest?.computerLevel === "wildcard",
       avatar: (seat === 0 ? m.guest : m.host) ? publicPlayer((seat === 0 ? m.guest : m.host)!).avatar : null,
       myScore,
       oppScore,
@@ -119,7 +123,7 @@ export default async function HomePage() {
                     vs {g.opponent ?? "waiting…"}
                   </div>
                   <div className="subtle-text text-xs">
-                    {g.myScore}–{g.oppScore} · {g.computer ? "Computer match" : `code ${g.code}`}
+                    {g.exhibition ? "Exhibition · untracked" : `${g.myScore}–${g.oppScore} · ${g.computer ? "Computer match" : `code ${g.code}`}`}
                   </div>
                   </div>
                 </div>
@@ -172,10 +176,11 @@ export default async function HomePage() {
 function TurnBadge({
   turn,
 }: {
-  turn: "yours" | "theirs" | "waiting" | "next";
+  turn: "yours" | "theirs" | "waiting" | "next" | "trick";
 }) {
   const map = {
     yours: { text: "Your turn", cls: "status-chip-current" },
+    trick: { text: "Trick waiting", cls: "status-chip-current" },
     theirs: { text: "Their turn", cls: "" },
     waiting: { text: "Waiting", cls: "" },
     next: { text: "Next game", cls: "status-chip-success" },

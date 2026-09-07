@@ -20,7 +20,7 @@ describe("computer-match API", () => {
     expect((await POST(request('{"level":"easy"}'))).status).toBe(401);
     expect(mocks.create).not.toHaveBeenCalled();
   });
-  it.each(["easy", "medium", "hard"])("creates the selected %s opponent for the authenticated user only", async (level) => {
+  it.each(["easy", "medium", "hard", "wildcard"])("creates the selected %s opponent for the authenticated user only", async (level) => {
     const response = await POST(request(JSON.stringify({ level, hostId: "someone-else", guestId: "other", targetWins: 1 })));
     expect(response.status).toBe(201);
     expect(await response.json()).toEqual({ code: "ABCDEFGH" });

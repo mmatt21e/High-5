@@ -31,6 +31,7 @@ export async function opponentRecords(userId: string): Promise<OpponentRecord[]>
         SUM(CASE WHEN g.id IS NOT NULL AND g.winnerSeat IS NULL THEN 1 ELSE 0 END) AS pushes
       FROM "Match" m LEFT JOIN "Game" g ON g.matchId = m.id
       WHERE (m.hostId = ${userId} OR m.guestId = ${userId}) AND m.guestId IS NOT NULL
+        AND NOT EXISTS (SELECT 1 FROM "User" bot WHERE bot.id = m.guestId AND bot.computerLevel = 'wildcard')
       GROUP BY m.id
     )
     SELECT u.id, u.displayName, u.image, u.computerLevel,
@@ -51,6 +52,7 @@ export async function opponentRecords(userId: string): Promise<OpponentRecord[]>
 export const HISTORY_PAGE_SIZE = 20;
 export async function recentGames(userId: string, opponentId: string | undefined, page: number) {
   const where = { match: {
+    AND: { OR: [{ guest: null }, { guest: { computerLevel: null } }, { guest: { computerLevel: { not: "wildcard" } } }] },
     OR: [{ hostId: userId, ...(opponentId ? { guestId: opponentId } : {}) },
       { guestId: userId, ...(opponentId ? { hostId: opponentId } : {}) }],
   } };

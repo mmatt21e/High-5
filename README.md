@@ -6,27 +6,42 @@ or create a match and share an eight-character invite code. A named invitation
 starts a match only when its recipient accepts; invite-code joining remains
 available, including legacy five-character codes. Both players play against a
 server-authoritative deck and game engine. You can also play a computer opponent
-on one device, with the same rules and saved-match support.
+on one device, with saved-match support and a separate House Rules exhibition.
 
 ## Computer opponents
 
 Choose **Play the computer** from the signed-in lobby:
 
-- **Lucky Guppy** (relaxed): unpredictable legal placements for learning the game.
-- **Sneaky Stacker** (strategic): builds combinations and protects its concealed
+- **Analyst Edge** (relaxed): unpredictable legal placements for learning the game.
+- **House Edge** (strategic): builds combinations and protects its concealed
   hand, with occasional experimental plays.
-- **The Cardfather** (advanced): combines hand-building with 64 sampled possible
+- **Counter Edge** (advanced): combines hand-building with 64 sampled possible
   completions per decision, compares your visible rows, and considers discards.
+- **Wildcard Edge** (exhibition): cheats, bargains, and bends the rules in a
+  separate, untracked House Rules game. Every trick pauses for your response.
 
-Every level sees only its own hand and the public board. No opponent can read
-your hidden cards or future draws. Computer turns run on the server; no external
+The three standard levels see only their own hand and the public board. They
+cannot read your hidden cards or future draws. Computer turns run on the server; no external
 AI service, API key, or second device is needed. Internet/server access and a
 signed-in account are still required.
 
-Computer results count in overall stats. Each named opponent has a separate
+Standard computer results count in overall stats. Each standard opponent has a separate
 head-to-head record and history filter. Games resume after leaving or restarting
 the server, and **Next game** only needs the human player to be ready. Human
 search, named invitations, and invite-code matches remain available unchanged.
+
+Wildcard Edge is explicitly **untracked**: no wins, losses, streaks, match scores,
+completed-game records, or head-to-head history. Only the current board and trick
+decisions are saved so you can resume. It offers Switcheroo, Ace Up the Sleeve,
+Marked Cards, Second Thoughts, Caught Cheating, Deal with the Devil, and Shared
+Chaos. Moving the Goalposts declares one low-hand-wins row before play.
+
+You start with a **Play Fair!** cancellation token, a **Lucky Draw** redraw, and
+a row swap. Correct challenges, peeking compensation, Shared Chaos, and a bonus
+Lucky Break can earn more powers. Use **Tricks** to respond, use powers, or open
+the trick log and rulebook. **Fresh deal** restarts the exhibition at any point;
+**Next game** deals another round after showdown. See
+[the exhibition rules](docs/WILDCARD_EDGE.md) for the full behavior.
 
 ## Players, history and avatars
 

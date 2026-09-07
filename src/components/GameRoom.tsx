@@ -11,6 +11,8 @@ import Link from "next/link";
 import { useGameSocket } from "./useGameSocket";
 import { AppearanceSettings } from "./AppearanceSettings";
 import { NotificationToggle } from "./NotificationToggle";
+import { ExhibitionDrawer } from "./ExhibitionDrawer";
+import type { ExhibitionAction } from "@/lib/game/exhibitionTypes";
 import { PlayerAvatar } from "./PlayerAvatar";
 import {
   CardSlot,
@@ -22,7 +24,7 @@ import type { CardView, GameView, PlayerIndex } from "@/lib/game/types";
 import type { MatchSnapshot } from "@/lib/realtime/events";
 
 export function GameRoom({ code }: { code: string }) {
-  const { snapshot, view, error, connected, place, discard, next, endMatch } =
+  const { snapshot, view, error, connected, place, discard, next, endMatch, exhibition } =
     useGameSocket(code);
 
   if (error && !snapshot) {
@@ -88,6 +90,7 @@ export function GameRoom({ code }: { code: string }) {
         onDiscard={discard}
         onNext={next}
         onEndMatch={endMatch}
+        onExhibition={exhibition}
       />
     </>
   );
@@ -169,6 +172,7 @@ function Table({
   onDiscard,
   onNext,
   onEndMatch,
+  onExhibition,
 }: {
   snapshot: MatchSnapshot;
   view: GameView;
@@ -177,6 +181,7 @@ function Table({
   onDiscard: (cardId: string) => boolean;
   onNext: () => boolean;
   onEndMatch: () => boolean;
+  onExhibition: (action: ExhibitionAction) => boolean;
 }) {
   const you = view.you;
   const opp = (1 - you) as PlayerIndex;
@@ -189,6 +194,8 @@ function Table({
 
   const [selected, setSelected] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [tricksOpen, setTricksOpen] = useState(false);
+  useEffect(() => { setTricksOpen(snapshot.status !== "complete" && Boolean(view.exhibition?.pending)); }, [view.exhibition?.token, view.exhibition?.pending, snapshot.status]);
   // Drop any selection whose card is no longer in hand (after a move / new turn).
   useEffect(() => {
     const ids = new Set(myBoard.hand.map(cvId));
@@ -209,6 +216,8 @@ function Table({
   let statusLabel = view.yourTurn ? "Your turn" : `${oppBoard.displayName}'s turn`;
   let progressLabel = `${view.placed[you]}/${view.total} placed`;
   if (!view.yourTurn && snapshot.computerLevel) statusLabel = "Computer thinking…";
+  if (view.exhibition?.pending) statusLabel = "Trick waiting · open Tricks";
+  if (view.exhibition) progressLabel = `Untracked · ${view.placed[you]}/${view.total}`;
   if (matchOver) {
     statusLabel = "Match ended";
     progressLabel = "Game ended before showdown";
@@ -224,6 +233,7 @@ function Table({
         target={snapshot.targetWins} remaining={view.deckRemaining} onSettings={openSettings}
         canDiscard={!showResults && view.yourTurn && view.canDiscard && selected !== null}
         discardUsed={view.yourTurn && !view.canDiscard} showResults={showResults}
+        exhibition={Boolean(view.exhibition)} trickPending={Boolean(view.exhibition?.pending)} onTricks={() => setTricksOpen(true)}
         onDiscard={() => { if (selected && onDiscard(selected)) setSelected(null); }} />
       <TopBar
         code={snapshot.inviteCode}
@@ -232,7 +242,7 @@ function Table({
       />
       <div className="table-player-section table-opponent-section">
         <PlayerBar name={oppBoard.displayName} avatar={(opp === 0 ? snapshot.host : snapshot.guest)?.avatar} active={!showResults && !view.yourTurn} />
-        <AlignedBoard board={oppBoard} view={view} seat={opp} results={gameOver} />
+        <AlignedBoard key={view.exhibition?.tricksUsed} board={oppBoard} view={view} seat={opp} results={gameOver} />
       </div>
       {error ? (
         <div className="table-status table-status-error" role="alert" aria-atomic="true">
@@ -284,11 +294,13 @@ function Table({
   return (
     <>
       {body}
+      {tricksOpen && view.exhibition && <ExhibitionDrawer key={view.exhibition.token} view={view} onAction={onExhibition} onClose={() => setTricksOpen(false)} error={error} readOnly={snapshot.status === "complete"} />}
       {settingsOpen && (
         <SettingsModal
           onClose={closeSettings}
           onEndMatch={onEndMatch}
           matchOver={matchOver}
+          exhibition={Boolean(view.exhibition)}
         />
       )}
     </>
@@ -306,17 +318,20 @@ function TopBar({ code, computerLevel, gameNumber }: { code: string; computerLev
   );
 }
 
-function SideRail({ yourScore, opponentScore, opponentName, target, remaining, onSettings, canDiscard, discardUsed, showResults, onDiscard }: {
+function SideRail({ yourScore, opponentScore, opponentName, target, remaining, onSettings, canDiscard, discardUsed, showResults, onDiscard, exhibition, trickPending, onTricks }: {
   yourScore: number; opponentScore: number; opponentName: string; target: number;
   remaining: number; onSettings: () => void; canDiscard: boolean; discardUsed: boolean;
   showResults: boolean; onDiscard: () => void;
+  exhibition: boolean; trickPending: boolean; onTricks: () => void;
 }) {
   return (
     <aside className="game-side-rail" aria-label="Game controls and match score">
       <Link href="/" className="rail-control" aria-label="Leave game for lobby" title="Back to lobby">←<small>Lobby</small></Link>
-      <div className="rail-score" aria-label={`You: ${yourScore} of ${target} wins`}><span>You</span><strong>{yourScore}</strong></div>
-      <div className="rail-score" aria-label={`${opponentName}: ${opponentScore} of ${target} wins`}><span>Opp.</span><strong>{opponentScore}</strong></div>
-      <span className="rail-target">First<br />to {target}</span>
+      {exhibition ? <><span className="rail-target">Exhibition<br />Untracked</span><button className={`rail-control rail-tricks${trickPending ? " rail-tricks-pending" : ""}`} onClick={onTricks}>Tricks{trickPending && <small>Respond</small>}</button></> : <>
+        <div className="rail-score" aria-label={`You: ${yourScore} of ${target} wins`}><span>You</span><strong>{yourScore}</strong></div>
+        <div className="rail-score" aria-label={`${opponentName}: ${opponentScore} of ${target} wins`}><span>Opp.</span><strong>{opponentScore}</strong></div>
+        <span className="rail-target">First<br />to {target}</span>
+      </>}
       <div className="rail-score rail-deck" aria-label={`Draw deck: ${remaining} cards remaining`}><span>Deck</span><strong>{remaining}</strong></div>
       {!showResults && <button type="button" className="rail-control rail-discard" disabled={!canDiscard} onClick={onDiscard}
         aria-label={discardUsed ? "Discard already used this game" : "Discard selected card, once per game"}
@@ -335,10 +350,12 @@ function SettingsModal({
   onClose,
   onEndMatch,
   matchOver,
+  exhibition = false,
 }: {
   onClose: () => void;
   onEndMatch: () => boolean;
   matchOver: boolean;
+  exhibition?: boolean;
 }) {
   const dialogRef = useRef<HTMLDivElement>(null);
 
@@ -441,7 +458,7 @@ function SettingsModal({
             onClick={() => {
               if (
                 window.confirm(
-                  "End this match for both players? This can't be undone.",
+                  exhibition ? "End this exhibition? Your statistics are unaffected." : "End this match for both players? This can't be undone.",
                 )
               ) {
                 if (onEndMatch()) onClose();
@@ -449,7 +466,7 @@ function SettingsModal({
             }}
             className="tap-target error-text mt-2 w-full rounded-xl border border-current px-3 text-sm font-bold"
           >
-            End match
+            {exhibition ? "End exhibition" : "End match"}
           </button>
         )}
       </div>
@@ -523,6 +540,7 @@ function AlignedBoard({ board, view, seat, results, legalRows = [], onRow }: {
         const outcome = rowOutcome(handResult?.winner, seat);
         const label = handResult?.scores[seat].label;
         const name = rowIndex === 4 ? "Hand" : `Row ${rowIndex + 1}`;
+        const lowRow = view.exhibition?.lowRow === rowIndex;
         const latest = board.lastPlacement?.row === rowIndex ? board.lastPlacement.cardId : null;
         const latestCard = slots.find((slot) => cvId(slot) === latest);
         const completionLabel = complete ? "Complete." : `${count} of 5 cards.`;
@@ -533,6 +551,7 @@ function AlignedBoard({ board, view, seat, results, legalRows = [], onRow }: {
         const accessible = [
           `${name}: ${describeCardViews(slots)}.`,
           completionLabel,
+          lowRow ? "Lowest poker hand wins this row." : "",
           latestLabel,
           resultLabel,
           playable ? "Place selected card here." : "",
@@ -543,12 +562,13 @@ function AlignedBoard({ board, view, seat, results, legalRows = [], onRow }: {
           complete && "table-row-finished",
           playable && "table-row-playable",
           outcome === "Won" && "table-row-won",
+          view.exhibition && "table-row-exhibition",
         ].filter(Boolean).join(" ");
 
         const content = (
           <>
             <span className="table-row-heading">
-              <span>{name}</span>
+              <span title={lowRow ? `${name}: lowest poker hand wins` : name}>{lowRow ? `${rowIndex + 1} LOW` : name}</span>
               {complete && <span className="table-row-check" aria-hidden="true">✓</span>}
             </span>
             <span className="board-row-cards" aria-hidden="true">
@@ -668,7 +688,7 @@ function GameOver({
         {headline}
       </div>
       <div className="supporting-text text-xs">
-        Hands won — you {result.handWins[you]} · opponent{" "}
+        {view.exhibition ? "Untracked · hands" : "Hands won"} — you {result.handWins[you]} · opponent{" "}
         {result.handWins[(1 - you) as PlayerIndex]}
       </div>
       <button
@@ -691,14 +711,14 @@ function MatchOver({ snapshot, you }: { snapshot: MatchSnapshot; you: PlayerInde
   const decided = snapshot.matchWinner !== null && snapshot.matchWinner !== undefined;
   const yourScore = you === 0 ? snapshot.scoreHost : snapshot.scoreGuest;
   const opponentScore = you === 0 ? snapshot.scoreGuest : snapshot.scoreHost;
-  const headline = won ? "You win the match!" : decided ? "Opponent wins the match" : "Match ended";
+  const headline = snapshot.exhibition ? "Exhibition ended" : won ? "You win the match!" : decided ? "Opponent wins the match" : "Match ended";
   return (
     <div className="table-result-summary">
       <div className={`text-2xl font-black ${won ? "text-gold" : decided ? "error-text" : ""}`}>
         {headline}
       </div>
       <div className="supporting-text text-sm">
-        Final score — you {yourScore} · opponent {opponentScore}
+        {snapshot.exhibition ? "Untracked — your record is unchanged." : `Final score — you ${yourScore} · opponent ${opponentScore}`}
       </div>
       <Link href="/" className="btn-primary table-result-action">
         Back to lobby

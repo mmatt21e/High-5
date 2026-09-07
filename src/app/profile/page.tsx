@@ -50,7 +50,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
       </div>
 
       <h2 className="font-bold">Overall record</h2>
-      <p className="subtle-text text-xs">Includes human and computer games. Compare each named computer opponent separately below.</p>
+      <p className="subtle-text text-xs">Includes human games and the three standard computer opponents. Wildcard Edge exhibitions never affect these records or streaks.</p>
       <div className="grid grid-cols-2 gap-3">
         <Big label="Win rate" value={`${winRate}%`} />
         <Big label="Win streak" value={stats?.currentStreak ?? 0} />

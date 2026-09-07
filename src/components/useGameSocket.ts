@@ -9,6 +9,7 @@ import type {
   ServerToClientEvents,
 } from "@/lib/realtime/events";
 import type { GameView } from "@/lib/game/types";
+import type { ExhibitionAction } from "@/lib/game/exhibitionTypes";
 
 type ClientSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -21,6 +22,7 @@ export interface GameSocketState {
   discard: (cardId: string) => boolean;
   next: () => boolean;
   endMatch: () => boolean;
+  exhibition: (action: ExhibitionAction) => boolean;
 }
 
 export function useGameSocket(code: string): GameSocketState {
@@ -97,5 +99,8 @@ export function useGameSocket(code: string): GameSocketState {
     return send((socket) => socket.emit("match:end"));
   }, [send]);
 
-  return { snapshot, view, error, connected, place, discard, next, endMatch };
+  const exhibition = useCallback((action: ExhibitionAction) => {
+    return send((socket) => socket.emit("game:exhibition", action));
+  }, [send]);
+  return { snapshot, view, error, connected, place, discard, next, endMatch, exhibition };
 }

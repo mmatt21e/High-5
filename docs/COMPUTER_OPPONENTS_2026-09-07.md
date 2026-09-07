@@ -1,5 +1,10 @@
 # Computer opponents
 
+This document describes the three standard opponents. The fourth opponent,
+**Wildcard Edge**, uses separate untracked exhibition rules, described in
+[WILDCARD_EDGE.md](WILDCARD_EDGE.md). Fair-play and statistics statements below
+apply to the standard opponents only.
+
 Implemented locally on top of `7bcb385`. This record covers implementation and
 local verification, not a production deployment.
 
@@ -10,9 +15,9 @@ invitations and invite-code matches. Choose an opponent before starting:
 
 | Opponent | Challenge | Behavior |
 |---|---|---|
-| Lucky Guppy | Relaxed | Unpredictable legal placements. |
-| Sneaky Stacker | Strategic | Builds combinations and protects its concealed hand; experiments on 12% of turns. |
-| The Cardfather | Advanced | Combines hand-building with sampled outcomes against visible rows; considers tactical discards. |
+| Analyst Edge | Relaxed | Unpredictable legal placements. |
+| House Edge | Strategic | Builds combinations and protects its concealed hand; experiments on 12% of turns. |
+| Counter Edge | Advanced | Combines hand-building with sampled outcomes against visible rows; considers tactical discards. |
 
 The table identifies computer matches and shows when the opponent is thinking.
 The computer takes turns automatically; **Next game** only requires the human
@@ -28,7 +33,7 @@ records and history filtering. Existing human multiplayer remains available.
 - The strategy receives only `GameView`, the same redacted view a player gets.
   It cannot read the opponent's concealed cards, actual remaining deck, seed,
   database or authentication data. All levels use the same legal game engine.
-- The Cardfather samples 64 hypothetical completions from unseen cards. These
+- Counter Edge samples 64 hypothetical completions from unseen cards. These
   estimates are not knowledge of future draws or guarantees of optimal play.
 - Computer turns reuse the human move persistence path, including transactional
   game completion, statistics and in-memory rollback after a failed write.
@@ -80,9 +85,9 @@ test deals (seeds 8001–8040, both seat assignments per pairing):
 
 | Pairing | First opponent wins | Second opponent wins | Pushes |
 |---|---:|---:|---:|
-| Sneaky Stacker / Lucky Guppy | 78 | 2 | 0 |
-| The Cardfather / Lucky Guppy | 80 | 0 | 0 |
-| The Cardfather / Sneaky Stacker | 56 | 24 | 0 |
+| House Edge / Analyst Edge | 78 | 2 | 0 |
+| Counter Edge / Analyst Edge | 80 | 0 | 0 |
+| Counter Edge / House Edge | 56 | 24 | 0 |
 
 The longest individual decision in that local run was under 9ms. These are
 bounded bot-versus-bot checks, not promised human win rates or a universal

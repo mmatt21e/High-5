@@ -46,8 +46,9 @@ export function ComputerLobby() {
             })}
           </div>
         </fieldset>
+        {level === "wildcard" && <p className="surface-card p-3 text-sm" role="status"><strong>House Rules exhibition — results never count.</strong> Edge can peek, swap cards, bargain, and cheat. You get a Play Fair token, a redraw, and a row swap. One row is low-hand-wins, announced before play. Every trick waits for your response.</p>}
         <button type="submit" disabled={busy} className="btn-primary">{busy ? "Setting the table…" : `Play ${COMPUTER_OPPONENTS[level].name}`}</button>
-        <p className="subtle-text text-xs">Same rules, no peeking at your hidden cards. Results count in your overall record and against each named computer opponent.</p>
+        <p className="subtle-text text-xs">{level === "wildcard" ? "Saved so you can resume. No wins, losses, streaks, or head-to-head records. Restart whenever you like." : "Same rules, no peeking at your hidden cards. Results count in your overall record and against each named computer opponent."}</p>
         {error && <p role="alert" className="error-text text-sm">{error}</p>}
       </form>
     </section>

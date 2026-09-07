@@ -25,7 +25,8 @@ export default function HowToPlayPage() {
 
       <section className="panel">
         <h2 className="mb-2 font-bold">Choose your opponent</h2>
-        <p className="supporting-text text-sm">Invite a player by name or code, or choose Play the computer in the lobby. Start with Lucky Guppy, challenge Sneaky Stacker, or take on The Cardfather. Computer opponents follow the same rules and cannot see your hidden cards. Results count in your overall and head-to-head records.</p>
+        <p className="supporting-text text-sm">Invite a player by name or code, or choose Play the computer in the lobby. Start with Analyst Edge, challenge House Edge, or take on Counter Edge. These three follow the same rules and cannot see your hidden cards. Their results count in your overall and head-to-head records.</p>
+        <p className="supporting-text mt-3 text-sm"><strong>Wildcard Edge: House Rules exhibition.</strong> This fourth opponent can cheat, peek, swap cards, and offer deals. Results never affect statistics or history. One row is low-hand-wins, announced before play. Every trick waits for your response: allow it, use Play Fair!, call a suspicious bluff, or accept/decline a deal. Open Tricks for your redraw and row-swap powers, the trick log, and the full rulebook. Fresh deal restarts whenever you like; the current board saves so you can resume.</p>
       </section>
 
       <Step n={1} title="Five hands: 4 shown, 1 hidden">

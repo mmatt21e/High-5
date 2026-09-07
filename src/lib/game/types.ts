@@ -1,5 +1,6 @@
 import type { Card } from "./cards";
 import type { HandScore } from "./evaluator";
+import type { ExhibitionState, ExhibitionView } from "./exhibitionTypes";
 
 export const NUM_ROWS = 4; // face-up rows both players can see
 export const CARDS_PER_HAND = 5;
@@ -33,6 +34,7 @@ export interface PlayerState {
 export type GamePhase = "playing" | "complete";
 
 export interface GameState {
+  exhibition?: ExhibitionState;
   /** Remaining deck; the card at the end of the array is the "top". */
   deck: Card[];
   players: [PlayerState, PlayerState];
@@ -77,6 +79,7 @@ export interface PlayerView {
 }
 
 export interface GameView {
+  exhibition?: ExhibitionView;
   phase: GamePhase;
   toMove: PlayerIndex;
   /** Your seat at this table. */

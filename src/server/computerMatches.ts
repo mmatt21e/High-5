@@ -19,7 +19,7 @@ export async function createComputerMatch(hostId: string, level: ComputerLevel) 
       where: { computerLevel: level },
       create: { id: computerPlayerId(level), computerLevel: level,
         email: `${randomUUID()}@computer.invalid`, displayName: opponent.name, image: opponent.avatar },
-      update: {},
+      update: { displayName: opponent.name },
     });
     return tx.match.create({ data: { inviteCode, hostId, guestId: computer.id, status: "active" } });
   });

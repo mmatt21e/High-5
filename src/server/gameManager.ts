@@ -5,6 +5,8 @@ import { joinMatch } from "../lib/match";
 import { publicPlayer } from "./playerIdentity";
 import { isComputerLevel, type ComputerLevel } from "../lib/computer";
 import { chooseComputerMove } from "../lib/game/computerStrategy";
+import { startExhibition, prepareWildcardTurn, chooseWildcardMove, finishWildcardTurn, exhibitionAction } from "../lib/game/exhibition";
+import type { ExhibitionAction } from "../lib/game/exhibitionTypes";
 import { sendPushToUser } from "../lib/push";
 import {
   persistCompletedGame,
@@ -94,7 +96,7 @@ async function readLiveFromDatabase(matchId: string): Promise<LiveMatch | null> 
     computerLevel: isComputerLevel(m.guest?.computerLevel) ? m.guest.computerLevel : null,
     host: { userId: m.host.id, displayName: m.host.displayName, avatar: publicPlayer(m.host).avatar },
     guest: m.guest
-      ? { userId: m.guest.id, displayName: m.guest.displayName, avatar: publicPlayer(m.guest).avatar }
+      ? { userId: m.guest.id, displayName: publicPlayer(m.guest).displayName, avatar: publicPlayer(m.guest).avatar }
       : null,
     scoreHost: m.scoreHost,
     scoreGuest: m.scoreGuest,
@@ -128,7 +130,7 @@ async function refreshMembership(
   // transition, never replacing a newer in-memory turn with persisted JSON.
   cached.host = { userId: m.host.id, displayName: m.host.displayName, avatar: publicPlayer(m.host).avatar };
   if (cached.guest && m.guest?.id === cached.guest.userId) {
-    cached.guest.displayName = m.guest.displayName;
+    cached.guest.displayName = publicPlayer(m.guest).displayName;
     cached.guest.avatar = publicPlayer(m.guest).avatar;
   }
   if (
@@ -140,7 +142,7 @@ async function refreshMembership(
   ) {
     cached.guest = {
       userId: m.guest.id,
-      displayName: m.guest.displayName,
+      displayName: publicPlayer(m.guest).displayName,
       avatar: publicPlayer(m.guest).avatar,
     };
     cached.status = "active";
@@ -249,6 +251,7 @@ function snapshotFor(live: LiveMatch, userId: string): MatchSnapshot {
     status: live.status,
     targetWins: live.targetWins,
     computerLevel: live.computerLevel,
+    exhibition: live.computerLevel === "wildcard",
     host: { displayName: live.host.displayName, avatar: live.host.avatar },
     guest: live.guest ? { displayName: live.guest.displayName, avatar: live.guest.avatar } : null,
     scoreHost: live.scoreHost,
@@ -273,10 +276,10 @@ async function broadcast(io: IO, live: LiveMatch) {
     if (!userId) continue;
     s.emit("match:snapshot", snapshotFor(live, userId));
     const seat = seatOfUser(live, userId);
-    s.emit(
-      "game:view",
-      live.game && seat !== -1 ? viewFor(live.game, seat) : null,
-    );
+    const gameView = live.game && seat !== -1 ? viewFor(live.game, seat) : null;
+    // Names are presentation metadata. Keep persisted JSON exact for completion CAS.
+    if (gameView && live.computerLevel && live.guest) gameView.players[1].displayName = live.guest.displayName;
+    s.emit("game:view", gameView);
   }
 }
 
@@ -293,6 +296,7 @@ interface TurnNotification {
 }
 
 function notificationForTurn(live: LiveMatch): TurnNotification | null {
+  if (live.computerLevel === "wildcard") return null;
   if (!live.game || live.game.phase !== "playing" || !live.guest) return null;
   const seat = live.game.toMove;
   if (seat === 1 && live.computerLevel) return null;
@@ -344,6 +348,7 @@ function startGame(live: LiveMatch) {
     { userId: live.guest.userId, displayName: live.guest.displayName },
     { randomIndex: randomInt, firstLead },
   );
+  if (live.computerLevel === "wildcard") startExhibition(live.game, `${live.gameNumber}-${shuffleNonce}`);
 }
 
 async function persistAndScore(
@@ -361,6 +366,12 @@ async function persistAndScore(
   }
   if (live.gameSeed === null) {
     throw new Error("Cannot persist a completed game without its shuffle seed");
+  }
+
+  // Exhibition keeps only a resumable board. No Game, Stats, streak or match score.
+  if (live.computerLevel === "wildcard") {
+    await saveState(live);
+    return;
   }
 
   const write: CompletedGameWrite = {
@@ -402,7 +413,7 @@ async function commitMove(live: LiveMatch, seat: PlayerIndex, move: (game: GameS
 
 function computerToMove(live: LiveMatch): boolean {
   return Boolean(live.computerLevel && live.guest && live.status === "active"
-    && live.game?.phase === "playing" && live.game.toMove === 1);
+    && live.game?.phase === "playing" && live.game.toMove === 1 && !live.game.exhibition?.pending);
 }
 
 /** Delay outside the mutation queue; recheck persisted/current state inside it.
@@ -415,11 +426,20 @@ function scheduleComputerTurn(io: IO, matchId: string) {
     void matchMutations.run(matchId, async () => {
       const live = await getLive(matchId);
       if (!live || !computerToMove(live)) return null;
-      const move = chooseComputerMove(viewFor(live.game!, 1), live.computerLevel!);
-      if (!move) throw new Error("Computer could not choose a legal move");
+      if (live.computerLevel === "wildcard") {
+        await persistLiveMutation(live, async () => {
+          prepareWildcardTurn(live.game!);
+          await saveState(live);
+        });
+        if (live.game!.exhibition?.pending) { await broadcast(io, live); return null; }
+      }
       await commitMove(live, 1, (game, seat) => {
+        const move = live.computerLevel === "wildcard" ? chooseWildcardMove(game)
+          : chooseComputerMove(viewFor(game, 1), live.computerLevel as Exclude<ComputerLevel, "wildcard">);
+        if (!move) throw new Error("Computer could not choose a legal move");
         if (move.kind === "discard") discardCard(game, seat, move.cardId);
         else placeCard(game, seat, move.cardId, move.row);
+        finishWildcardTurn(game);
       });
       await broadcast(io, live);
       succeeded = true;
@@ -510,6 +530,35 @@ export async function handleDiscard(io: IO, socket: SocketT, cardId: string) {
     applyMove(io, socket, (game, seat) => discardCard(game, seat, cardId)),
   );
   dispatchTurnNotification(io, notification);
+  scheduleComputerTurn(io, matchId);
+}
+
+export async function handleExhibition(io: IO, socket: SocketT, input: ExhibitionAction) {
+  const matchId = socket.data.matchId as string | undefined;
+  if (!matchId) return;
+  await matchMutations.run(matchId, async () => {
+    const live = registry.get(matchId);
+    if (!live || live.computerLevel !== "wildcard" || !live.game?.exhibition || live.status !== "active"
+      || seatOfUser(live, socket.data.userId as string) !== 0) {
+      socket.emit("errorMsg", { message: "This action is only available in your Wildcard exhibition" });
+      return;
+    }
+    try {
+      await persistLiveMutation(live, async () => {
+        if (input.action === "restart") {
+          const ex = live.game!.exhibition!;
+          if (input.token !== `${ex.sessionId}:${ex.revision}`) throw new IllegalMoveError("The table changed. Try again.");
+          startGame(live);
+        } else exhibitionAction(live.game!, 0, input);
+        await saveState(live);
+      });
+    } catch (error) {
+      if (!(error instanceof IllegalMoveError)) throw error;
+      socket.emit("errorMsg", { message: error.message });
+      return;
+    }
+    await broadcast(io, live);
+  });
   scheduleComputerTurn(io, matchId);
 }
 

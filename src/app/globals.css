@@ -1038,6 +1038,47 @@ body:has(.game-table-active) { background: var(--table-felt-shadow); }
   padding-left: max(0.75rem, env(safe-area-inset-left));
 }
 
+.rail-tricks { font-size: 11px; border: 1px solid var(--color-gold); color: var(--color-gold); }
+.rail-tricks-pending { background: var(--color-gold); color: var(--ui-on-accent); }
+.wildcard-dialog { width: min(480px, calc(100vw - 20px)); max-height: calc(100dvh - 24px); margin: auto; padding: 0; border: 1px solid var(--color-gold); border-radius: 8px; background: var(--table-felt-shadow); color: var(--theme-foreground); overflow-y: auto; overscroll-behavior: contain; }
+.wildcard-dialog::backdrop { background: #0009; }
+.wildcard-dialog-content { padding: 14px; font-size: 13px; line-height: 1.5; }
+.wildcard-dialog header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.wildcard-dialog h2 { font-size: 19px; font-weight: 750; color: var(--color-gold); }
+.wildcard-dialog h3 { font-size: 18px; font-weight: 750; }
+.wildcard-dialog header p { font-size: 11px; color: var(--ui-muted-text); }
+.wildcard-dialog button { min-height: 44px; padding: 7px 10px; border: 1px solid var(--ui-divider); border-radius: 4px; font-weight: 650; }
+.wildcard-dialog header button { min-width: 44px; font-size: 22px; }
+.wildcard-dialog button:disabled { opacity: .45; }
+.wildcard-dialog button:focus-visible, .wildcard-dialog select:focus-visible { outline: 2px solid var(--color-gold); outline-offset: 2px; }
+.wildcard-dialog select { display: block; width: 100%; min-height: 44px; border: 1px solid var(--ui-divider); border-radius: 3px; padding: 7px; background: var(--table-felt); color: var(--theme-foreground); }
+.wildcard-dialog label { display: block; font-size: 12px; }
+.wildcard-rule { margin-block: 14px; padding-block: 10px; border-block: 1px solid var(--ui-divider); color: var(--color-gold); font-size: 12px; }
+.wildcard-prompt, .wildcard-powers { display: grid; gap: 12px; }
+.wildcard-actions { display: flex; flex-wrap: wrap; gap: 7px; }
+.wildcard-offer { display: flex !important; align-items: center; gap: 10px; min-height: 44px; }
+.wildcard-dialog nav { display: flex; gap: 6px; margin-bottom: 12px; }
+.wildcard-dialog nav button { flex: 1; font-size: 12px; }
+.wildcard-dialog nav button[aria-pressed="true"] { border-color: var(--color-gold); color: var(--color-gold); }
+.wildcard-swap-selects { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.wildcard-log { display: grid; gap: 10px; padding-left: 18px; list-style: decimal; }
+.wildcard-book p { margin-block: 12px; }
+.wildcard-book strong { color: var(--color-gold); }
+.wildcard-dialog footer { display: flex; justify-content: space-between; gap: 8px; border-top: 1px solid var(--ui-divider); margin-top: 14px; padding-top: 12px; }
+@keyframes wildcard-change { from { border-color: var(--color-gold); } to { border-color: var(--ui-divider); } }
+.table-row-exhibition { animation: wildcard-change 550ms ease-out; }
+.table-row-heading > span:first-child { white-space: nowrap; }
+.board-card:has(+ .board-card[data-slot-state="card"]) .table-card-jumbo { visibility: hidden; }
+/* A swapped Last card can sit earlier in a fan; keep later ranks above it. */
+.board-card-last:has(+ .board-card[data-slot-state="card"]) { z-index: auto; }
+.board-card-last:has(+ .board-card[data-slot-state="card"]) .board-card-last-label { top: 1px; bottom: auto; font-size: 7px; line-height: 10px; padding: 0 1px; }
+.game-table-active .board-card-last:has(+ .board-card[data-slot-state="card"]) .playing-card-rank { font-size: 11px; }
+.game-table-active .board-card-last:has(+ .board-card[data-slot-state="card"]) .playing-card-suit { font-size: 9px; }
+@media (max-height: 480px) and (min-width: 561px) {
+  .board-card-last:has(+ .board-card[data-slot-state="card"]) .board-card-last-label { top: auto; bottom: 0; line-height: 9px; }
+}
+@media (prefers-reduced-motion: reduce) { .table-row-exhibition { animation: none; } }
+
 .settings-dialog {
   max-height: calc(
     100dvh - max(1.5rem, env(safe-area-inset-top)) -

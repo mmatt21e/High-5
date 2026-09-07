@@ -1,7 +1,7 @@
 import { buildDeck, cardId, shuffle, type Card } from "./cards";
 import { compareHands, evaluateHand } from "./evaluator";
 import type { CardView, GameView } from "./types";
-import type { ComputerLevel } from "../computer";
+import type { RankedComputerLevel } from "../computer";
 
 export type ComputerMove =
   | { kind: "place"; cardId: string; row: number }
@@ -58,7 +58,7 @@ function equity(mine: Card[], theirs: Card[], samples: Sample[]): number {
  * Hard samples hypothetical completions from unseen cards, not actual draws.
  * Work is bounded: 64 samples and at most 24 placements + 6 discards per turn.
  */
-export function chooseComputerMove(view: GameView, level: ComputerLevel, rng: () => number = Math.random): ComputerMove | null {
+export function chooseComputerMove(view: GameView, level: RankedComputerLevel, rng: () => number = Math.random): ComputerMove | null {
   if (view.phase !== "playing" || !view.yourTurn || view.legalRows.length === 0) return null;
   const own = view.players[view.you];
   const other = view.players[1 - view.you];

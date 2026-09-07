@@ -13,6 +13,7 @@ import {
   discardPayloadSchema,
   matchJoinPayloadSchema,
   placePayloadSchema,
+  exhibitionPayloadSchema,
 } from "./src/lib/realtime/validation";
 import { userIdFromCookie } from "./src/server/socketAuth";
 import {
@@ -23,6 +24,7 @@ import { QueueCapacityExceededError } from "./src/server/keyedCoordination";
 import {
   handleJoin,
   handlePlace,
+  handleExhibition,
   handleDiscard,
   handleNext,
   handleEndMatch,
@@ -178,6 +180,10 @@ app.prepare().then(() => {
         payload,
         ({ cardId, row }) => handlePlace(io, socket, cardId, row),
       );
+    });
+    socket.on("game:exhibition", (payload: unknown) => {
+      runValidatedSocketAction(socket, exhibitionPayloadSchema, payload,
+        (action) => handleExhibition(io, socket, action));
     });
     socket.on("game:discard", (payload: unknown) => {
       runValidatedSocketAction(

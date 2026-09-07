@@ -31,6 +31,7 @@ export class MatchPersistenceConflictError extends Error {}
 const matchSelection = {
   hostId: true,
   guestId: true,
+  guest: { select: { computerLevel: true } },
   scoreHost: true,
   scoreGuest: true,
   targetWins: true,
@@ -352,6 +353,9 @@ export async function persistCompletedGame(
   try {
     return await client.$transaction(async (tx) => {
       const match = await loadMatch(tx, input.matchId);
+      if (match.guest?.computerLevel === "wildcard") {
+        throw new MatchPersistenceConflictError("Exhibition games cannot write tracked results");
+      }
       const existing = await findStoredGame(tx, input);
       if (existing) {
         assertStoredGameMatches(existing, input);

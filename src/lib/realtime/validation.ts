@@ -36,3 +36,11 @@ export const placePayloadSchema = z
 export const discardPayloadSchema = z
   .object({ cardId: cardIdSchema })
   .strict();
+
+export const exhibitionPayloadSchema = z.object({
+  token: z.string().min(1).max(100),
+  action: z.enum(["allow", "block", "challenge", "accept", "decline", "choose", "redraw", "swap", "restart"]),
+  cardId: cardIdSchema.optional(),
+  otherCardId: cardIdSchema.optional(),
+  offerIndex: z.number().int().min(0).max(1).optional(),
+}).strict();

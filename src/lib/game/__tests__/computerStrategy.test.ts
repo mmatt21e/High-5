@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { COMPUTER_LEVELS, COMPUTER_OPPONENTS, isComputerLevel } from "../../computer";
+import { RANKED_COMPUTER_LEVELS as COMPUTER_LEVELS, COMPUTER_OPPONENTS, isComputerLevel } from "../../computer";
 import { buildDeck, cardId, seededRng, type Card } from "../cards";
 import { createGame, discardCard, placeCard, viewFor } from "../engine";
 import { chooseComputerMove } from "../computerStrategy";
@@ -7,7 +7,7 @@ import type { CardView, GameView } from "../types";
 
 describe("named computer opponents", () => {
   it("keeps stable difficulty keys separate from playful, descriptive names", () => {
-    expect(COMPUTER_LEVELS.map((level) => COMPUTER_OPPONENTS[level].name)).toEqual(["Lucky Guppy", "Sneaky Stacker", "The Cardfather"]);
+    expect(COMPUTER_LEVELS.map((level) => COMPUTER_OPPONENTS[level].name)).toEqual(["Analyst Edge", "House Edge", "Counter Edge"]);
     for (const input of [null, undefined, "expert", "__proto__", {}, 1]) expect(isComputerLevel(input)).toBe(false);
   });
 
@@ -48,7 +48,7 @@ describe("named computer opponents", () => {
     expect(chooseComputerMove(viewFor(state, 0), level)).toBeNull();
   });
 
-  it("The Cardfather completes a winning flush while preserving a full house", () => {
+  it("Counter Edge completes a winning flush while preserving a full house", () => {
     const asViews = (cards: Card[]): CardView[] => cards.map((card) => ({ state: "card", card }));
     const flush: Card[] = [{ rank: 2, suit: "h" }, { rank: 5, suit: "h" }, { rank: 9, suit: "h" }, { rank: 11, suit: "h" }];
     const hand: Card[] = [{ rank: 13, suit: "h" }, { rank: 7, suit: "c" }, { rank: 7, suit: "d" }, { rank: 7, suit: "s" }, { rank: 14, suit: "c" }, { rank: 14, suit: "d" }];
@@ -59,7 +59,7 @@ describe("named computer opponents", () => {
     const view: GameView = { phase: "playing", toMove: 1, you: 1, yourTurn: true, legalRows: [0], canDiscard: true,
       placed: [20, 19], total: 20, deckRemaining: 1, result: null,
       players: [{ displayName: "Human", rows: [asViews(opponent), ...rows.slice(0, 3)], hand: Array.from({ length: 5 }, () => ({ state: "hidden" })) },
-        { displayName: "The Cardfather", rows: [[...asViews(flush), { state: "empty" }], ...rows.slice(3)], hand: asViews(hand) }] };
+        { displayName: "Counter Edge", rows: [[...asViews(flush), { state: "empty" }], ...rows.slice(3)], hand: asViews(hand) }] };
     expect(chooseComputerMove(view, "hard", seededRng(321))).toEqual({ kind: "place", cardId: "13h", row: 0 });
   });
 });

@@ -131,6 +131,7 @@ export function placeCard(
 ): GameState {
   if (state.phase !== "playing") throw new IllegalMoveError("Game is not in progress");
   if (player !== state.toMove) throw new IllegalMoveError("Not your turn");
+  if (state.exhibition?.pending) throw new IllegalMoveError("Resolve Edge's trick first");
   if (row < 0 || row >= NUM_ROWS) throw new IllegalMoveError("No such row");
 
   const p = state.players[player];
@@ -158,6 +159,7 @@ export function discardCard(
 ): GameState {
   if (state.phase !== "playing") throw new IllegalMoveError("Game is not in progress");
   if (player !== state.toMove) throw new IllegalMoveError("Not your turn");
+  if (state.exhibition?.pending) throw new IllegalMoveError("Resolve Edge's trick first");
 
   const p = state.players[player];
   if (p.discardUsed) throw new IllegalMoveError("You have already used your discard");
@@ -171,6 +173,7 @@ export function discardCard(
 }
 
 function advanceTurn(state: GameState): void {
+  if (state.exhibition) state.exhibition.revision++;
   if (isDone(state, 0) && isDone(state, 1)) {
     finishGame(state);
     return;
@@ -200,7 +203,8 @@ export function evaluateGame(state: GameState): GameResult {
   ) => {
     const scoreA = evaluateHand(a);
     const scoreB = evaluateHand(b);
-    const c = compareScores(scoreA, scoreB);
+    const comparison = compareScores(scoreA, scoreB);
+    const c = state.exhibition?.lowRow === index ? -comparison : comparison;
     let winner: PlayerIndex | null = null;
     if (c > 0) {
       winner = 0;
@@ -267,6 +271,20 @@ export function viewFor(state: GameState, you: PlayerIndex): GameView {
   ];
   return {
     phase: state.phase,
+    ...(state.exhibition ? { exhibition: {
+      token: `${state.exhibition.sessionId}:${state.exhibition.revision}`,
+      lowRow: state.exhibition.lowRow,
+      playFair: state.exhibition.playFair,
+      redraws: state.exhibition.redraws,
+      swaps: state.exhibition.swaps,
+      tricksUsed: state.exhibition.tricksUsed,
+      log: [...state.exhibition.log],
+      pending: state.exhibition.pending ? {
+        kind: state.exhibition.pending.kind,
+        power: state.exhibition.pending.power,
+        ...(state.exhibition.pending.offers ? { offers: state.exhibition.pending.offers.map(card => ({ ...card })) } : {}),
+      } : null,
+    } } : {}),
     toMove: state.toMove,
     you,
     yourTurn,

@@ -2,6 +2,7 @@
 
 import type { GameView, PlayerIndex } from "../game/types";
 import type { ComputerLevel } from "../computer";
+import type { ExhibitionAction } from "../game/exhibitionTypes";
 
 export interface MatchSnapshot {
   matchId: string;
@@ -9,6 +10,7 @@ export interface MatchSnapshot {
   status: "lobby" | "active" | "complete";
   targetWins: number;
   computerLevel?: ComputerLevel | null;
+  exhibition?: boolean;
   host: { displayName: string; avatar?: string };
   guest: { displayName: string; avatar?: string } | null;
   scoreHost: number;
@@ -23,6 +25,7 @@ export interface MatchSnapshot {
 
 // Client -> Server
 export interface ClientToServerEvents {
+  "game:exhibition": (payload: ExhibitionAction) => void;
   "match:join": (payload: { code: string }) => void;
   /** Place a held card (by card id, e.g. "14s") into a row (0..3). */
   "game:place": (payload: { cardId: string; row: number }) => void;
