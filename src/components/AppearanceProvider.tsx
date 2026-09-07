@@ -21,6 +21,7 @@ import {
   updateAppearancePreferences,
   type AppearancePreferences,
 } from "@/lib/appearance";
+import { MotionProvider } from "./MotionProvider";
 
 type AppearanceUpdate = Partial<Omit<AppearancePreferences, "version">>;
 
@@ -129,7 +130,7 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
 
   return (
     <AppearanceContext.Provider value={value}>
-      {children}
+      <MotionProvider>{children}</MotionProvider>
     </AppearanceContext.Provider>
   );
 }

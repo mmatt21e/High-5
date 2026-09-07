@@ -12,6 +12,7 @@ import {
 } from "@/lib/appearance";
 import { useAppearance } from "./AppearanceProvider";
 import { CardBack, CardFace } from "./PlayingCard";
+import { MotionSettings } from "./MotionProvider";
 
 type AppearanceKey = keyof Omit<AppearancePreferences, "version">;
 
@@ -99,6 +100,7 @@ export function AppearanceSettings({
             label: option.name,
           }))}
         />
+        <MotionSettings />
       </div>
 
       <div className="mt-3 flex items-center justify-between gap-3">

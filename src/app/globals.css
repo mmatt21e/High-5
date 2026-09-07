@@ -1691,3 +1691,23 @@ body:has(.game-table-active) { background: var(--table-felt-shadow); }
 .suit-c {
   color: var(--suit-clubs);
 }
+
+/* Motion decorates the fixed table without taking space or accepting input. */
+.table-motion-layer { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 40; contain: strict; }
+.table-motion-card { position: absolute; transform-origin: top left; pointer-events: none; }
+.table-win-spark { position: absolute; width: 4px; height: 8px; background: var(--color-gold); border-radius: 1px; }
+.table-win-spark:nth-child(even) { background: var(--theme-foreground); }
+.table-trick-stamp { position: absolute; transform: translateX(-50%); padding: 2px 12px; border: 1px solid var(--color-gold); border-radius: 3px; background: var(--table-felt-shadow); color: var(--color-gold); font-size: 12px; font-weight: 800; white-space: nowrap; }
+html[data-motion="full"] .hand-select-card .playing-card { transition: transform 140ms ease-out, box-shadow 140ms ease-out; }
+html[data-motion="full"] .hand-select-card-selected .playing-card { transform: translateY(-3px); box-shadow: 0 4px 7px #0005; }
+html[data-motion="full"] .table-player-name strong { transition: color 180ms ease-out; }
+html[data-motion="full"] .settings-dialog, html[data-motion="full"] .wildcard-dialog { animation: panel-arrive 180ms ease-out; }
+html[data-motion="reduced"] .settings-dialog, html[data-motion="reduced"] .wildcard-dialog { animation: panel-fade 120ms ease-out; }
+@keyframes panel-arrive { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes panel-fade { from { opacity: .4; } to { opacity: 1; } }
+html[data-motion="off"] *, html[data-motion="off"] *::before, html[data-motion="off"] *::after { animation: none !important; transition: none !important; }
+html[data-motion="reduced"] .hand-select-card .playing-card { transition: none; transform: none; }
+html[data-motion="reduced"] .target-glow { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .hand-select-card-selected .playing-card { transform: none !important; }
+}

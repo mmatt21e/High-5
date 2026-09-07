@@ -9,6 +9,7 @@ import {
 } from "react";
 import Link from "next/link";
 import { useGameSocket } from "./useGameSocket";
+import { useTableMotion } from "./useTableMotion";
 import { AppearanceSettings } from "./AppearanceSettings";
 import { NotificationToggle } from "./NotificationToggle";
 import { ExhibitionDrawer } from "./ExhibitionDrawer";
@@ -24,7 +25,7 @@ import type { CardView, GameView, PlayerIndex } from "@/lib/game/types";
 import type { MatchSnapshot } from "@/lib/realtime/events";
 
 export function GameRoom({ code }: { code: string }) {
-  const { snapshot, view, error, connected, place, discard, next, endMatch, exhibition } =
+  const { snapshot, view, error, connected, sync, animationKey, place, discard, next, endMatch, exhibition } =
     useGameSocket(code);
 
   if (error && !snapshot) {
@@ -83,6 +84,9 @@ export function GameRoom({ code }: { code: string }) {
   return (
     <>
       <Table
+        animationKey={animationKey}
+        connected={connected}
+        sync={sync}
         snapshot={snapshot}
         view={view}
         error={error}
@@ -165,6 +169,9 @@ function cvId(cv: CardView): string {
 }
 
 function Table({
+  animationKey,
+  connected,
+  sync,
   snapshot,
   view,
   error,
@@ -174,6 +181,9 @@ function Table({
   onEndMatch,
   onExhibition,
 }: {
+  animationKey: string;
+  connected: boolean;
+  sync: number;
   snapshot: MatchSnapshot;
   view: GameView;
   error?: string | null;
@@ -191,6 +201,7 @@ function Table({
   const oppScore = you === 0 ? snapshot.scoreGuest : snapshot.scoreHost;
   const gameOver = view.phase === "complete";
   const matchOver = snapshot.status === "complete";
+  const motionRef = useTableMotion(view, animationKey, sync, connected);
 
   const [selected, setSelected] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -228,7 +239,7 @@ function Table({
   }
 
   const body = (
-    <main className={`game-table-active${shellState}`} aria-label="Five-O game table">
+    <main ref={motionRef} className={`game-table-active${shellState}`} aria-label="Five-O game table">
       <SideRail yourScore={myScore} opponentScore={oppScore} opponentName={oppBoard.displayName}
         target={snapshot.targetWins} remaining={view.deckRemaining} onSettings={openSettings}
         canDiscard={!showResults && view.yourTurn && view.canDiscard && selected !== null}
@@ -242,7 +253,7 @@ function Table({
       />
       <div className="table-player-section table-opponent-section">
         <PlayerBar name={oppBoard.displayName} avatar={(opp === 0 ? snapshot.host : snapshot.guest)?.avatar} active={!showResults && !view.yourTurn} />
-        <AlignedBoard key={view.exhibition?.tricksUsed} board={oppBoard} view={view} seat={opp} results={gameOver} />
+        <AlignedBoard board={oppBoard} view={view} seat={opp} results={gameOver} />
       </div>
       {error ? (
         <div className="table-status table-status-error" role="alert" aria-atomic="true">
@@ -562,7 +573,6 @@ function AlignedBoard({ board, view, seat, results, legalRows = [], onRow }: {
           complete && "table-row-finished",
           playable && "table-row-playable",
           outcome === "Won" && "table-row-won",
-          view.exhibition && "table-row-exhibition",
         ].filter(Boolean).join(" ");
 
         const content = (
@@ -575,7 +585,7 @@ function AlignedBoard({ board, view, seat, results, legalRows = [], onRow }: {
               {slots.map((slot, index) => {
                 const isLatest = Boolean(latest && cvId(slot) === latest);
                 return (
-                  <span key={index} data-slot-state={slot.state} style={{ "--slot-index": index } as CSSProperties} className={`board-card${isLatest ? " board-card-last" : ""}`}>
+                  <span key={cvId(slot) || `slot-${index}`} data-motion-card={cvId(slot) || undefined} data-slot-state={slot.state} style={{ "--slot-index": index } as CSSProperties} className={`board-card${isLatest ? " board-card-last" : ""}`}>
                     <CardSlot slot={slot} size="sm" target={playable && index === count} decorative table />
                     {isLatest && <span className="board-card-last-label">Last</span>}
                   </span>
@@ -637,6 +647,7 @@ function YourHand({ hand, selected, yourTurn, onSelect }: {
             return (
               <button
                 key={id || i}
+                data-motion-card={id || undefined}
                 type="button"
                 disabled={!yourTurn || cv.state !== "card"}
                 onClick={() => id && onSelect(id)}

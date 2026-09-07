@@ -18,6 +18,8 @@ export interface GameSocketState {
   view: GameView | null;
   error: string | null;
   connected: boolean;
+  sync: number;
+  animationKey: string;
   place: (cardId: string, row: number) => boolean;
   discard: (cardId: string) => boolean;
   next: () => boolean;
@@ -30,6 +32,8 @@ export function useGameSocket(code: string): GameSocketState {
   const [view, setView] = useState<GameView | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [connected, setConnected] = useState(false);
+  const [sync, setSync] = useState(0);
+  const [animationKey, setAnimationKey] = useState(code);
   const socketRef = useRef<ClientSocket | null>(null);
   const joinedRef = useRef(false);
 
@@ -44,8 +48,11 @@ export function useGameSocket(code: string): GameSocketState {
       transports: ["websocket", "polling"],
     });
     socketRef.current = socket;
+    let firstView = true;
+    let latestSnapshot: MatchSnapshot | null = null;
 
     socket.on("connect", () => {
+      firstView = true;
       setConnected(true);
       joinedRef.current = false;
       setError(null);
@@ -58,11 +65,14 @@ export function useGameSocket(code: string): GameSocketState {
     });
     socket.on("connect_error", () => setError("Could not connect"));
     socket.on("match:snapshot", (s) => {
+      latestSnapshot = s;
       joinedRef.current = true;
       setSnapshot(s);
       setError(null);
     });
     socket.on("game:view", (v) => {
+      if (latestSnapshot) setAnimationKey(`${code}:${latestSnapshot.gameNumber}`);
+      if (firstView) { setSync(current => current + 1); firstView = false; }
       setView(v);
       setError(null);
     });
@@ -102,5 +112,5 @@ export function useGameSocket(code: string): GameSocketState {
   const exhibition = useCallback((action: ExhibitionAction) => {
     return send((socket) => socket.emit("game:exhibition", action));
   }, [send]);
-  return { snapshot, view, error, connected, place, discard, next, endMatch, exhibition };
+  return { snapshot, view, error, connected, sync, animationKey, place, discard, next, endMatch, exhibition };
 }
