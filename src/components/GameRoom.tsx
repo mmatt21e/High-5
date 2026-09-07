@@ -11,8 +11,10 @@ import Link from "next/link";
 import { useGameSocket } from "./useGameSocket";
 import { AppearanceSettings } from "./AppearanceSettings";
 import { NotificationToggle } from "./NotificationToggle";
+import { PlayerAvatar } from "./PlayerAvatar";
 import {
   CardSlot,
+  CardBack,
   FannedColumn,
   describePlayingCard,
   type CardSize,
@@ -208,7 +210,7 @@ function Table({
     body = (
       <main className="flex flex-1 flex-col gap-2 p-3">
         <TopBar code={snapshot.inviteCode} onSettings={openSettings} />
-        <PlayerBar name={oppBoard.displayName} score={oppScore} target={snapshot.targetWins} />
+        <PlayerBar name={oppBoard.displayName} avatar={(opp === 0 ? snapshot.host : snapshot.guest)?.avatar} score={oppScore} target={snapshot.targetWins} />
         <ResultBoard board={oppBoard} view={view} seat={opp} size="sm" />
         <div className="my-1">
           {matchOver ? (
@@ -218,7 +220,7 @@ function Table({
           )}
         </div>
         <ResultBoard board={myBoard} view={view} seat={you} size="sm" />
-        <PlayerBar name={myBoard.displayName} score={myScore} target={snapshot.targetWins} gold you />
+        <PlayerBar name={myBoard.displayName} avatar={(you === 0 ? snapshot.host : snapshot.guest)?.avatar} score={myScore} target={snapshot.targetWins} gold you />
       </main>
     );
   } else {
@@ -229,8 +231,10 @@ function Table({
       <MatchHud
         view={view}
         opponentName={oppBoard.displayName}
+        opponentAvatar={(opp === 0 ? snapshot.host : snapshot.guest)?.avatar}
         opponentScore={oppScore}
         yourName={myBoard.displayName}
+        yourAvatar={(you === 0 ? snapshot.host : snapshot.guest)?.avatar}
         yourScore={myScore}
         target={snapshot.targetWins}
         selected={selected !== null}
@@ -243,6 +247,8 @@ function Table({
           </h2>
           <HandsRow board={oppBoard} size="sm" />
         </section>
+
+        <DrawDeck remaining={view.deckRemaining} />
 
         <section className="game-board-section" aria-labelledby="your-rows-title">
           <h2 id="your-rows-title" className="game-board-label">
@@ -440,12 +446,14 @@ function SettingsModal({
 
 function PlayerBar({
   name,
+  avatar,
   score,
   target,
   gold = false,
   you = false,
 }: {
   name: string;
+  avatar?: string;
   score: number;
   target: number;
   gold?: boolean;
@@ -453,6 +461,7 @@ function PlayerBar({
 }) {
   return (
     <div className="flex items-center justify-between px-1">
+      <PlayerAvatar avatar={avatar} name={name} size="sm" />
       <span className={`min-w-0 truncate text-sm font-semibold ${gold ? "text-gold" : ""}`}>
         {name}
         {you && <span className="ml-1 text-white/40">(you)</span>}
@@ -479,16 +488,20 @@ function PlayerBar({
 function MatchHud({
   view,
   opponentName,
+  opponentAvatar,
   opponentScore,
   yourName,
+  yourAvatar,
   yourScore,
   target,
   selected,
 }: {
   view: GameView;
   opponentName: string;
+  opponentAvatar?: string;
   opponentScore: number;
   yourName: string;
+  yourAvatar?: string;
   yourScore: number;
   target: number;
   selected: boolean;
@@ -508,6 +521,7 @@ function MatchHud({
       aria-label={`${turnLabel}. Match score: ${opponentName} ${opponentScore} of ${target}; you ${yourScore} of ${target}. ${view.placed[view.you]} of ${view.total} cards placed. ${instruction}.`}
     >
       <div className="game-hud-player">
+        <PlayerAvatar avatar={opponentAvatar} name={opponentName} size="sm" />
         <div className="subtle-text truncate text-[10px] font-bold uppercase tracking-wide">
           {opponentName}
         </div>
@@ -522,6 +536,7 @@ function MatchHud({
         </div>
       </div>
       <div className="game-hud-player">
+        <PlayerAvatar avatar={yourAvatar} name={yourName} size="sm" />
         <div className="truncate text-[10px] font-bold uppercase tracking-wide text-gold">
           {yourName} · you
         </div>
@@ -545,6 +560,20 @@ function describeCardViews(cards: CardView[]): string {
   return parts.join(", ");
 }
 
+function DrawDeck({ remaining }: { remaining: number }) {
+  return (
+    <div className="draw-deck" role="group" aria-label={`Draw deck: ${remaining} cards remaining`}>
+      <div className={`draw-deck-stack ${remaining === 0 ? "draw-deck-empty" : ""}`} aria-hidden="true">
+        {remaining > 0 ? <><span className="deck-layer deck-layer-bottom" /><span className="deck-layer deck-layer-middle" /><CardBack size="sm" decorative /></> : <span>Empty</span>}
+      </div>
+      <div><p className="text-xs font-semibold">Draw deck</p>
+        <p className="supporting-text text-xs" role="status" aria-live="polite"><strong className="text-gold tabular-nums">{remaining}</strong> {remaining === 1 ? "card" : "cards"} left</p>
+        <p className="subtle-text text-[10px]">Drawn automatically on your turn</p>
+      </div>
+    </div>
+  );
+}
+
 /** Opponent's four face-up hands plus their concealed hand (as card backs). */
 function HandsRow({ board, size }: { board: GameView["players"][0]; size: CardSize }) {
   const concealedCount = Math.min(board.hand.length, 5);
@@ -560,15 +589,17 @@ function HandsRow({ board, size }: { board: GameView["players"][0]; size: CardSi
           role="group"
           aria-label={`Opponent row ${i + 1}: ${describeCardViews(row)}`}
         >
-          <FannedColumn slots={row} size={size} decorative />
+          <span className="card-row-label">Row {i + 1}</span>
+          <FannedColumn slots={row} size={size} decorative well />
         </div>
       ))}
       <div
-        className="flex flex-col items-center rounded-lg border border-white/10 bg-black/20 p-1"
+        className="flex flex-col items-center rounded-lg p-1"
         role="group"
         aria-label={`Opponent hidden hand: ${concealedCount} face-down ${concealedCount === 1 ? "card" : "cards"}`}
       >
-        <FannedColumn slots={backs} size={size} decorative />
+        <span className="card-row-label">Hand</span>
+        <FannedColumn slots={backs} size={size} decorative well />
         <span className="subtle-text mt-0.5 text-[8px] uppercase tracking-wide">
           hidden
         </span>
@@ -612,7 +643,8 @@ function RowsBoard({
                 : ""
             }`}
           >
-            <FannedColumn slots={row} size={size} targetIndex={target} decorative />
+            <span className="card-row-label">Row {i + 1}</span>
+            <FannedColumn slots={row} size={size} targetIndex={target} decorative well />
           </button>
         );
       })}
@@ -757,7 +789,8 @@ function ResultBoard({
               won ? "result-hand-won" : "result-hand-not-won"
             }`}
           >
-            <FannedColumn slots={padTo5(slots)} size={size} decorative />
+            <span className="card-row-label">{isHand ? "Hand" : `Row ${i + 1}`}</span>
+            <FannedColumn slots={padTo5(slots)} size={size} decorative well />
             <span
               className={`mt-0.5 text-[9px] leading-tight ${
                 won ? "success-text" : "supporting-text"

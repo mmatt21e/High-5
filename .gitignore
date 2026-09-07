@@ -45,6 +45,7 @@ npm-debug.log*
 /graphify-out/
 .claude/
 .codex/
+/.Codex/handoff.md
 .cursor/
 CLAUDE.md
 CODEX.md

@@ -28,6 +28,7 @@ const atomicMigration = "20260905150000_atomic_game_completion";
 const acceptedAtomicChecksum =
   "d703b710a6c65ca46a2bc15f993b51a8de25fbc0e39fabb2fcea610599f2ab88";
 const integrityMigration = "20260905200000_verify_foreign_key_integrity";
+const invitationMigration = "20260906000000_player_invitations";
 const atomicMigrationSql = resolve(
   prismaDirectory,
   "migrations",
@@ -138,7 +139,7 @@ async function inspectDatabase(url) {
     );
     assert(
       appliedMigrations.map(({ migration_name }) => migration_name).join(",") ===
-        [baselineMigration, atomicMigration, integrityMigration].join(","),
+        [baselineMigration, atomicMigration, integrityMigration, invitationMigration].join(","),
       "Expected the complete tracked migration history to be applied",
     );
   } finally {
@@ -307,6 +308,9 @@ try {
   runDeployment(freshUrl);
   await inspectDatabase(freshUrl);
   verifyNoSchemaDrift(freshDatabase, freshUrl);
+  // Starting a second time must recognize the newly completed history too.
+  runDeployment(freshUrl);
+  await inspectDatabase(freshUrl);
 
   runPrisma(
     ["db", "push", "--schema", legacySchema, "--skip-generate"],

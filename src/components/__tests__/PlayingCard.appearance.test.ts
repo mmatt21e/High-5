@@ -11,9 +11,7 @@ describe("mobile playing-card appearance", () => {
     for (const [size, geometry] of Object.entries(CARD_GEOMETRY)) {
       const indexBottom =
         geometry.indexTop +
-        geometry.rankLine +
-        geometry.suitLine +
-        geometry.indexGap;
+        Math.max(geometry.rankLine, geometry.suitLine);
 
       expect(indexBottom, `${size} index bottom`).toBeLessThanOrEqual(
         geometry.peek - 2,

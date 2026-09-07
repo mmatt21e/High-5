@@ -7,6 +7,9 @@ import { Lobby } from "@/components/Lobby";
 import { SignOutButton } from "@/components/SignOutButton";
 import { AppearanceSettings } from "@/components/AppearanceSettings";
 import { NotificationToggle } from "@/components/NotificationToggle";
+import { PlayerChallenges } from "@/components/PlayerChallenges";
+import { PlayerAvatar } from "@/components/PlayerAvatar";
+import { publicPlayer } from "@/server/playerIdentity";
 
 export const metadata: Metadata = {
   title: "Five-O Poker | Five Hands. Three to Win.",
@@ -77,6 +80,7 @@ export default async function HomePage() {
     return {
       code: m.inviteCode,
       opponent,
+      avatar: (seat === 0 ? m.guest : m.host) ? publicPlayer((seat === 0 ? m.guest : m.host)!).avatar : null,
       myScore,
       oppScore,
       target: m.targetWins,
@@ -106,12 +110,15 @@ export default async function HomePage() {
                 href={`/play/${g.code}`}
                 className="surface-list-item flex items-center justify-between px-3 py-2.5 active:scale-[0.99]"
               >
-                <div>
+                <div className="flex min-w-0 items-center gap-2">
+                  <PlayerAvatar avatar={g.avatar} name={g.opponent ?? "Player"} size="sm" />
+                  <div className="min-w-0">
                   <div className="text-sm font-semibold">
                     vs {g.opponent ?? "waiting…"}
                   </div>
                   <div className="subtle-text text-xs">
                     {g.myScore}–{g.oppScore} · code {g.code}
+                  </div>
                   </div>
                 </div>
                 <TurnBadge turn={g.turn} />
@@ -121,13 +128,17 @@ export default async function HomePage() {
         </section>
       )}
 
-      <Lobby />
+      <PlayerChallenges />
+      <section className="panel" aria-labelledby="invite-code-title">
+        <h2 id="invite-code-title" className="mb-3 font-bold">Play using an invite code</h2>
+        <Lobby />
+      </section>
 
       <section className="panel mt-2">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="font-bold">Your stats</h2>
           <Link href="/profile" className="nav-link px-2 text-sm text-gold">
-            Details
+            Profile & history
           </Link>
         </div>
         <div className="grid grid-cols-3 gap-3 text-center">

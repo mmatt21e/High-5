@@ -5,6 +5,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { publicPlayer, playerSelect } from "@/server/playerIdentity";
 import { fitsBcryptPasswordLimit } from "@/lib/password";
 import {
   RATE_LIMITS,
@@ -65,7 +66,7 @@ providers.push(
         id: user.id,
         email: user.email,
         name: user.displayName,
-        image: user.image,
+        image: publicPlayer(user).avatar,
       };
     },
   }),
@@ -83,9 +84,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (token.uid) {
         const db = await prisma.user.findUnique({
           where: { id: token.uid as string },
-          select: { displayName: true },
+          select: playerSelect,
         });
-        if (db) token.displayName = db.displayName;
+        if (db) {
+          token.displayName = db.displayName;
+          token.picture = publicPlayer(db).avatar;
+        }
       }
       return token;
     },

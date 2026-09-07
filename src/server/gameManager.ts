@@ -2,6 +2,7 @@ import { randomInt } from "node:crypto";
 import type { Server, Socket } from "socket.io";
 import { prisma } from "../lib/prisma";
 import { joinMatch } from "../lib/match";
+import { publicPlayer } from "./playerIdentity";
 import { sendPushToUser } from "../lib/push";
 import {
   persistCompletedGame,
@@ -30,8 +31,8 @@ interface LiveMatch {
   inviteCode: string;
   status: "lobby" | "active" | "complete";
   targetWins: number;
-  host: { userId: string; displayName: string };
-  guest: { userId: string; displayName: string } | null;
+  host: { userId: string; displayName: string; avatar?: string };
+  guest: { userId: string; displayName: string; avatar?: string } | null;
   scoreHost: number;
   scoreGuest: number;
   matchWinnerId: string | null;
@@ -84,9 +85,9 @@ async function readLiveFromDatabase(matchId: string): Promise<LiveMatch | null> 
           ? "lobby"
           : "complete",
     targetWins: m.targetWins,
-    host: { userId: m.host.id, displayName: m.host.displayName },
+    host: { userId: m.host.id, displayName: m.host.displayName, avatar: publicPlayer(m.host).avatar },
     guest: m.guest
-      ? { userId: m.guest.id, displayName: m.guest.displayName }
+      ? { userId: m.guest.id, displayName: m.guest.displayName, avatar: publicPlayer(m.guest).avatar }
       : null,
     scoreHost: m.scoreHost,
     scoreGuest: m.scoreGuest,
@@ -118,7 +119,11 @@ async function refreshMembership(
 
   // REST owns seat acquisition. Reconcile only the one legal lobby-to-active
   // transition, never replacing a newer in-memory turn with persisted JSON.
-  cached.host = { userId: m.host.id, displayName: m.host.displayName };
+  cached.host = { userId: m.host.id, displayName: m.host.displayName, avatar: publicPlayer(m.host).avatar };
+  if (cached.guest && m.guest?.id === cached.guest.userId) {
+    cached.guest.displayName = m.guest.displayName;
+    cached.guest.avatar = publicPlayer(m.guest).avatar;
+  }
   if (
     !cached.guest &&
     cached.status === "lobby" &&
@@ -129,6 +134,7 @@ async function refreshMembership(
     cached.guest = {
       userId: m.guest.id,
       displayName: m.guest.displayName,
+      avatar: publicPlayer(m.guest).avatar,
     };
     cached.status = "active";
   }
@@ -235,8 +241,8 @@ function snapshotFor(live: LiveMatch, userId: string): MatchSnapshot {
     inviteCode: live.inviteCode,
     status: live.status,
     targetWins: live.targetWins,
-    host: { displayName: live.host.displayName },
-    guest: live.guest ? { displayName: live.guest.displayName } : null,
+    host: { displayName: live.host.displayName, avatar: live.host.avatar },
+    guest: live.guest ? { displayName: live.guest.displayName, avatar: live.guest.avatar } : null,
     scoreHost: live.scoreHost,
     scoreGuest: live.scoreGuest,
     gameNumber: live.gameNumber,

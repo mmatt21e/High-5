@@ -11,18 +11,22 @@ const repositoryRoot = fileURLToPath(new URL("..", import.meta.url));
 const prismaDirectory = resolve(repositoryRoot, "prisma");
 const currentSchema = resolve(prismaDirectory, "schema.prisma");
 const legacySchema = resolve(repositoryRoot, "scripts", "fixtures", "pre-round2.schema.prisma");
+const prePlayerSchema = resolve(repositoryRoot, "scripts", "fixtures", "pre-player-features.schema.prisma");
 const require = createRequire(import.meta.url);
 const prismaCli = require.resolve("prisma/build/index.js");
 
 const baselineMigration = "20260905000000_initial_sqlite_baseline";
 const atomicMigration = "20260905150000_atomic_game_completion";
 const integrityMigration = "20260905200000_verify_foreign_key_integrity";
-const completeHistory = [baselineMigration, atomicMigration, integrityMigration];
+const invitationMigration = "20260906000000_player_invitations";
+const previousHistory = [baselineMigration, atomicMigration, integrityMigration];
+const completeHistory = [...previousHistory, invitationMigration];
 const knownHistories = new Map([
   ["", "untracked"],
   [atomicMigration, "round2"],
   [baselineMigration, "legacy-baselined"],
   [[baselineMigration, atomicMigration].join(","), "pre-integrity"],
+  [previousHistory.join(","), "pre-invitations"],
   [completeHistory.join(","), "current"],
 ]);
 
@@ -188,6 +192,8 @@ if (kind === "untracked") {
   assert(!isEmpty, "Migration history exists but application tables are missing. No changes made.");
   if (kind === "legacy-baselined") {
     assertSchemaMatches(legacySchema, "Baselined legacy");
+  } else if (kind !== "current") {
+    assertSchemaMatches(prePlayerSchema, "Before player invitations");
   } else {
     assertSchemaMatches(currentSchema, "Tracked");
   }

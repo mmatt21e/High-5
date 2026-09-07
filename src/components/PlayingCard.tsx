@@ -86,46 +86,23 @@ export function CardFace({
         <span className="playing-card-suit">{suit}</span>
       </div>
 
-      <div aria-hidden="true" className="playing-card-pips">
-        {pips.map(([x, y], index) => (
-          <span
-            className="playing-card-pip"
-            key={`${x}-${y}-${index}`}
-            style={
-              {
-                left: `${x}%`,
-                top: `${y}%`,
-                "--pip-turn": y > 50 ? "180deg" : "0deg",
-              } as CSSProperties
-            }
-          >
-            {suit}
-          </span>
-        ))}
-      </div>
-
-      <div aria-hidden="true" className={`playing-card-center flex h-full items-center justify-center font-black ${sizing.pip}`}>
-        {suit}
-      </div>
-
-      {isCourt && (
-        <div aria-hidden="true" className="playing-card-court">
-          <span className="court-crown"><i /><i /><i /></span>
-          <span className="court-rank">{RANK_LABEL[card.rank]}</span>
-          <span className="court-suit">{suit}</span>
-          <span className="court-rule court-rule-top" />
-          <span className="court-rule court-rule-bottom" />
-        </div>
-      )}
-
-      <div aria-hidden="true" className="playing-card-mobile-id">
-        <span>{RANK_LABEL[card.rank]}</span>
-        <span>{suit}</span>
-      </div>
-
-      <div aria-hidden="true" className="playing-card-ornament">
-        <i /><i /><i /><i />
-      </div>
+      <svg className="card-art" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+        <g className="card-art-single"><text x="50" y="50" fontSize="64">{suit}</text></g>
+        <g className="card-art-pips">
+          {pips.map(([x, y], index) => <text key={index} x={x} y={y} fontSize="17"
+            transform={y > 50 ? `rotate(180 ${x} ${y})` : undefined}>{suit}</text>)}
+        </g>
+        {isCourt && <g className="card-art-court">
+          <rect x="6" y="3" width="88" height="94" rx="3" fill="none" stroke="currentColor" strokeWidth="2" />
+          <path d="M27 13 L35 25 L50 10 L65 25 L73 13 L69 34 L31 34 Z" />
+          <text x="36" y="66" fontSize="43">{RANK_LABEL[card.rank]}</text>
+          <text x="74" y="66" fontSize="28">{suit}</text>
+        </g>}
+        <g className="card-art-jumbo">
+          <text x="50" y="27" fontSize="46">{RANK_LABEL[card.rank]}</text>
+          <text x="50" y="80" fontSize="28">{suit}</text>
+        </g>
+      </svg>
     </div>
   );
 }
@@ -196,20 +173,24 @@ export function FannedColumn({
   size = "md",
   targetIndex = null,
   decorative = false,
+  well = false,
 }: {
   slots: CardView[];
   size?: CardSize;
   targetIndex?: number | null;
   decorative?: boolean;
+  well?: boolean;
 }) {
   const sizing = SIZE[size];
   const overlap = sizing.hpx - sizing.peek;
   return (
-    <div className="flex flex-col items-center">
+    <div className={well ? "card-row-well" : "flex flex-col items-center"}
+      style={well ? { height: sizing.hpx + (slots.length - 1) * sizing.peek + 8 } : undefined}>
       {slots.map((slot, index) => (
+        well && slot.state === "empty" ? null :
         <div
           key={index}
-          style={{ marginTop: index === 0 ? 0 : -overlap, zIndex: index }}
+          style={well ? { position: "absolute", top: 3 + index * sizing.peek, zIndex: index } : { marginTop: index === 0 ? 0 : -overlap, zIndex: index }}
           className="relative"
         >
           <CardSlot
@@ -220,6 +201,7 @@ export function FannedColumn({
           />
         </div>
       ))}
+      {well && <span className="card-row-count" aria-hidden="true">{slots.filter((slot) => slot.state !== "empty").length} / 5</span>}
     </div>
   );
 }

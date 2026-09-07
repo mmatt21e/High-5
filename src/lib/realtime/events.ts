@@ -7,8 +7,8 @@ export interface MatchSnapshot {
   inviteCode: string;
   status: "lobby" | "active" | "complete";
   targetWins: number;
-  host: { displayName: string };
-  guest: { displayName: string } | null;
+  host: { displayName: string; avatar?: string };
+  guest: { displayName: string; avatar?: string } | null;
   scoreHost: number;
   scoreGuest: number;
   gameNumber: number;

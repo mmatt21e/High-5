@@ -1,9 +1,35 @@
 # Five-O Poker
 
 Five-O Poker is a mobile-first, heads-up poker game played in real time across
-two devices. One authenticated player creates a match and shares an eight-character
-invite code; the other joins that match and both play against a server-authoritative
-deck and game engine. Legacy five-character invite codes remain accepted.
+two devices. Players can search for another player's name and send an invitation,
+or create a match and share an eight-character invite code. A named invitation
+starts a match only when its recipient accepts; invite-code joining remains
+available, including legacy five-character codes. Both players play against a
+server-authoritative deck and game engine.
+
+## Players, history and avatars
+
+- Search uses the player name chosen at registration. Names need not be unique;
+  avatars and a short player identifier distinguish search results. Search is
+  available only to signed-in players and does not return email addresses.
+- The lobby lists incoming and outgoing invitations and refreshes while visible.
+  Recipients can accept or decline; senders can cancel pending invitations.
+  Acceptance reserves both seats and can be retried without creating another match.
+- **Profile & history** shows overall game wins, losses and pushes, completed
+  match records, opponent-by-opponent records and paginated game history. Selecting
+  an opponent filters that history. Unfinished or manually ended matches are not
+  counted as match wins or losses; completed games within them still count.
+- Avatars are saved to the account. Choose one of eight built-in avatars or upload
+  a still JPEG, PNG or WebP up to 2 MB / 16 megapixels. Uploads are center-cropped,
+  resized to 128×128 WebP, stripped of metadata and kept in SQLite with the account.
+- Table rows use continuous placement areas. The center draw deck shows the
+  server's remaining-card count; cards are drawn automatically at the start of a
+  turn. All ten deck styles keep card indices separate from their vector artwork.
+
+Existing installations must run `npm run db:migrate` before starting this version.
+The additive `20260906000000_player_invitations` migration preserves existing
+accounts, matches and results. Migration SQL uses LF line endings on every platform
+so released checksums remain stable.
 
 ## Game rules
 
