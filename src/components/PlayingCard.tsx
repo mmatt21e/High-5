@@ -45,10 +45,12 @@ export function CardFace({
   card,
   size = "md",
   decorative = false,
+  table = false,
 }: {
   card: Card;
   size?: CardSize;
   decorative?: boolean;
+  table?: boolean;
 }) {
   const sizing = SIZE[size];
   const suit = `${SUIT_LABEL[card.suit]}\uFE0E`;
@@ -63,6 +65,7 @@ export function CardFace({
       data-rank={card.rank}
       data-suit={card.suit}
       data-face-kind={faceKind}
+      data-card-layout={table ? "table" : undefined}
       style={
         {
           "--card-index-top": `${sizing.indexTop}px`,
@@ -86,6 +89,7 @@ export function CardFace({
         <span className="playing-card-suit">{suit}</span>
       </div>
 
+      {table && <span className="table-card-jumbo" aria-hidden="true">{RANK_LABEL[card.rank]}</span>}
       <svg className="card-art" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
         <g className="card-art-single"><text x="50" y="50" fontSize="64">{suit}</text></g>
         <g className="card-art-pips">
@@ -152,14 +156,16 @@ export function CardSlot({
   size = "md",
   target = false,
   decorative = false,
+  table = false,
 }: {
   slot: CardView;
   size?: CardSize;
   target?: boolean;
   decorative?: boolean;
+  table?: boolean;
 }) {
   if (slot.state === "card") {
-    return <CardFace card={slot.card} size={size} decorative={decorative} />;
+    return <CardFace card={slot.card} size={size} decorative={decorative} table={table} />;
   }
   if (slot.state === "hidden") {
     return <CardBack size={size} decorative={decorative} />;

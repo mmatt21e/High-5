@@ -142,6 +142,7 @@ export function placeCard(
 
   const [card] = p.hand.splice(idx, 1);
   p.rows[row].push(card);
+  p.lastPlacement = { row, cardId: id };
   advanceTurn(state);
   return state;
 }
@@ -252,6 +253,7 @@ function viewPlayer(
     displayName: player.displayName,
     rows: rowsView(player.rows),
     hand: handView(player.hand, isSelf || revealAll),
+    lastPlacement: player.lastPlacement ? { ...player.lastPlacement } : null,
   };
 }
 

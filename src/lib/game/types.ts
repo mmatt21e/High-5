@@ -11,6 +11,12 @@ export const NUM_HANDS = NUM_ROWS + 1;
 
 export type PlayerIndex = 0 | 1;
 
+/** The latest face-up placement; no concealed card information is included. */
+export interface BoardPlacement {
+  row: number;
+  cardId: string;
+}
+
 export interface PlayerState {
   userId: string;
   displayName: string;
@@ -20,6 +26,8 @@ export interface PlayerState {
   hand: Card[];
   /** Whether this player has used their one-time discard. */
   discardUsed: boolean;
+  /** Optional for games saved before placement markers were introduced. */
+  lastPlacement?: BoardPlacement | null;
 }
 
 export type GamePhase = "playing" | "complete";
@@ -65,6 +73,7 @@ export interface PlayerView {
   rows: CardView[][];
   /** Concealed hand: your own cards (revealed) or the opponent's (hidden). */
   hand: CardView[];
+  lastPlacement?: BoardPlacement | null;
 }
 
 export interface GameView {

@@ -43,9 +43,16 @@ search, named invitations, and invite-code matches remain available unchanged.
 - Avatars are saved to the account. Choose one of eight built-in avatars or upload
   a still JPEG, PNG or WebP up to 2 MB / 16 megapixels. Uploads are center-cropped,
   resized to 128×128 WebP, stripped of metadata and kept in SQLite with the account.
-- Table rows use continuous placement areas. The center draw deck shows the
-  server's remaining-card count; cards are drawn automatically at the start of a
-  turn. All ten deck styles keep card indices separate from their vector artwork.
+- The Side Rail table stacks the opponent above you, with all four row columns
+  aligned. Scores, deck count, Discard, and Settings sit in the left rail; your
+  private hand spans the bottom. The opponent's concealed hand appears only at
+  showdown. Select a card, then tap an available row to place it.
+- Each player's latest board placement has a **Last** marker, saved with the
+  game across reconnects. Full rows show **Complete**. Older saved games gain a
+  marker on the next placement; no database migration is needed for these markers.
+- The draw-deck counter shows the server's remaining cards; cards are drawn
+  automatically at the start of a turn. Gameplay uses compact square faces with
+  exposed rank/suit indices; deck previews retain their full vector artwork.
 
 Existing installations must run `npm run db:migrate` before starting this version.
 The additive `20260907000000_computer_opponents` migration adds nullable computer

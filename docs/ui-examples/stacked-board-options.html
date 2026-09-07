@@ -1,0 +1,182 @@
+<div id="fiveo-stacked-options">
+  <style>
+    #fiveo-stacked-options { color-scheme: light dark; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: light-dark(#24312d,#eef2f0); }
+    #fiveo-stacked-options * { box-sizing: border-box; }
+    #fiveo-stacked-options .fo-options { display:flex; flex-wrap:wrap; justify-content:center; gap:6px; margin-bottom:14px; }
+    #fiveo-stacked-options .fo-option { min-height:44px; padding:8px 12px; border:1px solid light-dark(#c7cfca,#4a544e); border-radius:7px; color:inherit; background:light-dark(#f7f8f7,#252b28); font:inherit; font-size:13px; cursor:pointer; }
+    #fiveo-stacked-options .fo-option[aria-pressed="true"] { background:light-dark(#243c32,#dfece4); color:light-dark(#fff,#1b2921); border-color:transparent; }
+    #fiveo-stacked-options .fo-caption { display:flex; align-items:baseline; justify-content:space-between; gap:12px; max-width:400px; margin:0 auto 8px; font-size:13px; }
+    #fiveo-stacked-options .fo-caption span { font-size:11px; color:light-dark(#56655c,#b3beb6); }
+    #fiveo-stacked-options .fo-screen {
+      --fo-bg:#123b2c; --fo-surface:#0c2b20; --fo-well:#123f2e; --fo-text:#f3f4eb;
+      --fo-muted:#b9cbbf; --fo-line:#39614b; --fo-accent:#eed083; --fo-on-accent:#24301b;
+      --fo-complete:#b0e3bc; --fo-radius:10px; --fo-peek:20px;
+      display:grid; grid-template-rows:44px minmax(0,1fr) 42px minmax(0,1fr) 112px;
+      gap:8px; padding:0 10px 10px; max-width:400px; height:700px; margin:auto;
+      color:var(--fo-text); background:var(--fo-bg); border:1px solid var(--fo-line);
+      border-radius:16px; overflow:hidden; color-scheme:dark;
+    }
+    #fiveo-stacked-options .fo-toolbar { display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--fo-line); }
+    #fiveo-stacked-options .fo-toolbar strong { font-size:15px; letter-spacing:.04em; }
+    #fiveo-stacked-options .fo-chrome-button { display:flex; align-items:center; justify-content:center; gap:5px; min-height:44px; min-width:44px; padding:0 4px; font:inherit; font-size:12px; border:0; color:var(--fo-muted); background:none; cursor:pointer; }
+    #fiveo-stacked-options .fo-player-area { min-height:0; display:grid; grid-template-rows:30px minmax(0,1fr); }
+    #fiveo-stacked-options .fo-player-header { display:flex; justify-content:space-between; align-items:center; min-width:0; padding:0 3px; }
+    #fiveo-stacked-options .fo-person { display:flex; gap:7px; align-items:center; min-width:0; font-size:12px; font-weight:600; }
+    #fiveo-stacked-options .fo-avatar { display:grid; place-items:center; width:22px; height:22px; border-radius:50%; background:var(--fo-line); font-size:11px; }
+    #fiveo-stacked-options .fo-you .fo-avatar { background:var(--fo-accent); color:var(--fo-on-accent); }
+    #fiveo-stacked-options .fo-score { color:var(--fo-muted); font-size:11px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+    #fiveo-stacked-options .fo-score b { color:var(--fo-text); font-size:15px; margin-right:2px; }
+    #fiveo-stacked-options .fo-four-rows { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; min-height:0; }
+    #fiveo-stacked-options .fo-row { display:flex; flex-direction:column; align-items:center; min-width:0; min-height:0; position:relative; margin:0; padding:0 3px 5px; border:1px solid var(--fo-line); border-radius:var(--fo-radius); background:var(--fo-well); color:var(--fo-text); font:inherit; text-align:left; }
+    #fiveo-stacked-options button.fo-row { cursor:pointer; }
+    #fiveo-stacked-options .fo-row-header { width:100%; display:flex; justify-content:space-between; align-items:center; gap:2px; height:23px; flex:none; padding:0 1px; font-size:11px; font-weight:600; }
+    #fiveo-stacked-options .fo-row-check { color:var(--fo-complete); font-size:13px; }
+    #fiveo-stacked-options .fo-fan { position:relative; width:min(100%,60px); flex:1; min-height:0; }
+    #fiveo-stacked-options .fo-well { display:block; height:100%; border:1px dashed var(--fo-line); border-radius:5px; }
+    #fiveo-stacked-options .fo-playing-card { position:absolute; inset-inline:0; top:calc(var(--fo-index,0) * var(--fo-peek)); height:70px; border:1px solid #c5c7be; border-radius:5px; background:#fffcf3; color:var(--fo-suit); box-shadow:0 1px 2px #0003; font-family:Georgia,"Times New Roman",serif; }
+    #fiveo-stacked-options .fo-index { position:absolute; top:3px; left:4px; font-size:15px; line-height:17px; font-weight:bold; white-space:nowrap; }
+    #fiveo-stacked-options .fo-index-bottom { top:auto; left:auto; bottom:3px; right:4px; transform:rotate(180deg); font-size:12px; }
+    #fiveo-stacked-options .fo-center-suit { display:grid; place-items:center; height:100%; padding-top:5px; font-size:25px; }
+    #fiveo-stacked-options .fo-last { outline:2px solid var(--fo-accent); outline-offset:1px; }
+    #fiveo-stacked-options .fo-last-label { position:absolute; right:-1px; bottom:-1px; padding:1px 3px; border-radius:3px 0 4px 0; background:var(--fo-accent); color:var(--fo-on-accent); font:600 11px/13px system-ui,sans-serif; }
+    #fiveo-stacked-options .fo-row-footer { width:100%; text-align:center; font-size:11px; line-height:15px; height:15px; flex:none; color:var(--fo-muted); }
+    #fiveo-stacked-options .fo-finished .fo-row-footer { color:var(--fo-complete); }
+    #fiveo-stacked-options .fo-center-bar { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:0 8px; border-block:1px solid var(--fo-line); background:var(--fo-surface); }
+    #fiveo-stacked-options .fo-turn { font-size:13px; font-weight:650; color:var(--fo-accent); }
+    #fiveo-stacked-options .fo-turn small { display:block; color:var(--fo-muted); font-size:11px; font-weight:400; margin-top:2px; }
+    #fiveo-stacked-options .fo-draw { display:flex; gap:7px; align-items:center; color:var(--fo-muted); font-size:11px; }
+    #fiveo-stacked-options .fo-deck { width:22px; height:29px; background:#803746; border:2px solid #ede4ce; box-shadow:2px 2px 0 var(--fo-line); border-radius:3px; display:grid; place-items:center; font-size:10px; color:#fff8df; }
+    #fiveo-stacked-options .fo-hand { min-height:0; display:grid; grid-template-rows:28px minmax(0,1fr); padding:4px 6px 6px; border-top:1px solid var(--fo-line); background:var(--fo-surface); border-radius:var(--fo-radius); }
+    #fiveo-stacked-options .fo-hand-top { display:flex; align-items:center; justify-content:space-between; gap:5px; font-size:12px; }
+    #fiveo-stacked-options .fo-hand-top small { color:var(--fo-muted); font-size:11px; }
+    #fiveo-stacked-options .fo-hand-cards { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); align-items:center; gap:5px; min-width:0; }
+    #fiveo-stacked-options .fo-hand-card { position:relative; height:65px; min-width:0; padding:0; border:0; border-radius:5px; background:none; font:inherit; cursor:pointer; }
+    #fiveo-stacked-options .fo-hand-card .fo-playing-card { height:100%; }
+    #fiveo-stacked-options .fo-hand-card[aria-pressed="true"] { outline:3px solid var(--fo-accent); outline-offset:2px; }
+    #fiveo-stacked-options .fo-discard { font:inherit; font-size:11px; color:var(--fo-muted); border:0; background:none; padding:3px; cursor:pointer; }
+    #fiveo-stacked-options .fo-can-place { outline:2px solid var(--fo-accent); outline-offset:-2px; }
+    #fiveo-stacked-options .fo-choice { display:flex; gap:12px; align-items:center; justify-content:space-between; max-width:400px; margin:12px auto 0; }
+    #fiveo-stacked-options .fo-use { background:light-dark(#243c32,#dfece4); color:light-dark(#fff,#1b2921); border:0; border-radius:7px; padding:10px 16px; min-height:44px; font:500 13px system-ui,sans-serif; cursor:pointer; }
+    #fiveo-stacked-options .fo-choice-status { font-size:12px; }
+    #fiveo-stacked-options [data-design="graphite"] { --fo-bg:#1b1e22; --fo-surface:#252a30; --fo-well:#1b1e22; --fo-text:#f4f6f8; --fo-muted:#b4bbc3; --fo-line:#41474f; --fo-accent:#85b6ff; --fo-on-accent:#102c51; --fo-complete:#a3dcbb; --fo-radius:5px; border-radius:10px; }
+    #fiveo-stacked-options [data-design="graphite"] .fo-row { border:0; border-right:1px solid var(--fo-line); border-radius:0; }
+    #fiveo-stacked-options [data-design="graphite"] .fo-row:last-child { border-right:0; }
+    #fiveo-stacked-options [data-design="graphite"] .fo-player-header { border-bottom:1px solid var(--fo-line); margin-bottom:4px; }
+    #fiveo-stacked-options [data-design="graphite"] .fo-well { border:0; background:#23272c; }
+    #fiveo-stacked-options [data-design="graphite"] .fo-center-bar { border:0; border-radius:5px; }
+    #fiveo-stacked-options [data-design="graphite"] .fo-playing-card { font-family:system-ui,sans-serif; }
+    #fiveo-stacked-options [data-design="ivory"] { --fo-bg:#eeeae2; --fo-surface:#fcfaf5; --fo-well:#e5e0d6; --fo-text:#262d31; --fo-muted:#586264; --fo-line:#ccc5b8; --fo-accent:#235ac4; --fo-on-accent:#fff; --fo-complete:#206444; --fo-radius:8px; color-scheme:light; }
+    #fiveo-stacked-options [data-design="ivory"] .fo-toolbar { background:#fcfaf5; margin-inline:-10px; padding-inline:10px; }
+    #fiveo-stacked-options [data-design="ivory"] .fo-row { border:0; }
+    #fiveo-stacked-options [data-design="ivory"] .fo-finished { box-shadow:inset 0 -3px 0 #438166; }
+    #fiveo-stacked-options [data-design="ivory"] .fo-center-bar { border:1px solid var(--fo-line); border-radius:8px; }
+    #fiveo-stacked-options [data-design="ivory"] .fo-hand { border:1px solid var(--fo-line); }
+    #fiveo-stacked-options [data-design="navy"] { --fo-bg:#111c2b; --fo-surface:#1b2a3d; --fo-well:#152235; --fo-text:#edf1f6; --fo-muted:#aec0d5; --fo-line:#354862; --fo-accent:#e8b66a; --fo-on-accent:#2e2414; --fo-complete:#a2d3bb; --fo-radius:3px; border-radius:8px; }
+    #fiveo-stacked-options [data-design="navy"] .fo-player-header { padding:0 7px; background:var(--fo-surface); border-radius:3px; }
+    #fiveo-stacked-options [data-design="navy"] .fo-row { border:0; }
+    #fiveo-stacked-options [data-design="navy"] .fo-row-header { justify-content:center; gap:8px; }
+    #fiveo-stacked-options [data-design="navy"] .fo-center-bar { background:none; }
+    #fiveo-stacked-options [data-design="navy"] .fo-turn { order:2; text-align:right; }
+    #fiveo-stacked-options [data-design="navy"] .fo-playing-card { border-radius:3px; }
+    #fiveo-stacked-options [data-density="compact"] { height:640px; --fo-peek:20px; grid-template-rows:40px minmax(0,1fr) 36px minmax(0,1fr) 98px; gap:6px; padding-bottom:8px; }
+    #fiveo-stacked-options [data-density="compact"] .fo-player-area { grid-template-rows:26px minmax(0,1fr); }
+    #fiveo-stacked-options [data-density="compact"] .fo-playing-card { height:64px; }
+    #fiveo-stacked-options [data-density="compact"] .fo-hand { grid-template-rows:24px minmax(0,1fr); }
+    #fiveo-stacked-options [data-density="compact"] .fo-hand-card { height:60px; }
+    #fiveo-stacked-options [data-density="compact"] .fo-hand-card .fo-playing-card { height:100%; }
+    @media (max-width:360px) {
+      #fiveo-stacked-options .fo-screen { padding-inline:6px; }
+      #fiveo-stacked-options .fo-four-rows { gap:4px; }
+      #fiveo-stacked-options .fo-row { padding-inline:2px; }
+      #fiveo-stacked-options .fo-hand-cards { gap:4px; }
+      #fiveo-stacked-options .fo-option { padding-inline:8px; font-size:12px; }
+      #fiveo-stacked-options [data-design="ivory"] .fo-toolbar { margin-inline:-6px; padding-inline:6px; }
+    }
+  </style>
+  <div class="fo-options" role="group" aria-label="Interface examples">
+    <button class="fo-option" type="button" data-option="felt" aria-pressed="true">A · Felt</button>
+    <button class="fo-option" type="button" data-option="graphite" aria-pressed="false">B · Graphite</button>
+    <button class="fo-option" type="button" data-option="ivory" aria-pressed="false">C · Ivory</button>
+    <button class="fo-option" type="button" data-option="navy" aria-pressed="false">D · Navy</button>
+  </div>
+  <div class="fo-caption"><strong id="fo-design-name">A · Classic felt</strong><span>Illustrative game · stacked boards</span></div>
+  <div class="fo-screen" data-design="felt" data-density="comfortable" aria-label="Five-O stacked board interface example">
+    <div class="fo-toolbar"><button type="button" class="fo-chrome-button" data-demo="leave">← Lobby</button><strong>FIVE-O</strong><button type="button" class="fo-chrome-button" data-demo="settings">Settings</button></div>
+    <section class="fo-player-area fo-opponent" aria-label="Opponent visible board">
+      <div class="fo-player-header"><div class="fo-person"><span class="fo-avatar" aria-hidden="true">J</span>Jordan</div><span class="fo-score"><b>2</b> / 5 wins</span></div>
+      <div class="fo-four-rows" id="fo-opponent-rows"></div>
+    </section>
+    <div class="fo-center-bar"><div class="fo-turn">Your turn<small id="fo-instruction" role="status" aria-live="polite">Choose a card below</small></div><div class="fo-draw"><span class="fo-deck" aria-hidden="true">5O</span><span><b>14</b> in deck<br>Game 6</span></div></div>
+    <section class="fo-player-area fo-you" aria-label="Your visible board">
+      <div class="fo-player-header"><div class="fo-person"><span class="fo-avatar" aria-hidden="true">M</span>Matt · you</div><span class="fo-score"><b>3</b> / 5 wins</span></div>
+      <div class="fo-four-rows" id="fo-your-rows"></div>
+    </section>
+    <section class="fo-hand" aria-label="Your private hand">
+      <div class="fo-hand-top"><strong>Your hand <small>· private</small></strong><button class="fo-discard" type="button">Discard · once per game</button></div>
+      <div class="fo-hand-cards" id="fo-held-cards"></div>
+    </section>
+  </div>
+  <div class="fo-choice"><button class="fo-use" type="button">Choose A · Felt</button><span class="fo-choice-status" role="status" aria-live="polite"></span></div>
+  <script>
+    (() => {
+      const root = document.getElementById('fiveo-stacked-options');
+      const screen = root.querySelector('.fo-screen');
+      const state = { design:'felt', density:'comfortable', selected:null };
+      const variants = {
+        felt:{letter:'A',short:'Felt',name:'Classic felt'},
+        graphite:{letter:'B',short:'Graphite',name:'Native graphite'},
+        ivory:{letter:'C',short:'Ivory',name:'Light ivory'},
+        navy:{letter:'D',short:'Navy',name:'Compact navy'}
+      };
+      const suit = {s:['♠','#15202c','spades'],h:['♥','#ac2440','hearts'],d:['♦','#175da8','diamonds'],c:['♣','#176142','clubs']};
+      const ranks = {11:'J',12:'Q',13:'K',14:'A'};
+      const opponent = [['4c','5d','6s','7h','8h'],['14s','14d','9c'],['2s','3s','9s','11s'],['12h','10d']];
+      const yours = [['13s','13h','13d','8c','8d'],['10s','10h','10c','4d'],['11h','12c','14c'],['9h']];
+      const hand = ['2d','3h','6c','7d','12s','5h'];
+      function describe(id) { const n=Number(id.slice(0,-1)); return `${({11:'Jack',12:'Queen',13:'King',14:'Ace'})[n] || n} of ${suit[id.slice(-1)][2]}`; }
+      function face(id,index=0,last=false) {
+        const n=Number(id.slice(0,-1)); const [glyph,color]=suit[id.slice(-1)]; const rank=ranks[n] || n;
+        return `<span class="fo-playing-card${last?' fo-last':''}" style="--fo-index:${index};--fo-suit:${color}" aria-hidden="true"><span class="fo-index">${rank}${glyph}</span><span class="fo-center-suit">${glyph}</span><span class="fo-index fo-index-bottom">${rank}${glyph}</span>${last?'<span class="fo-last-label">Last</span>':''}</span>`;
+      }
+      function board(rows,local) {
+        return rows.map((cards,i)=>{
+          const lastRow=local?2:3; const full=cards.length===5;
+          const label=`${local?'Your':'Opponent'} row ${i+1}: ${cards.map(describe).join(', ')}. ${full?'Complete.':`${cards.length} of 5.`}${i===lastRow?` Last played: ${describe(cards.at(-1))}.`:''}`;
+          const content=`<span class="fo-row-header"><span>Row ${i+1}</span>${full?'<span class="fo-row-check" aria-hidden="true">✓</span>':''}</span><span class="fo-fan"><span class="fo-well"></span>${cards.map((id,j)=>face(id,j,i===lastRow&&j===cards.length-1)).join('')}</span><span class="fo-row-footer">${full?'Complete':`${cards.length} / 5`}</span>`;
+          return local?`<button type="button" class="fo-row${full?' fo-finished':''}" data-row="${i}" aria-label="${label}">${content}</button>`:`<div class="fo-row${full?' fo-finished':''}" data-row="${i}" role="group" aria-label="${label}">${content}</div>`;
+        }).join('');
+      }
+      root.querySelector('#fo-opponent-rows').innerHTML=board(opponent,false);
+      root.querySelector('#fo-your-rows').innerHTML=board(yours,true);
+      root.querySelector('#fo-held-cards').innerHTML=hand.map(id=>`<button type="button" class="fo-hand-card" data-card="${id}" aria-label="Select ${describe(id)}" aria-pressed="false">${face(id)}</button>`).join('');
+      function render() {
+        const v=variants[state.design];
+        screen.dataset.design=state.design; screen.dataset.density=state.density;
+        root.querySelector('#fo-design-name').textContent=`${v.letter} · ${v.name}`;
+        root.querySelector('.fo-use').textContent=`Choose ${v.letter} · ${v.short}`;
+        root.querySelectorAll('[data-option]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.option===state.design)));
+        root.querySelectorAll('[data-card]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.card===state.selected)));
+        root.querySelectorAll('#fo-your-rows .fo-row').forEach((el,i)=>el.classList.toggle('fo-can-place',Boolean(state.selected)&&yours[i].length<5));
+        root.querySelector('#fo-instruction').textContent=state.selected?`${describe(state.selected)} · choose a row`:'Choose a card below';
+      }
+      root.querySelectorAll('[data-option]').forEach(b=>b.addEventListener('click',()=>{state.design=b.dataset.option;root.querySelector('.fo-choice-status').textContent='';render();}));
+      root.querySelectorAll('[data-card]').forEach(b=>b.addEventListener('click',()=>{state.selected=state.selected===b.dataset.card?null:b.dataset.card;render();}));
+      root.querySelectorAll('#fo-your-rows .fo-row').forEach((b,i)=>b.addEventListener('click',()=>{root.querySelector('#fo-instruction').textContent=yours[i].length===5?'This row is complete':state.selected?`Preview: place ${describe(state.selected)} in row ${i+1}`:'Choose a card below first';}));
+      root.querySelector('.fo-discard').addEventListener('click',()=>{root.querySelector('#fo-instruction').textContent=state.selected?`Preview: discard ${describe(state.selected)}`:'Select a card to discard';});
+      root.querySelectorAll('[data-demo]').forEach(b=>b.addEventListener('click',()=>{root.querySelector('.fo-choice-status').textContent=`${b.dataset.demo==='leave'?'Lobby':'Settings'} · design preview`; }));
+      root.querySelector('.fo-use').addEventListener('click',async()=>{
+        const v=variants[state.design];
+        const prompt=`Use option ${v.letter}, ${v.name}, from the stacked-board UI examples. Keep the opponent above me, four matching vertical fanned row columns aligned, no opponent hidden-hand row during play, last-played card markers, and completed-row indicators. Implement the selected design in High-5 with a neat screen-fitted layout.`;
+        if(window.openai?.sendFollowUpMessage) {
+          try { await window.openai.sendFollowUpMessage({prompt,title:`Use option ${v.letter} · ${v.name}`}); }
+          catch { root.querySelector('.fo-choice-status').textContent=`Selected ${v.letter} · ${v.name}`; }
+        } else root.querySelector('.fo-choice-status').textContent=`Selected ${v.letter} · ${v.name}`;
+      });
+      render();
+      if(globalThis.Tweak) {
+        const tweak=new Tweak({container:screen,onChange:render});
+        tweak.addSelect(state,'density',{label:'Screen density',options:[{label:'Comfortable',value:'comfortable'},{label:'Compact',value:'compact'}]});
+      }
+    })();
+  </script>
+</div>

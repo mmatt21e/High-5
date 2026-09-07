@@ -5,7 +5,7 @@ import {
   useEffect,
   useRef,
   useState,
-  type ReactNode,
+  type CSSProperties,
 } from "react";
 import Link from "next/link";
 import { useGameSocket } from "./useGameSocket";
@@ -14,10 +14,7 @@ import { NotificationToggle } from "./NotificationToggle";
 import { PlayerAvatar } from "./PlayerAvatar";
 import {
   CardSlot,
-  CardBack,
-  FannedColumn,
   describePlayingCard,
-  type CardSize,
 } from "./PlayingCard";
 import { cardId } from "@/lib/game/cards";
 import { COMPUTER_OPPONENTS, type ComputerLevel } from "@/lib/computer";
@@ -83,10 +80,10 @@ export function GameRoom({ code }: { code: string }) {
 
   return (
     <>
-      {error && <SocketNotice message={error} />}
       <Table
         snapshot={snapshot}
         view={view}
+        error={error}
         onPlace={place}
         onDiscard={discard}
         onNext={next}
@@ -98,7 +95,7 @@ export function GameRoom({ code }: { code: string }) {
 
 function SocketNotice({ message }: { message: string }) {
   return (
-    <div role="alert" className="error-text border-b border-current bg-black/45 px-4 py-2 text-center text-sm">
+    <div role="alert" className="socket-notice error-text border-b border-current bg-black/45 px-4 py-2 text-center text-sm">
       {message}
     </div>
   );
@@ -167,6 +164,7 @@ function cvId(cv: CardView): string {
 function Table({
   snapshot,
   view,
+  error,
   onPlace,
   onDiscard,
   onNext,
@@ -174,6 +172,7 @@ function Table({
 }: {
   snapshot: MatchSnapshot;
   view: GameView;
+  error?: string | null;
   onPlace: (cardId: string, row: number) => boolean;
   onDiscard: (cardId: string) => boolean;
   onNext: () => boolean;
@@ -205,83 +204,82 @@ function Table({
 
   const openSettings = useCallback(() => setSettingsOpen(true), []);
   const closeSettings = useCallback(() => setSettingsOpen(false), []);
-  let body: ReactNode;
+  const showResults = gameOver || matchOver;
+  const shellState = gameOver ? " game-table-results" : matchOver ? " game-table-ended" : "";
+  let statusLabel = view.yourTurn ? "Your turn" : `${oppBoard.displayName}'s turn`;
+  let progressLabel = `${view.placed[you]}/${view.total} placed`;
+  if (!view.yourTurn && snapshot.computerLevel) statusLabel = "Computer thinking…";
+  if (matchOver) {
+    statusLabel = "Match ended";
+    progressLabel = "Game ended before showdown";
+  }
+  if (gameOver) {
+    statusLabel = "Showdown";
+    progressLabel = "All five hands revealed";
+  }
 
-  if (gameOver || matchOver) {
-    body = (
-      <main className="flex flex-1 flex-col gap-2 p-3">
-        <TopBar code={snapshot.inviteCode} computerLevel={snapshot.computerLevel} onSettings={openSettings} />
-        <PlayerBar name={oppBoard.displayName} avatar={(opp === 0 ? snapshot.host : snapshot.guest)?.avatar} score={oppScore} target={snapshot.targetWins} />
-        <ResultBoard board={oppBoard} view={view} seat={opp} size="sm" />
-        <div className="my-1">
+  const body = (
+    <main className={`game-table-active${shellState}`} aria-label="Five-O game table">
+      <SideRail yourScore={myScore} opponentScore={oppScore} opponentName={oppBoard.displayName}
+        target={snapshot.targetWins} remaining={view.deckRemaining} onSettings={openSettings}
+        canDiscard={!showResults && view.yourTurn && view.canDiscard && selected !== null}
+        discardUsed={view.yourTurn && !view.canDiscard} showResults={showResults}
+        onDiscard={() => { if (selected && onDiscard(selected)) setSelected(null); }} />
+      <TopBar
+        code={snapshot.inviteCode}
+        computerLevel={snapshot.computerLevel}
+        gameNumber={snapshot.gameNumber}
+      />
+      <div className="table-player-section table-opponent-section">
+        <PlayerBar name={oppBoard.displayName} avatar={(opp === 0 ? snapshot.host : snapshot.guest)?.avatar} active={!showResults && !view.yourTurn} />
+        <AlignedBoard board={oppBoard} view={view} seat={opp} results={gameOver} />
+      </div>
+      {error ? (
+        <div className="table-status table-status-error" role="alert" aria-atomic="true">
+          {error}
+        </div>
+      ) : (
+        <div className="table-status" role="status" aria-live="polite" aria-atomic="true">
+          <span className="table-turn-label">{statusLabel}</span>
+          <span className="table-progress">{progressLabel}</span>
+        </div>
+      )}
+      <div className="table-player-section table-self-section">
+        <PlayerBar
+          name={myBoard.displayName}
+          avatar={(you === 0 ? snapshot.host : snapshot.guest)?.avatar}
+          you
+          active={!showResults && view.yourTurn}
+        />
+        <AlignedBoard
+          board={myBoard}
+          view={view}
+          seat={you}
+          results={gameOver}
+          legalRows={!showResults && view.yourTurn && selected ? view.legalRows : []}
+          onRow={tapRow}
+        />
+      </div>
+      {showResults ? (
+        <div className="table-result-dock">
           {matchOver ? (
             <MatchOver snapshot={snapshot} you={you} />
           ) : (
             <GameOver view={view} you={you} snapshot={snapshot} onNext={onNext} />
           )}
         </div>
-        <ResultBoard board={myBoard} view={view} seat={you} size="sm" />
-        <PlayerBar name={myBoard.displayName} avatar={(you === 0 ? snapshot.host : snapshot.guest)?.avatar} score={myScore} target={snapshot.targetWins} gold you />
-      </main>
-    );
-  } else {
-    body = (
-    <main className="game-table-active" aria-label="Five-O game table">
-      <TopBar code={snapshot.inviteCode} computerLevel={snapshot.computerLevel} onSettings={openSettings} />
-
-      <MatchHud
-        view={view}
-        computer={Boolean(snapshot.computerLevel)}
-        opponentName={oppBoard.displayName}
-        opponentAvatar={(opp === 0 ? snapshot.host : snapshot.guest)?.avatar}
-        opponentScore={oppScore}
-        yourName={myBoard.displayName}
-        yourAvatar={(you === 0 ? snapshot.host : snapshot.guest)?.avatar}
-        yourScore={myScore}
-        target={snapshot.targetWins}
-        selected={selected !== null}
-      />
-
-      <div className="game-board-scroll" aria-label="Scrollable playing area">
-        <section className="game-board-section" aria-labelledby="opponent-layout-title">
-          <h2 id="opponent-layout-title" className="game-board-label">
-            {oppBoard.displayName}&apos;s layout
-          </h2>
-          <HandsRow board={oppBoard} size="sm" />
-        </section>
-
-        <DrawDeck remaining={view.deckRemaining} />
-
-        <section className="game-board-section" aria-labelledby="your-rows-title">
-          <h2 id="your-rows-title" className="game-board-label">
-            Your four rows
-          </h2>
-          <RowsBoard
-            board={myBoard}
-            size="md"
-            legalRows={view.yourTurn && selected ? view.legalRows : []}
-            onRow={tapRow}
+      ) : (
+        <div className="game-hand-dock">
+          <YourHand
+            hand={myBoard.hand}
+            selected={selected}
+            yourTurn={view.yourTurn}
+            onSelect={(id) => setSelected((current) => current === id ? null : id)}
           />
-        </section>
-      </div>
-
-      <div className="game-hand-dock">
-        <YourHand
-          hand={myBoard.hand}
-          selected={selected}
-          yourTurn={view.yourTurn}
-          canDiscard={view.canDiscard}
-          legalRows={view.yourTurn && selected ? view.legalRows : []}
-          onSelect={(id) => setSelected((current) => (current === id ? null : id))}
-          onRow={tapRow}
-          onDiscard={() => {
-            if (selected && onDiscard(selected)) setSelected(null);
-          }}
-        />
-      </div>
+        </div>
+      )}
     </main>
-    );
-  }
+  );
 
   return (
     <>
@@ -297,21 +295,34 @@ function Table({
   );
 }
 
-function TopBar({ code, computerLevel, onSettings }: { code: string; computerLevel?: ComputerLevel | null; onSettings: () => void }) {
+function TopBar({ code, computerLevel, gameNumber }: { code: string; computerLevel?: ComputerLevel | null; gameNumber: number }) {
   return (
-    <div className="game-topbar supporting-text flex items-center justify-between text-xs">
-      <Link href="/" className="tap-target -ml-2 rounded-lg px-2 active:text-white">
-        ← Leave
-      </Link>
-      {computerLevel ? <span>Computer · {COMPUTER_OPPONENTS[computerLevel].skill}</span> : <span className="font-mono tracking-[0.25em]">{code}</span>}
-      <button
-        type="button"
-        onClick={onSettings}
-        className="tap-target -mr-2 rounded-lg px-2 active:text-white"
-      >
-        ⚙ Settings
-      </button>
-    </div>
+    <header className="game-topbar">
+      <strong>FIVE-O</strong>
+      <span title={computerLevel ? COMPUTER_OPPONENTS[computerLevel].name : code}>
+        {computerLevel ? `Computer · ${COMPUTER_OPPONENTS[computerLevel].skill}` : code} · Game {gameNumber}
+      </span>
+    </header>
+  );
+}
+
+function SideRail({ yourScore, opponentScore, opponentName, target, remaining, onSettings, canDiscard, discardUsed, showResults, onDiscard }: {
+  yourScore: number; opponentScore: number; opponentName: string; target: number;
+  remaining: number; onSettings: () => void; canDiscard: boolean; discardUsed: boolean;
+  showResults: boolean; onDiscard: () => void;
+}) {
+  return (
+    <aside className="game-side-rail" aria-label="Game controls and match score">
+      <Link href="/" className="rail-control" aria-label="Leave game for lobby" title="Back to lobby">←<small>Lobby</small></Link>
+      <div className="rail-score" aria-label={`You: ${yourScore} of ${target} wins`}><span>You</span><strong>{yourScore}</strong></div>
+      <div className="rail-score" aria-label={`${opponentName}: ${opponentScore} of ${target} wins`}><span>Opp.</span><strong>{opponentScore}</strong></div>
+      <span className="rail-target">First<br />to {target}</span>
+      <div className="rail-score rail-deck" aria-label={`Draw deck: ${remaining} cards remaining`}><span>Deck</span><strong>{remaining}</strong></div>
+      {!showResults && <button type="button" className="rail-control rail-discard" disabled={!canDiscard} onClick={onDiscard}
+        aria-label={discardUsed ? "Discard already used this game" : "Discard selected card, once per game"}
+        title="Discard once per game">Discard</button>}
+      <button type="button" className="rail-control" onClick={onSettings} aria-label="Settings">☰<small>Settings</small></button>
+    </aside>
   );
 }
 
@@ -446,107 +457,21 @@ function SettingsModal({
   );
 }
 
-function PlayerBar({
-  name,
-  avatar,
-  score,
-  target,
-  gold = false,
-  you = false,
-}: {
+function PlayerBar({ name, avatar, you = false, active = false }: {
   name: string;
   avatar?: string;
-  score: number;
-  target: number;
-  gold?: boolean;
   you?: boolean;
+  active?: boolean;
 }) {
-  return (
-    <div className="flex items-center justify-between px-1">
-      <PlayerAvatar avatar={avatar} name={name} size="sm" />
-      <span className={`min-w-0 truncate text-sm font-semibold ${gold ? "text-gold" : ""}`}>
-        {name}
-        {you && <span className="ml-1 text-white/40">(you)</span>}
-      </span>
-      <div className="flex items-center gap-2">
-        <div className="flex gap-1">
-          {Array.from({ length: target }).map((_, i) => (
-            <span
-              key={i}
-              className={`h-2 w-2 rounded-full ${
-                i < score ? (gold ? "bg-gold" : "bg-white") : "bg-white/20"
-              }`}
-            />
-          ))}
-        </div>
-        <span className="subtle-text text-xs tabular-nums">
-          {score}/{target}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function MatchHud({
-  view,
-  computer = false,
-  opponentName,
-  opponentAvatar,
-  opponentScore,
-  yourName,
-  yourAvatar,
-  yourScore,
-  target,
-  selected,
-}: {
-  view: GameView;
-  computer?: boolean;
-  opponentName: string;
-  opponentAvatar?: string;
-  opponentScore: number;
-  yourName: string;
-  yourAvatar?: string;
-  yourScore: number;
-  target: number;
-  selected: boolean;
-}) {
-  const turnLabel = view.yourTurn ? "Your turn" : computer ? "Computer thinking…" : `${opponentName}'s turn`;
-  const instruction = view.yourTurn
-    ? selected
-      ? "Choose row or discard"
-      : "Choose a card"
-    : "Waiting";
-
   return (
     <div
-      className="game-hud"
-      role="status"
-      aria-live="polite"
-      aria-label={`${turnLabel}. Match score: ${opponentName} ${opponentScore} of ${target}; you ${yourScore} of ${target}. ${view.placed[view.you]} of ${view.total} cards placed. ${instruction}.`}
+      className={`table-player${active ? " table-player-active" : ""}`}
+      aria-label={`${name}${you ? ", you" : ", opponent"}${active ? ". Current turn" : ""}.`}
     >
-      <div className="game-hud-player">
-        <PlayerAvatar avatar={opponentAvatar} name={opponentName} size="sm" />
-        <div className="subtle-text truncate text-[10px] font-bold uppercase tracking-wide">
-          {opponentName}
-        </div>
-        <div className="text-base font-black tabular-nums">
-          {opponentScore}<span className="text-[10px] font-semibold text-white/45">/{target}</span>
-        </div>
-      </div>
-      <div className="game-hud-turn">
-        <div className="text-xs font-black text-gold">{turnLabel}</div>
-        <div className="supporting-text mt-0.5 text-[9px] leading-tight">
-          {view.placed[view.you]}/{view.total} placed · {instruction}
-        </div>
-      </div>
-      <div className="game-hud-player">
-        <PlayerAvatar avatar={yourAvatar} name={yourName} size="sm" />
-        <div className="truncate text-[10px] font-bold uppercase tracking-wide text-gold">
-          {yourName} · you
-        </div>
-        <div className="text-base font-black tabular-nums text-gold">
-          {yourScore}<span className="text-[10px] font-semibold text-white/45">/{target}</span>
-        </div>
+      <PlayerAvatar avatar={avatar} name={name} size="sm" />
+      <div className="table-player-name">
+        <strong title={name}>{name}</strong>
+        <span>{you ? "You" : "Opponent"}</span>
       </div>
     </div>
   );
@@ -564,247 +489,147 @@ function describeCardViews(cards: CardView[]): string {
   return parts.join(", ");
 }
 
-function DrawDeck({ remaining }: { remaining: number }) {
-  return (
-    <div className="draw-deck" role="group" aria-label={`Draw deck: ${remaining} cards remaining`}>
-      <div className={`draw-deck-stack ${remaining === 0 ? "draw-deck-empty" : ""}`} aria-hidden="true">
-        {remaining > 0 ? <><span className="deck-layer deck-layer-bottom" /><span className="deck-layer deck-layer-middle" /><CardBack size="sm" decorative /></> : <span>Empty</span>}
-      </div>
-      <div><p className="text-xs font-semibold">Draw deck</p>
-        <p className="supporting-text text-xs" role="status" aria-live="polite"><strong className="text-gold tabular-nums">{remaining}</strong> {remaining === 1 ? "card" : "cards"} left</p>
-        <p className="subtle-text text-[10px]">Drawn automatically on your turn</p>
-      </div>
-    </div>
-  );
+function rowOutcome(winner: PlayerIndex | null | undefined, seat: PlayerIndex): string {
+  if (winner === undefined) return "";
+  if (winner === null) return "Tied";
+  return winner === seat ? "Won" : "Lost";
 }
 
-/** Opponent's four face-up hands plus their concealed hand (as card backs). */
-function HandsRow({ board, size }: { board: GameView["players"][0]; size: CardSize }) {
-  const concealedCount = Math.min(board.hand.length, 5);
-  const backs: CardView[] = Array.from({ length: 5 }, (_, i) =>
-    i < concealedCount ? { state: "hidden" } : { state: "empty" },
-  );
-  return (
-    <div className="grid grid-cols-5 gap-1.5" role="group" aria-label="Opponent rows">
-      {board.rows.map((row, i) => (
-        <div
-          key={i}
-          className="flex flex-col items-center rounded-lg p-1"
-          role="group"
-          aria-label={`Opponent row ${i + 1}: ${describeCardViews(row)}`}
-        >
-          <span className="card-row-label">Row {i + 1}</span>
-          <FannedColumn slots={row} size={size} decorative well />
-        </div>
-      ))}
-      <div
-        className="flex flex-col items-center rounded-lg p-1"
-        role="group"
-        aria-label={`Opponent hidden hand: ${concealedCount} face-down ${concealedCount === 1 ? "card" : "cards"}`}
-      >
-        <span className="card-row-label">Hand</span>
-        <FannedColumn slots={backs} size={size} decorative well />
-        <span className="subtle-text mt-0.5 text-[8px] uppercase tracking-wide">
-          hidden
-        </span>
-      </div>
-    </div>
-  );
-}
-
-/** Your four rows as tappable drop targets. */
-function RowsBoard({
-  board,
-  size,
-  legalRows,
-  onRow,
-}: {
+/** Both seats share identical row geometry; only the local board is interactive. */
+function AlignedBoard({ board, view, seat, results, legalRows = [], onRow }: {
   board: GameView["players"][0];
-  size: CardSize;
-  legalRows: number[];
-  onRow: (row: number) => void;
+  view: GameView;
+  seat: PlayerIndex;
+  results: boolean;
+  legalRows?: number[];
+  onRow?: (row: number) => void;
 }) {
+  const isYou = seat === view.you;
+  const rows = results ? [...board.rows, board.hand] : board.rows;
+  const ownerLabel = isYou ? "Your" : `${board.displayName}'s`;
+
   return (
-    <div className="grid grid-cols-4 gap-1.5" role="group" aria-label="Your placement rows">
-      {board.rows.map((row, i) => {
-        const playable = legalRows.includes(i);
-        const target = playable ? row.findIndex((s) => s.state === "empty") : null;
-        const contents = describeCardViews(row);
-        return (
+    <section
+      className="table-board"
+      data-seat={seat}
+      aria-label={`${ownerLabel} ${results ? "revealed hands" : "board"}`}
+    >
+      {rows.map((cards, rowIndex) => {
+        const slots = padTo5(cards);
+        const count = slots.filter((slot) => slot.state !== "empty").length;
+        const complete = count === 5;
+        const playable = legalRows.includes(rowIndex);
+        const handResult = results ? view.result?.hands[rowIndex] : undefined;
+        const outcome = rowOutcome(handResult?.winner, seat);
+        const label = handResult?.scores[seat].label;
+        const name = rowIndex === 4 ? "Hand" : `Row ${rowIndex + 1}`;
+        const latest = board.lastPlacement?.row === rowIndex ? board.lastPlacement.cardId : null;
+        const latestCard = slots.find((slot) => cvId(slot) === latest);
+        const completionLabel = complete ? "Complete." : `${count} of 5 cards.`;
+        const latestLabel = latestCard?.state === "card"
+          ? `Last played: ${describePlayingCard(latestCard.card)}.`
+          : "";
+        const resultLabel = handResult ? `${outcome}. ${label}.` : "";
+        const accessible = [
+          `${name}: ${describeCardViews(slots)}.`,
+          completionLabel,
+          latestLabel,
+          resultLabel,
+          playable ? "Place selected card here." : "",
+        ].filter(Boolean).join(" ");
+        const rowStatus = results ? outcome || "Complete" : "Complete";
+        const className = [
+          "table-row",
+          complete && "table-row-finished",
+          playable && "table-row-playable",
+          outcome === "Won" && "table-row-won",
+        ].filter(Boolean).join(" ");
+
+        const content = (
+          <>
+            <span className="table-row-heading">
+              <span>{name}</span>
+              {complete && <span className="table-row-check" aria-hidden="true">✓</span>}
+            </span>
+            <span className="board-row-cards" aria-hidden="true">
+              {slots.map((slot, index) => {
+                const isLatest = Boolean(latest && cvId(slot) === latest);
+                return (
+                  <span key={index} data-slot-state={slot.state} style={{ "--slot-index": index } as CSSProperties} className={`board-card${isLatest ? " board-card-last" : ""}`}>
+                    <CardSlot slot={slot} size="sm" target={playable && index === count} decorative table />
+                    {isLatest && <span className="board-card-last-label">Last</span>}
+                  </span>
+                );
+              })}
+            </span>
+            <span className={complete ? "table-row-complete" : "table-row-count"}>{complete ? rowStatus : `${count}/5`}</span>
+            {results && <span className="table-row-result" title={label}>{label || "—"}</span>}
+          </>
+        );
+
+        return isYou && !results ? (
           <button
-            key={i}
+            key={rowIndex}
+            data-row={rowIndex}
             type="button"
+            className={className}
             disabled={!playable}
-            onClick={() => onRow(i)}
-            aria-label={
-              playable
-                ? `Row ${i + 1}: ${contents}. Place selected card here.`
-                : `Row ${i + 1}: ${contents}. No placement action available.`
-            }
-            className={`flex flex-col items-center rounded-lg p-1 transition ${
-              playable
-                ? "target-glow bg-gold/10 ring-2 ring-gold/80 active:scale-95"
-                : ""
-            }`}
+            onClick={() => onRow?.(rowIndex)}
+            aria-label={accessible}
           >
-            <span className="card-row-label">Row {i + 1}</span>
-            <FannedColumn slots={row} size={size} targetIndex={target} decorative well />
+            {content}
           </button>
+        ) : (
+          <div key={rowIndex} data-row={rowIndex} role="group" className={className} aria-label={accessible}>
+            {content}
+          </div>
         );
       })}
-    </div>
+    </section>
   );
 }
 
-/** Your concealed hand: tap a card to select, then place it or discard it. */
-function YourHand({
-  hand,
-  selected,
-  yourTurn,
-  canDiscard,
-  legalRows,
-  onSelect,
-  onRow,
-  onDiscard,
-}: {
+/** Selection never changes the private hand dock's geometry. */
+function YourHand({ hand, selected, yourTurn, onSelect }: {
   hand: CardView[];
   selected: string | null;
   yourTurn: boolean;
-  canDiscard: boolean;
-  legalRows: number[];
   onSelect: (id: string) => void;
-  onRow: (row: number) => void;
-  onDiscard: () => void;
 }) {
+  const selectionHelp = selected ? "Tap a highlighted row to place" : "Select a card to play";
+  const instruction = yourTurn ? selectionHelp : "Waiting for your turn";
+
   return (
     <div className="game-hand-panel">
-      <div className="mb-1 flex items-center justify-between px-1">
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-white/60">
-          Your hidden hand
+      <div className="game-hand-heading">
+        <strong>Your hand <span className="hand-private-label">· private</span></strong>
+        <span className="game-hand-instruction" role="status" aria-live="polite" aria-atomic="true">
+          {instruction}
         </span>
-        <button
-          onClick={onDiscard}
-          disabled={!yourTurn || !canDiscard || !selected}
-          className="tap-target error-text rounded-lg border border-current px-3 text-xs font-bold disabled:opacity-40"
-        >
-          Discard{canDiscard ? "" : " ✓"}
-        </button>
       </div>
-      <div
-        className="game-hand-cards"
-        aria-label="Your cards"
-        role="group"
-      >
-        {hand.map((cv, i) => {
-          const id = cvId(cv);
-          const isSel = selected === id;
-          return (
-            <button
-              key={id || i}
-              type="button"
-              disabled={!yourTurn || cv.state !== "card"}
-              onClick={() => id && onSelect(id)}
-              aria-label={
-                cv.state === "card"
-                  ? `${isSel ? "Deselect" : "Select"} ${describePlayingCard(cv.card)}`
-                  : "Unavailable card"
-              }
-              aria-pressed={isSel}
-              className={`shrink-0 rounded-lg transition ${isSel ? "-translate-y-1" : ""} ${
-                yourTurn ? "active:scale-95" : "hand-card-waiting"
-              }`}
-            >
-              <div className={isSel ? "rounded-lg ring-2 ring-gold" : ""}>
-                <CardSlot slot={cv} size="hand" decorative />
-              </div>
-            </button>
-          );
-        })}
-      </div>
-      {selected && legalRows.length > 0 && (
-        <div
-          className="mt-2 grid grid-cols-4 gap-1.5 border-t border-white/10 pt-2"
-          role="group"
-          aria-label="Place selected card"
-        >
-          {Array.from({ length: 4 }, (_, row) => {
-            const legal = legalRows.includes(row);
+      <div className="game-hand-content">
+        <div className="game-hand-cards" aria-label="Your cards" role="group">
+          {hand.map((cv, i) => {
+            const id = cvId(cv);
+            const isSelected = selected === id;
+            const action = isSelected ? "Deselect" : "Select";
+            const cardLabel = cv.state === "card" ? `${action} ${describePlayingCard(cv.card)}` : "Unavailable card";
             return (
               <button
-                key={row}
+                key={id || i}
                 type="button"
-                className={`tap-target rounded-lg border px-1 text-xs font-black ${
-                  legal
-                    ? "border-gold/70 bg-gold/15 text-gold active:scale-95"
-                    : "border-white/10 text-white/30"
-                }`}
-                disabled={!legal}
-                onClick={() => onRow(row)}
-                aria-label={
-                  legal
-                    ? `Place selected card in row ${row + 1}`
-                    : `Row ${row + 1} is full; no placement action available`
-                }
+                disabled={!yourTurn || cv.state !== "card"}
+                onClick={() => id && onSelect(id)}
+                aria-label={cardLabel}
+                aria-pressed={isSelected}
+                className={`hand-select-card${isSelected ? " hand-select-card-selected" : ""}`}
               >
-                Row {row + 1}
+                <CardSlot slot={cv} size="hand" decorative table />
               </button>
             );
           })}
         </div>
-      )}
-    </div>
-  );
-}
-
-/** Showdown board: 4 rows + the (revealed) concealed hand, with win highlights. */
-function ResultBoard({
-  board,
-  view,
-  seat,
-  size,
-}: {
-  board: GameView["players"][0];
-  view: GameView;
-  seat: PlayerIndex;
-  size: CardSize;
-}) {
-  const result = view.result;
-  const cols: CardView[][] = [...board.rows, board.hand];
-  return (
-    <div className="grid grid-cols-5 gap-1.5">
-      {cols.map((slots, i) => {
-        const hr = result?.hands[i];
-        const won = hr?.winner === seat;
-        const label = hr?.scores[seat].label ?? "";
-        const isHand = i === 4;
-        const outcome = !hr
-          ? "Result unavailable"
-          : hr.winner === null
-            ? "Tied"
-            : won
-              ? "Won"
-              : "Lost";
-        return (
-          <div
-            key={i}
-            role="group"
-            aria-label={`${isHand ? "Hidden hand" : `Row ${i + 1}`}: ${outcome}. ${label || "No hand label"}. ${describeCardViews(slots)}`}
-            className={`result-hand flex flex-col items-center rounded-lg p-1 ${
-              won ? "result-hand-won" : "result-hand-not-won"
-            }`}
-          >
-            <span className="card-row-label">{isHand ? "Hand" : `Row ${i + 1}`}</span>
-            <FannedColumn slots={padTo5(slots)} size={size} decorative well />
-            <span
-              className={`mt-0.5 text-[9px] leading-tight ${
-                won ? "success-text" : "supporting-text"
-              }`}
-            >
-              {isHand ? "Hand · " : ""}{outcome} · {label}
-            </span>
-          </div>
-        );
-      })}
+      </div>
     </div>
   );
 }
@@ -838,7 +663,7 @@ function GameOver({
         : "You won the game!"
       : "Opponent won the game";
   return (
-    <div className="panel flex flex-col items-center gap-2 py-3">
+    <div className="table-result-summary">
       <div className={`text-lg font-black ${tie ? "" : won ? "text-gold" : "error-text"}`}>
         {headline}
       </div>
@@ -849,7 +674,7 @@ function GameOver({
       <button
         onClick={onNext}
         disabled={snapshot.youReady}
-        className="btn-primary mt-1 w-full max-w-xs"
+        className="btn-primary table-result-action"
       >
         {snapshot.youReady
           ? snapshot.opponentReady
@@ -863,15 +688,19 @@ function GameOver({
 
 function MatchOver({ snapshot, you }: { snapshot: MatchSnapshot; you: PlayerIndex }) {
   const won = snapshot.matchWinner === you;
+  const decided = snapshot.matchWinner !== null && snapshot.matchWinner !== undefined;
+  const yourScore = you === 0 ? snapshot.scoreHost : snapshot.scoreGuest;
+  const opponentScore = you === 0 ? snapshot.scoreGuest : snapshot.scoreHost;
+  const headline = won ? "You win the match!" : decided ? "Opponent wins the match" : "Match ended";
   return (
-    <div className="panel flex flex-col items-center gap-2 py-4">
-      <div className={`text-2xl font-black ${won ? "text-gold" : "error-text"}`}>
-        {won ? "🏆 You win the match!" : "Match over"}
+    <div className="table-result-summary">
+      <div className={`text-2xl font-black ${won ? "text-gold" : decided ? "error-text" : ""}`}>
+        {headline}
       </div>
       <div className="supporting-text text-sm">
-        Final score {snapshot.scoreHost} – {snapshot.scoreGuest}
+        Final score — you {yourScore} · opponent {opponentScore}
       </div>
-      <Link href="/" className="btn-primary mt-2 w-full max-w-xs">
+      <Link href="/" className="btn-primary table-result-action">
         Back to lobby
       </Link>
     </div>

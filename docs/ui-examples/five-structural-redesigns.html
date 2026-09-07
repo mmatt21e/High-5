@@ -1,0 +1,259 @@
+<div id="fiveo-five-designs">
+  <style>
+    #fiveo-five-designs { color-scheme:light dark; color:light-dark(#25362d,#edf2ee); font-family:system-ui,-apple-system,"Segoe UI",sans-serif; }
+    #fiveo-five-designs * { box-sizing:border-box; }
+    #fiveo-five-designs .rd-gallery { display:grid; gap:32px; }
+    #fiveo-five-designs .rd-example { width:100%; max-width:420px; margin:auto; }
+    #fiveo-five-designs .rd-title { display:flex; gap:9px; align-items:baseline; margin:0 0 5px; font-size:18px; font-weight:600; }
+    #fiveo-five-designs .rd-subtitle { margin:0 0 12px; font-size:12px; color:light-dark(#53665a,#b8c7bd); }
+    #fiveo-five-designs .rd-app {
+      --rd-bg:#123b2c; --rd-deep:#0c2b20; --rd-panel:#1b4937; --rd-line:#527361;
+      --rd-ink:#f3f4eb; --rd-muted:#c0d0c5; --rd-gold:#eed083; --rd-on-gold:#253121;
+      --rd-complete:#b0e3bc; --rd-paper:#fffcf3; --rd-edge:#c5c7be; --rd-step:18px;
+      display:grid; grid-template-areas:"toolbar" "opponent" "middle" "self" "hand";
+      grid-template-rows:44px minmax(0,1fr) 52px minmax(0,1fr) 116px; gap:8px;
+      height:710px; padding:8px; border:1px solid var(--rd-line); border-radius:12px;
+      color:var(--rd-ink); background:var(--rd-bg); color-scheme:dark; overflow:hidden;
+      font:12px/1.25 system-ui,-apple-system,"Segoe UI",sans-serif;
+    }
+    #fiveo-five-designs .rd-toolbar { grid-area:toolbar; display:flex; align-items:center; justify-content:space-between; gap:8px; min-width:0; }
+    #fiveo-five-designs .rd-brand { font-size:17px; font-weight:750; letter-spacing:.06em; }
+    #fiveo-five-designs .rd-toolbar small { font-size:11px; color:var(--rd-muted); }
+    #fiveo-five-designs .rd-nav { display:flex; align-items:center; gap:5px; }
+    #fiveo-five-designs .rd-control { display:flex; align-items:center; justify-content:center; min-height:40px; min-width:36px; padding:5px; background:none; color:var(--rd-muted); border:0; font:inherit; font-size:11px; cursor:pointer; }
+    #fiveo-five-designs .rd-board { display:grid; grid-template-rows:27px minmax(0,1fr); min-height:0; min-width:0; }
+    #fiveo-five-designs .rd-opponent { grid-area:opponent; }
+    #fiveo-five-designs .rd-self { grid-area:self; }
+    #fiveo-five-designs .rd-person { display:flex; align-items:center; justify-content:space-between; gap:6px; padding:0 4px; min-width:0; }
+    #fiveo-five-designs .rd-name { display:flex; align-items:center; gap:6px; white-space:nowrap; font-weight:600; }
+    #fiveo-five-designs .rd-avatar { display:grid; place-items:center; width:22px; height:22px; flex:none; background:var(--rd-panel); border:1px solid var(--rd-line); border-radius:50%; font-size:11px; }
+    #fiveo-five-designs .rd-score { font-size:11px; white-space:nowrap; color:var(--rd-muted); }
+    #fiveo-five-designs .rd-score b { font-size:16px; color:var(--rd-ink); margin-right:2px; }
+    #fiveo-five-designs .rd-rows { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; min-height:0; }
+    #fiveo-five-designs .rd-lane { display:grid; grid-template-rows:21px minmax(0,1fr) 17px; min-height:0; min-width:0; padding:2px 3px; border:1px solid var(--rd-line); border-radius:8px; background:var(--rd-deep); color:var(--rd-ink); font:inherit; text-align:left; }
+    #fiveo-five-designs button.rd-lane { cursor:pointer; }
+    #fiveo-five-designs .rd-row-title { display:flex; align-items:center; justify-content:space-between; gap:2px; font-size:11px; font-weight:600; }
+    #fiveo-five-designs .rd-done-mark { color:var(--rd-complete); }
+    #fiveo-five-designs .rd-stack { position:relative; width:min(100%,52px); margin:auto; height:100%; min-height:0; }
+    #fiveo-five-designs .rd-slot { position:absolute; top:calc(var(--rd-i) * var(--rd-step)); inset-inline:0; height:63px; }
+    #fiveo-five-designs .rd-face { display:block; position:relative; height:100%; background:var(--rd-paper); color:var(--rd-suit); border:1px solid var(--rd-edge); border-radius:5px; box-shadow:0 1px 2px #0004; font-family:Georgia,"Times New Roman",serif; }
+    #fiveo-five-designs .rd-empty { display:block; height:100%; border:1px dashed var(--rd-line); border-radius:5px; }
+    #fiveo-five-designs .rd-index { position:absolute; top:2px; left:3px; font-size:14px; font-weight:700; line-height:15px; white-space:nowrap; }
+    #fiveo-five-designs .rd-bottom { top:auto; left:auto; right:3px; bottom:2px; transform:rotate(180deg); font-size:11px; }
+    #fiveo-five-designs .rd-pip { display:grid; place-items:center; height:100%; padding-top:3px; font-size:23px; }
+    #fiveo-five-designs .rd-jumbo { display:none; }
+    #fiveo-five-designs .rd-latest .rd-face { outline:2px solid var(--rd-gold); outline-offset:1px; }
+    #fiveo-five-designs .rd-last { position:absolute; z-index:6; right:-1px; bottom:-1px; padding:1px 3px; background:var(--rd-gold); color:var(--rd-on-gold); border-radius:3px 0 4px 0; font:600 11px/12px system-ui,sans-serif; }
+    #fiveo-five-designs .rd-progress { display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--rd-muted); white-space:nowrap; }
+    #fiveo-five-designs .rd-finished .rd-progress { color:var(--rd-complete); }
+    #fiveo-five-designs .rd-middle { grid-area:middle; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:5px 8px; min-width:0; background:var(--rd-deep); }
+    #fiveo-five-designs .rd-turn { color:var(--rd-gold); font-size:14px; font-weight:700; }
+    #fiveo-five-designs .rd-instruction { display:block; max-width:220px; font-size:11px; font-weight:400; color:var(--rd-muted); margin-top:3px; }
+    #fiveo-five-designs .rd-deck { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--rd-muted); flex:none; }
+    #fiveo-five-designs .rd-deck-shape { display:grid; place-items:center; height:30px; width:23px; border:2px solid var(--rd-paper); border-radius:4px; background:var(--rd-panel); color:var(--rd-gold); font-family:Georgia,serif; font-weight:bold; }
+    #fiveo-five-designs .rd-hand { grid-area:hand; display:grid; grid-template-rows:26px minmax(0,1fr); gap:4px; padding:4px 5px; min-height:0; min-width:0; background:var(--rd-deep); border-radius:8px; }
+    #fiveo-five-designs .rd-hand-title { display:flex; align-items:center; justify-content:space-between; gap:5px; font-size:12px; }
+    #fiveo-five-designs .rd-hand-title small { font-size:11px; color:var(--rd-muted); }
+    #fiveo-five-designs .rd-discard { padding:4px; min-height:28px; font:inherit; font-size:11px; background:none; color:var(--rd-muted); border:0; cursor:pointer; }
+    #fiveo-five-designs .rd-held { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:5px; align-items:center; min-width:0; min-height:0; }
+    #fiveo-five-designs .rd-hand-card { position:relative; height:65px; min-width:0; border:0; border-radius:5px; padding:0; background:none; cursor:pointer; }
+    #fiveo-five-designs .rd-hand-card .rd-slot { inset:0; height:100%; }
+    #fiveo-five-designs .rd-hand-card[aria-pressed="true"] { outline:3px solid var(--rd-gold); outline-offset:2px; }
+    #fiveo-five-designs .rd-legal { outline:2px solid var(--rd-gold); outline-offset:-2px; }
+    #fiveo-five-designs .rd-choice-row { display:flex; align-items:center; gap:12px; margin-top:10px; }
+    #fiveo-five-designs .rd-pick { min-height:44px; padding:8px 14px; border:0; border-radius:6px; background:light-dark(#243e30,#d5e8db); color:light-dark(#fff,#163020); font:500 13px system-ui,sans-serif; cursor:pointer; }
+    #fiveo-five-designs .rd-selection { font-size:12px; }
+
+    /* 1. One oval playing surface, serif identity, player medallions, curved hand. */
+    #fiveo-five-designs .rd-club { border-radius:34px; padding:8px 12px; font-family:Georgia,"Times New Roman",serif; grid-template-rows:42px minmax(0,1fr) 54px minmax(0,1fr) 120px; }
+    #fiveo-five-designs .rd-club .rd-toolbar { justify-content:center; position:relative; }
+    #fiveo-five-designs .rd-club .rd-brand { font-size:24px; font-weight:400; letter-spacing:.13em; }
+    #fiveo-five-designs .rd-club .rd-toolbar .rd-control { position:absolute; left:0; }
+    #fiveo-five-designs .rd-club .rd-toolbar .rd-control:last-child { left:auto; right:0; }
+    #fiveo-five-designs .rd-club .rd-board { border-inline:3px double var(--rd-line); padding-inline:7px; }
+    #fiveo-five-designs .rd-club .rd-opponent { border-top:3px double var(--rd-line); border-radius:64px 64px 0 0; padding-top:6px; }
+    #fiveo-five-designs .rd-club .rd-self { border-bottom:3px double var(--rd-line); border-radius:0 0 64px 64px; padding-bottom:8px; }
+    #fiveo-five-designs .rd-club .rd-person { justify-content:center; gap:12px; }
+    #fiveo-five-designs .rd-club .rd-avatar { display:none; }
+    #fiveo-five-designs .rd-club .rd-lane { border:0; background:none; padding-inline:0; }
+    #fiveo-five-designs .rd-club .rd-row-title { justify-content:center; gap:6px; }
+    #fiveo-five-designs .rd-club .rd-stack { width:min(100%,47px); }
+    #fiveo-five-designs .rd-club .rd-middle { justify-content:center; flex-direction:row-reverse; gap:16px; background:none; }
+    #fiveo-five-designs .rd-club .rd-deck-shape { height:44px; width:44px; border-radius:50%; border:3px double var(--rd-gold); }
+    #fiveo-five-designs .rd-club .rd-turn { font-family:Georgia,serif; font-size:16px; }
+    #fiveo-five-designs .rd-club .rd-hand { background:none; border-radius:0; padding-inline:10px; }
+    #fiveo-five-designs .rd-club .rd-held { gap:1px; padding:0 5px 5px; }
+    #fiveo-five-designs .rd-club .rd-hand-card { transform:translateY(calc(var(--rd-bend) * 2px)) rotate(calc(var(--rd-bend) * 4deg)); transform-origin:50% 100%; }
+
+    /* 2. Large native header, rounded row pods, soft rectangular cards, hand shelf. */
+    #fiveo-five-designs .rd-soft { border-radius:26px; padding:8px 10px; grid-template-rows:68px minmax(0,1fr) 40px minmax(0,1fr) 118px; gap:7px; font-family:"Trebuchet MS",system-ui,sans-serif; }
+    #fiveo-five-designs .rd-soft .rd-toolbar { align-items:center; }
+    #fiveo-five-designs .rd-soft .rd-brand { font-size:29px; letter-spacing:-.07em; line-height:1; }
+    #fiveo-five-designs .rd-soft .rd-brand small { display:block; margin-top:5px; letter-spacing:0; font-weight:400; }
+    #fiveo-five-designs .rd-soft .rd-header-score { background:var(--rd-deep); padding:8px 12px; border-radius:18px; text-align:center; font-size:22px; font-weight:700; }
+    #fiveo-five-designs .rd-soft .rd-header-score small { display:block; font-size:11px; font-weight:400; }
+    #fiveo-five-designs .rd-soft .rd-board { grid-template-rows:28px minmax(0,1fr); }
+    #fiveo-five-designs .rd-soft .rd-score { display:none; }
+    #fiveo-five-designs .rd-soft .rd-lane { border:0; border-radius:22px 22px 12px 12px; padding:1px 4px; background:var(--rd-panel); }
+    #fiveo-five-designs .rd-soft .rd-row-title { justify-content:center; gap:6px; }
+    #fiveo-five-designs .rd-soft .rd-face { border-radius:10px; font-family:"Trebuchet MS",sans-serif; }
+    #fiveo-five-designs .rd-soft .rd-stack { width:min(100%,48px); }
+    #fiveo-five-designs .rd-soft .rd-middle { border-radius:20px; padding:3px 12px; }
+    #fiveo-five-designs .rd-soft .rd-deck-shape { display:none; }
+    #fiveo-five-designs .rd-soft .rd-turn { font-size:13px; }
+    #fiveo-five-designs .rd-soft .rd-instruction { display:inline; margin-left:8px; }
+    #fiveo-five-designs .rd-soft .rd-hand { border-radius:24px 24px 15px 15px; padding:8px 9px; border-top:3px solid var(--rd-line); }
+    #fiveo-five-designs .rd-soft .rd-hand-card { height:61px; border-radius:10px; }
+
+    /* 3. Five unoverlapped tickets per row, fixed grid rules, typewriter hierarchy. */
+    #fiveo-five-designs .rd-scorecard { border-radius:0; font-family:"Courier New",monospace; grid-template-rows:44px minmax(0,1fr) 32px minmax(0,1fr) 132px; gap:6px; }
+    #fiveo-five-designs .rd-scorecard .rd-toolbar { border-block:3px double var(--rd-line); }
+    #fiveo-five-designs .rd-scorecard .rd-brand { font-size:17px; letter-spacing:-.06em; }
+    #fiveo-five-designs .rd-scorecard .rd-person { border-bottom:1px solid var(--rd-line); font-size:12px; }
+    #fiveo-five-designs .rd-scorecard .rd-avatar { display:none; }
+    #fiveo-five-designs .rd-scorecard .rd-rows { gap:0; }
+    #fiveo-five-designs .rd-scorecard .rd-lane { border:0; border-right:1px solid var(--rd-line); border-radius:0; padding:0 4px; background:none; grid-template-rows:21px minmax(0,1fr) 17px; }
+    #fiveo-five-designs .rd-scorecard .rd-lane:last-child { border-right:0; }
+    #fiveo-five-designs .rd-scorecard .rd-row-title { justify-content:center; gap:4px; }
+    #fiveo-five-designs .rd-scorecard .rd-stack { width:100%; display:grid; grid-template-rows:repeat(5,minmax(0,1fr)); gap:3px; }
+    #fiveo-five-designs .rd-scorecard .rd-slot { position:relative; inset:auto; height:auto; min-height:0; }
+    #fiveo-five-designs .rd-scorecard .rd-face,#fiveo-five-designs .rd-scorecard .rd-empty { border-radius:0; box-shadow:none; }
+    #fiveo-five-designs .rd-scorecard .rd-face { font-family:"Courier New",monospace; }
+    #fiveo-five-designs .rd-scorecard .rd-index { inset:0; display:flex; align-items:center; justify-content:center; font-size:16px; line-height:1; letter-spacing:.06em; }
+    #fiveo-five-designs .rd-scorecard .rd-pip,#fiveo-five-designs .rd-scorecard .rd-bottom { display:none; }
+    #fiveo-five-designs .rd-scorecard .rd-last { right:0; bottom:0; padding:0 2px; border-radius:0; font-size:11px; line-height:12px; }
+    #fiveo-five-designs .rd-scorecard .rd-latest .rd-index { justify-content:flex-start; padding-left:4px; font-size:14px; }
+    #fiveo-five-designs .rd-scorecard .rd-middle { border-block:1px solid var(--rd-line); background:none; padding:2px 0; }
+    #fiveo-five-designs .rd-scorecard .rd-turn { font:700 12px "Courier New",monospace; }
+    #fiveo-five-designs .rd-scorecard .rd-instruction { display:inline; margin-left:6px; font-size:11px; }
+    #fiveo-five-designs .rd-scorecard .rd-deck-shape { display:none; }
+    #fiveo-five-designs .rd-scorecard .rd-hand { border-top:3px double var(--rd-line); border-radius:0; background:none; }
+    #fiveo-five-designs .rd-scorecard .rd-held { grid-template-columns:repeat(3,minmax(0,1fr)); grid-template-rows:repeat(2,minmax(0,1fr)); gap:5px; }
+    #fiveo-five-designs .rd-scorecard .rd-hand-card { height:100%; border-radius:0; }
+    #fiveo-five-designs .rd-scorecard .rd-hand-card .rd-slot { position:absolute; inset:0; }
+    #fiveo-five-designs .rd-scorecard .rd-hand-card .rd-index { font-size:20px; }
+
+    /* 4. Bevelled lanes, display typography, central score belt, rotated deal. */
+    #fiveo-five-designs .rd-arena { border-radius:3px; font-family:"Arial Narrow",Arial,sans-serif; grid-template-rows:32px minmax(0,1fr) 82px minmax(0,1fr) 106px; gap:6px; }
+    #fiveo-five-designs .rd-arena .rd-brand { font-family:Impact,"Arial Narrow",sans-serif; font-size:25px; letter-spacing:.12em; font-weight:400; }
+    #fiveo-five-designs .rd-arena .rd-person { text-transform:uppercase; font-weight:700; }
+    #fiveo-five-designs .rd-arena .rd-person .rd-score { display:none; }
+    #fiveo-five-designs .rd-arena .rd-lane { border-radius:0; border:0; background:var(--rd-panel); padding:2px 5px; clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px); }
+    #fiveo-five-designs .rd-arena .rd-row-title { font:16px Impact,"Arial Narrow",sans-serif; padding-inline:4px; }
+    #fiveo-five-designs .rd-arena .rd-stack { width:min(100%,45px); }
+    #fiveo-five-designs .rd-arena .rd-slot:not(.rd-blank) { transform:rotate(calc((var(--rd-i) - 2) * 1deg)); }
+    #fiveo-five-designs .rd-arena .rd-face { border-radius:1px; font-family:Arial,sans-serif; }
+    #fiveo-five-designs .rd-arena .rd-middle { display:grid; grid-template-columns:1fr auto 1fr; border-block:2px solid var(--rd-gold); background:var(--rd-deep); padding:3px 6px; }
+    #fiveo-five-designs .rd-arena .rd-big-score { font:40px/1 Impact,"Arial Narrow",sans-serif; letter-spacing:.08em; color:var(--rd-gold); text-align:center; }
+    #fiveo-five-designs .rd-arena .rd-big-score small { display:block; color:var(--rd-muted); font:11px Arial,sans-serif; letter-spacing:0; margin-top:4px; }
+    #fiveo-five-designs .rd-arena .rd-turn { font:18px Impact,"Arial Narrow",sans-serif; }
+    #fiveo-five-designs .rd-arena .rd-instruction { font-family:Arial,sans-serif; max-width:75px; font-size:11px; }
+    #fiveo-five-designs .rd-arena .rd-deck { justify-content:flex-end; }
+    #fiveo-five-designs .rd-arena .rd-deck-shape { display:none; }
+    #fiveo-five-designs .rd-arena .rd-hand { background:none; border-radius:0; padding-top:0; }
+    #fiveo-five-designs .rd-arena .rd-held { gap:4px; padding-inline:3px; }
+    #fiveo-five-designs .rd-arena .rd-hand-card { height:58px; transform:rotate(calc(var(--rd-bend) * 2deg)); }
+
+    /* 5. Independent utility rail, central-index square cards, full-width dock. */
+    #fiveo-five-designs .rd-rail { grid-template-columns:48px minmax(0,1fr); grid-template-areas:"rail toolbar" "rail opponent" "rail middle" "rail self" "hand hand"; grid-template-rows:36px minmax(0,1fr) 38px minmax(0,1fr) 108px; gap:7px; border-radius:8px; font-family:"Segoe UI",system-ui,sans-serif; }
+    #fiveo-five-designs .rd-railbar { grid-area:rail; display:flex; flex-direction:column; align-items:center; gap:9px; padding:6px 2px; border-right:1px solid var(--rd-line); background:var(--rd-deep); border-radius:5px; }
+    #fiveo-five-designs .rd-railbar .rd-control { font-size:18px; }
+    #fiveo-five-designs .rd-rail-score { text-align:center; font-size:11px; color:var(--rd-muted); padding-block:5px; }
+    #fiveo-five-designs .rd-rail-score b { display:block; font:26px/1.1 "Courier New",monospace; color:var(--rd-gold); }
+    #fiveo-five-designs .rd-railbar .rd-rail-deck { margin-top:auto; }
+    #fiveo-five-designs .rd-rail .rd-toolbar { border-bottom:1px solid var(--rd-line); }
+    #fiveo-five-designs .rd-rail .rd-toolbar .rd-brand { font-size:14px; letter-spacing:.14em; }
+    #fiveo-five-designs .rd-rail .rd-person .rd-score,#fiveo-five-designs .rd-rail .rd-avatar { display:none; }
+    #fiveo-five-designs .rd-rail .rd-person { padding:0; }
+    #fiveo-five-designs .rd-rail .rd-name { font-size:11px; }
+    #fiveo-five-designs .rd-rail .rd-rows { gap:4px; }
+    #fiveo-five-designs .rd-rail .rd-lane { border:0; border-radius:0; padding:0 2px; background:none; }
+    #fiveo-five-designs .rd-rail .rd-row-title { justify-content:center; gap:3px; font-size:11px; }
+    #fiveo-five-designs .rd-rail .rd-stack { width:min(100%,45px); --rd-step:23px; }
+    #fiveo-five-designs .rd-rail .rd-slot { height:49px; }
+    #fiveo-five-designs .rd-rail .rd-face { border-radius:8px; font-family:"Segoe UI",sans-serif; }
+    #fiveo-five-designs .rd-rail .rd-index { font-size:13px; }
+    #fiveo-five-designs .rd-rail .rd-bottom,#fiveo-five-designs .rd-rail .rd-pip { display:none; }
+    #fiveo-five-designs .rd-rail .rd-jumbo { display:grid; place-items:center; height:100%; padding-top:10px; font-size:25px; font-weight:700; }
+    #fiveo-five-designs .rd-rail .rd-middle { border-left:3px solid var(--rd-gold); padding:2px 6px; }
+    #fiveo-five-designs .rd-rail .rd-turn { font-size:12px; }
+    #fiveo-five-designs .rd-rail .rd-deck { display:none; }
+    #fiveo-five-designs .rd-rail .rd-instruction { margin-top:1px; }
+    #fiveo-five-designs .rd-rail .rd-hand { border-top:1px solid var(--rd-line); border-radius:0; background:var(--rd-panel); padding-inline:8px; }
+    #fiveo-five-designs .rd-rail .rd-hand-card { height:57px; }
+    #fiveo-five-designs .rd-rail .rd-hand-card .rd-slot { height:100%; }
+    #fiveo-five-designs .rd-rail .rd-hand-card .rd-jumbo { font-size:31px; }
+    @media(max-width:360px) {
+      #fiveo-five-designs .rd-app { padding-inline:5px; }
+      #fiveo-five-designs .rd-rows { gap:4px; }
+      #fiveo-five-designs .rd-club .rd-board { padding-inline:4px; }
+      #fiveo-five-designs .rd-club .rd-stack { width:min(100%,44px); }
+      #fiveo-five-designs .rd-soft .rd-instruction { display:none; }
+      #fiveo-five-designs .rd-scorecard .rd-instruction { display:none; }
+      #fiveo-five-designs .rd-rail { grid-template-columns:41px minmax(0,1fr); gap:5px; }
+      #fiveo-five-designs .rd-rail .rd-progress { font-size:11px; }
+      #fiveo-five-designs .rd-rail .rd-row-title { font-size:11px; }
+    }
+  </style>
+  <div class="rd-gallery"></div>
+  <script>
+    (()=>{
+      const root=document.getElementById('fiveo-five-designs');
+      const designs=[
+        {id:'club',name:'Club Table',label:'Oval table · serif lettering · curved private hand'},
+        {id:'soft',name:'Soft Native',label:'Rounded row pods · oversized header · raised hand shelf'},
+        {id:'scorecard',name:'Scorecard',label:'Flat ticket grid · monospaced type · every card unobscured'},
+        {id:'arena',name:'Arena',label:'Angular lanes · condensed type · central match scoreboard'},
+        {id:'rail',name:'Side Rail',label:'Vertical controls · square cards · full-width hand dock'}
+      ];
+      const opponent=[['4c','5d','6s','7h','8h'],['14s','14d','9c'],['2s','3s','9s','11s'],['12h','10d']];
+      const yours=[['13s','13h','13d','8c','8d'],['10s','10h','10c','4d'],['11h','12c','14c'],['9h']];
+      const held=['2d','3h','6c','7d','12s','5h'];
+      const suits={s:['♠','#15202c','spades'],h:['♥','#ac2440','hearts'],d:['♦','#175da8','diamonds'],c:['♣','#176142','clubs']};
+      const rankNames={11:'Jack',12:'Queen',13:'King',14:'Ace'},rankGlyphs={11:'J',12:'Q',13:'K',14:'A'};
+      function describe(card){const r=Number(card.slice(0,-1));return `${rankNames[r]||r} of ${suits[card.slice(-1)][2]}`;}
+      function face(card,index=0,last=false){
+        if(!card)return `<span class="rd-slot rd-blank" style="--rd-i:${index}" aria-hidden="true"><span class="rd-empty"></span></span>`;
+        const n=Number(card.slice(0,-1)),rank=rankGlyphs[n]||n,[glyph,color]=suits[card.slice(-1)];
+        return `<span class="rd-slot${last?' rd-latest':''}" style="--rd-i:${index};--rd-suit:${color}" aria-hidden="true"><span class="rd-face"><span class="rd-index">${rank}${glyph}</span><span class="rd-pip">${glyph}</span><span class="rd-jumbo">${rank}</span><span class="rd-index rd-bottom">${rank}${glyph}</span></span>${last?'<span class="rd-last">Last</span>':''}</span>`;
+      }
+      function board(local,design){
+        const rows=local?yours:opponent; const name=local?'Matt · you':'Jordan'; const lastRow=local?2:3;
+        return `<section class="rd-board rd-${local?'self':'opponent'}" aria-label="${local?'Your':'Opponent'} board"><div class="rd-person"><span class="rd-name"><span class="rd-avatar" aria-hidden="true">${local?'M':'J'}</span>${name}</span><span class="rd-score"><b>${local?3:2}</b> / 5 wins</span></div><div class="rd-rows">${rows.map((cards,i)=>{
+          const complete=cards.length===5;const pad=design==='scorecard'?Array.from({length:5},(_,j)=>cards[j]||null):cards;
+          const tag=local?'button':'div';
+          return `<${tag} ${local?'type="button"':'role="group"'} class="rd-lane${complete?' rd-finished':''}" data-row="${i}" aria-label="${local?'Your':'Opponent'} row ${i+1}. ${cards.map(describe).join(', ')}. ${complete?'Complete.':`${cards.length} of 5.`}${lastRow===i?` Last played ${describe(cards.at(-1))}.`:''}"><span class="rd-row-title"><span>${design==='arena'?`0${i+1}`:`Row ${i+1}`}</span>${complete?'<span class="rd-done-mark" aria-hidden="true">✓</span>':''}</span><span class="rd-stack">${pad.map((card,j)=>face(card,j,i===lastRow&&j===cards.length-1)).join('')}</span><span class="rd-progress">${complete?'Complete':`${cards.length} / 5`}</span></${tag}>`;
+        }).join('')}</div></section>`;
+      }
+      const nav='<button class="rd-control" type="button" data-demo="Lobby">← Lobby</button>';
+      const settings='<button class="rd-control" type="button" data-demo="Settings">Settings</button>';
+      const deck='<div class="rd-deck"><span class="rd-deck-shape" aria-hidden="true">5O</span><span><b>14</b> left<br>Draw deck</span></div>';
+      const turn='<div class="rd-turn">Your turn<span class="rd-instruction" role="status" aria-live="polite">Choose a card</span></div>';
+      function toolbar(d){
+        if(d==='soft')return `<header class="rd-toolbar"><div class="rd-brand">Five-O<small>Game 6 · first to five</small></div><div class="rd-header-score">3 : 2<small>You · Jordan</small></div>${settings}</header>`;
+        if(d==='rail')return '<header class="rd-toolbar"><span class="rd-brand">FIVE-O</span><small>Game 6</small></header>';
+        return `<header class="rd-toolbar">${nav}<span class="rd-brand">${d==='club'?'Five-O':d==='scorecard'?'FIVE / O':'FIVE-O'}</span>${settings}</header>`;
+      }
+      function hand(){return `<section class="rd-hand" aria-label="Your private hand"><div class="rd-hand-title"><strong>Your hand <small>· private</small></strong><button class="rd-discard" type="button">Discard · once/game</button></div><div class="rd-held">${held.map((card,i)=>`<button class="rd-hand-card" type="button" data-card="${card}" aria-pressed="false" aria-label="Select ${describe(card)}" style="--rd-bend:${(i-2.5)}">${face(card)}</button>`).join('')}</div></section>`;}
+      root.querySelector('.rd-gallery').innerHTML=designs.map((d,i)=>`<section class="rd-example" data-example="${d.id}" aria-label="Design ${i+1}: ${d.name}"><h2 class="rd-title">${i+1}. ${d.name}</h2><p class="rd-subtitle">${d.label}</p><div class="rd-app rd-${d.id}">${toolbar(d.id)}${d.id==='rail'?'<aside class="rd-railbar" aria-label="Game controls"><button class="rd-control" type="button" data-demo="Lobby" aria-label="Lobby">←</button><div class="rd-rail-score">You<b>3</b></div><div class="rd-rail-score">Jordan<b>2</b></div><div class="rd-rail-score">First<br>to 5</div><div class="rd-rail-score rd-rail-deck">Deck<b>14</b></div><button class="rd-control" type="button" data-demo="Settings" aria-label="Settings">☰</button></aside>':''}${board(false,d.id)}<div class="rd-middle">${turn}${d.id==='arena'?'<div class="rd-big-score">3–2<small>You · Jordan</small></div>':''}${deck}</div>${board(true,d.id)}${hand()}</div><div class="rd-choice-row"><button class="rd-pick" type="button">Choose ${i+1} · ${d.name}</button><span class="rd-selection" role="status" aria-live="polite"></span></div></section>`).join('');
+      root.querySelectorAll('.rd-example').forEach((example,i)=>{
+        const d=designs[i]; let selected=null;
+        const instruction=example.querySelector('.rd-instruction');
+        example.querySelectorAll('[data-card]').forEach(button=>button.addEventListener('click',()=>{
+          selected=selected===button.dataset.card?null:button.dataset.card;
+          example.querySelectorAll('[data-card]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.card===selected)));
+          example.querySelectorAll('.rd-self .rd-lane').forEach((row,j)=>row.classList.toggle('rd-legal',Boolean(selected)&&yours[j].length<5));
+          instruction.textContent=selected?'Choose a row':'Choose a card';
+        }));
+        example.querySelectorAll('.rd-self .rd-lane').forEach((row,j)=>row.addEventListener('click',()=>{example.querySelector('.rd-selection').textContent=yours[j].length===5?'Row already complete':selected?`Preview: ${describe(selected)} → row ${j+1}`:'Select a card first';}));
+        example.querySelector('.rd-discard').addEventListener('click',()=>{example.querySelector('.rd-selection').textContent=selected?`Preview: discard ${describe(selected)}`:'Select a card first';});
+        example.querySelectorAll('[data-demo]').forEach(b=>b.addEventListener('click',()=>{example.querySelector('.rd-selection').textContent=`${b.dataset.demo} · design preview`;}));
+        example.querySelector('.rd-pick').addEventListener('click',async()=>{
+          const prompt=`Use design ${i+1}, ${d.name}, from the five complete High-5 redesigns. Its distinguishing features are ${d.label}. Keep the shared green/cream/gold theme, opponent above me, matching row alignment, opponent hidden hand omitted during play, Last card markers and completed rows. Implement this selected design with a screen-fitted layout.`;
+          if(window.openai?.sendFollowUpMessage){try{await window.openai.sendFollowUpMessage({prompt,title:`Choose ${i+1} · ${d.name}`});}catch{example.querySelector('.rd-selection').textContent=`Selected ${i+1} · ${d.name}`;}}
+          else example.querySelector('.rd-selection').textContent=`Selected ${i+1} · ${d.name}`;
+        });
+      });
+    })();
+  </script>
+</div>
