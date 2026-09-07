@@ -58,7 +58,7 @@ providers.push(
       const user = await prisma.user.findUnique({
         where: { email: normalizedEmail },
       });
-      if (!user?.passwordHash) return null;
+      if (!user?.passwordHash || user.computerLevel) return null;
       const ok = await bcrypt.compare(password, user.passwordHash);
       if (!ok) return null;
       resetAccountRateLimit("credentials", normalizedEmail);
@@ -78,6 +78,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   pages: { signIn: "/login" },
   providers,
   callbacks: {
+    signIn: async ({ user }) => {
+      if (!user.email) return true;
+      const existing = await prisma.user.findUnique({ where: { email: user.email.toLowerCase() }, select: { computerLevel: true } });
+      return !existing?.computerLevel;
+    },
     jwt: async ({ token, user }) => {
       if (user?.id) token.uid = user.id;
       // Keep displayName fresh on the token.
@@ -87,6 +92,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           select: playerSelect,
         });
         if (db) {
+          if (db.computerLevel) return null;
           token.displayName = db.displayName;
           token.picture = publicPlayer(db).avatar;
         }

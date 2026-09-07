@@ -13,7 +13,7 @@ export interface OpponentRecord {
   matchLosses: number;
 }
 
-type RawRecord = { id: string; displayName: string; image: string | null } &
+type RawRecord = { id: string; displayName: string; image: string | null; computerLevel: string | null } &
   Record<"games" | "wins" | "losses" | "pushes" | "matches" | "matchWins" | "matchLosses", bigint | number | null>;
 
 /** Aggregate persisted completions in SQL, without loading board snapshots or
@@ -33,7 +33,7 @@ export async function opponentRecords(userId: string): Promise<OpponentRecord[]>
       WHERE (m.hostId = ${userId} OR m.guestId = ${userId}) AND m.guestId IS NOT NULL
       GROUP BY m.id
     )
-    SELECT u.id, u.displayName, u.image,
+    SELECT u.id, u.displayName, u.image, u.computerLevel,
       SUM(p.games) AS games, SUM(p.wins) AS wins, SUM(p.losses) AS losses, SUM(p.pushes) AS pushes,
       SUM(CASE WHEN p.status = 'complete' AND p.winnerId IN (${userId}, p.opponentId) THEN 1 ELSE 0 END) AS matches,
       SUM(CASE WHEN p.status = 'complete' AND p.winnerId = ${userId} THEN 1 ELSE 0 END) AS matchWins,

@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Enter 2–40 characters of a player's name." }, { status: 400 });
   }
   const players = await prisma.user.findMany({
-    where: { id: { not: session.user.id }, displayName: { contains: query } },
+    where: { id: { not: session.user.id }, computerLevel: null, displayName: { contains: query } },
     select: playerSelect,
     orderBy: [{ displayName: "asc" }, { id: "asc" }],
     take: 20,

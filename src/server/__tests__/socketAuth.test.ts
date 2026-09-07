@@ -63,4 +63,11 @@ describe("Socket.IO session cookie decoding", () => {
     ).resolves.toBeNull();
     await expect(userIdFromCookie(undefined)).resolves.toBeNull();
   });
+
+  it("never admits a built-in computer identity as an interactive socket", async () => {
+    for (const level of ["easy", "medium", "hard"]) {
+      mocks.getToken.mockResolvedValue({ uid: `fiveo-computer-${level}` });
+      await expect(userIdFromCookie("authjs.session-token=token")).resolves.toBeNull();
+    }
+  });
 });

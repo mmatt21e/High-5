@@ -1,4 +1,5 @@
 import { getToken } from "next-auth/jwt";
+import { isComputerPlayerId } from "../lib/computer";
 
 /**
  * Decode the Auth.js session JWT from a raw Cookie header and return the
@@ -27,7 +28,8 @@ export async function userIdFromCookie(
       cookieName,
       secureCookie: secure,
     });
-    return (token?.uid as string | undefined) ?? null;
+    const userId = token?.uid;
+    return typeof userId === "string" && !isComputerPlayerId(userId) ? userId : null;
   } catch {
     return null;
   }

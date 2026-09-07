@@ -8,6 +8,7 @@ import { SignOutButton } from "@/components/SignOutButton";
 import { AppearanceSettings } from "@/components/AppearanceSettings";
 import { NotificationToggle } from "@/components/NotificationToggle";
 import { PlayerChallenges } from "@/components/PlayerChallenges";
+import { ComputerLobby } from "@/components/ComputerLobby";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { publicPlayer } from "@/server/playerIdentity";
 
@@ -80,6 +81,7 @@ export default async function HomePage() {
     return {
       code: m.inviteCode,
       opponent,
+      computer: Boolean(m.guest?.computerLevel),
       avatar: (seat === 0 ? m.guest : m.host) ? publicPlayer((seat === 0 ? m.guest : m.host)!).avatar : null,
       myScore,
       oppScore,
@@ -117,7 +119,7 @@ export default async function HomePage() {
                     vs {g.opponent ?? "waiting…"}
                   </div>
                   <div className="subtle-text text-xs">
-                    {g.myScore}–{g.oppScore} · code {g.code}
+                    {g.myScore}–{g.oppScore} · {g.computer ? "Computer match" : `code ${g.code}`}
                   </div>
                   </div>
                 </div>
@@ -128,6 +130,7 @@ export default async function HomePage() {
         </section>
       )}
 
+      <ComputerLobby />
       <PlayerChallenges />
       <section className="panel" aria-labelledby="invite-code-title">
         <h2 id="invite-code-title" className="mb-3 font-bold">Play using an invite code</h2>

@@ -1,3 +1,5 @@
+import type { ComputerLevel } from "./computer";
+
 export const AVATARS = [
   { id: "spade", label: "Spade", symbol: "♠", color: "#233345" },
   { id: "fox", label: "Fox", symbol: "🦊", color: "#663819" },
@@ -20,4 +22,5 @@ export interface PublicPlayer {
   id: string;
   displayName: string;
   avatar: string;
+  computerLevel?: ComputerLevel;
 }

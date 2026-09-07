@@ -7,8 +7,8 @@ export class InvitationError extends Error {
 
 export async function sendInvitation(senderId: string, recipientId: string) {
   if (senderId === recipientId) throw new InvitationError("Choose another player to invite.");
-  const recipient = await prisma.user.findUnique({ where: { id: recipientId }, select: { id: true } });
-  if (!recipient) throw new InvitationError("That player is unavailable.", 404);
+  const recipient = await prisma.user.findUnique({ where: { id: recipientId }, select: { id: true, computerLevel: true } });
+  if (!recipient || recipient.computerLevel) throw new InvitationError("That player is unavailable. Use Play the computer for computer opponents.", 404);
   const pendingKey = JSON.stringify([senderId, recipientId].sort());
   // Both directions share one unique key. Concurrent sends cannot create two
   // invitations for the same pair; resolved invitations retain their history.

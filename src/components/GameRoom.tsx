@@ -20,6 +20,7 @@ import {
   type CardSize,
 } from "./PlayingCard";
 import { cardId } from "@/lib/game/cards";
+import { COMPUTER_OPPONENTS, type ComputerLevel } from "@/lib/computer";
 import type { CardView, GameView, PlayerIndex } from "@/lib/game/types";
 import type { MatchSnapshot } from "@/lib/realtime/events";
 
@@ -209,7 +210,7 @@ function Table({
   if (gameOver || matchOver) {
     body = (
       <main className="flex flex-1 flex-col gap-2 p-3">
-        <TopBar code={snapshot.inviteCode} onSettings={openSettings} />
+        <TopBar code={snapshot.inviteCode} computerLevel={snapshot.computerLevel} onSettings={openSettings} />
         <PlayerBar name={oppBoard.displayName} avatar={(opp === 0 ? snapshot.host : snapshot.guest)?.avatar} score={oppScore} target={snapshot.targetWins} />
         <ResultBoard board={oppBoard} view={view} seat={opp} size="sm" />
         <div className="my-1">
@@ -226,10 +227,11 @@ function Table({
   } else {
     body = (
     <main className="game-table-active" aria-label="Five-O game table">
-      <TopBar code={snapshot.inviteCode} onSettings={openSettings} />
+      <TopBar code={snapshot.inviteCode} computerLevel={snapshot.computerLevel} onSettings={openSettings} />
 
       <MatchHud
         view={view}
+        computer={Boolean(snapshot.computerLevel)}
         opponentName={oppBoard.displayName}
         opponentAvatar={(opp === 0 ? snapshot.host : snapshot.guest)?.avatar}
         opponentScore={oppScore}
@@ -295,13 +297,13 @@ function Table({
   );
 }
 
-function TopBar({ code, onSettings }: { code: string; onSettings: () => void }) {
+function TopBar({ code, computerLevel, onSettings }: { code: string; computerLevel?: ComputerLevel | null; onSettings: () => void }) {
   return (
     <div className="game-topbar supporting-text flex items-center justify-between text-xs">
       <Link href="/" className="tap-target -ml-2 rounded-lg px-2 active:text-white">
         ← Leave
       </Link>
-      <span className="font-mono tracking-[0.25em]">{code}</span>
+      {computerLevel ? <span>Computer · {COMPUTER_OPPONENTS[computerLevel].skill}</span> : <span className="font-mono tracking-[0.25em]">{code}</span>}
       <button
         type="button"
         onClick={onSettings}
@@ -487,6 +489,7 @@ function PlayerBar({
 
 function MatchHud({
   view,
+  computer = false,
   opponentName,
   opponentAvatar,
   opponentScore,
@@ -497,6 +500,7 @@ function MatchHud({
   selected,
 }: {
   view: GameView;
+  computer?: boolean;
   opponentName: string;
   opponentAvatar?: string;
   opponentScore: number;
@@ -506,7 +510,7 @@ function MatchHud({
   target: number;
   selected: boolean;
 }) {
-  const turnLabel = view.yourTurn ? "Your turn" : `${opponentName}'s turn`;
+  const turnLabel = view.yourTurn ? "Your turn" : computer ? "Computer thinking…" : `${opponentName}'s turn`;
   const instruction = view.yourTurn
     ? selected
       ? "Choose row or discard"

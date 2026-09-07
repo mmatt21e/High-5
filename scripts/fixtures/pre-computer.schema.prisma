@@ -22,7 +22,6 @@ model User {
   displayName   String    @default("") // backfilled on create for OAuth users
   passwordHash  String? // null for OAuth-only accounts
   image         String?
-  computerLevel String?   @unique // null for humans; easy | medium | hard for built-in opponents
   createdAt     DateTime  @default(now())
 
   accounts Account[]

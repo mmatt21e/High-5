@@ -23,6 +23,11 @@ export default function HowToPlayPage() {
         </Link>
       </header>
 
+      <section className="panel">
+        <h2 className="mb-2 font-bold">Choose your opponent</h2>
+        <p className="supporting-text text-sm">Invite a player by name or code, or choose Play the computer in the lobby. Start with Lucky Guppy, challenge Sneaky Stacker, or take on The Cardfather. Computer opponents follow the same rules and cannot see your hidden cards. Results count in your overall and head-to-head records.</p>
+      </section>
+
       <Step n={1} title="Five hands: 4 shown, 1 hidden">
         You build <b>four rows</b> your opponent can see, plus a{" "}
         <b>concealed hand</b> only you can see. Those five poker hands are what

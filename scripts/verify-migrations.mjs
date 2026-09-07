@@ -29,6 +29,7 @@ const acceptedAtomicChecksum =
   "d703b710a6c65ca46a2bc15f993b51a8de25fbc0e39fabb2fcea610599f2ab88";
 const integrityMigration = "20260905200000_verify_foreign_key_integrity";
 const invitationMigration = "20260906000000_player_invitations";
+const computerMigration = "20260907000000_computer_opponents";
 const atomicMigrationSql = resolve(
   prismaDirectory,
   "migrations",
@@ -42,6 +43,7 @@ const freshDatabase = resolve(prismaDirectory, `mig-fresh-${token}.db`);
 const legacyDatabase = resolve(prismaDirectory, `mig-legacy-${token}.db`);
 const predecessorDatabase = resolve(prismaDirectory, `mig-round2-${token}.db`);
 const orphanDatabase = resolve(prismaDirectory, `mig-orphan-${token}.db`);
+const playerDatabase = resolve(prismaDirectory, `mig-player-${token}.db`);
 
 function databaseUrl(databasePath) {
   // Relative SQLite URLs are resolved from the schema directory by Prisma.
@@ -139,9 +141,11 @@ async function inspectDatabase(url) {
     );
     assert(
       appliedMigrations.map(({ migration_name }) => migration_name).join(",") ===
-        [baselineMigration, atomicMigration, integrityMigration, invitationMigration].join(","),
+        [baselineMigration, atomicMigration, integrityMigration, invitationMigration, computerMigration].join(","),
       "Expected the complete tracked migration history to be applied",
     );
+    const userColumns = await client.$queryRawUnsafe('PRAGMA table_info("User")');
+    assert(userColumns.some(({ name }) => name === "computerLevel"), "User.computerLevel is missing");
   } finally {
     await client.$disconnect();
   }
@@ -304,6 +308,7 @@ try {
   closeSync(openSync(legacyDatabase, "wx"));
   closeSync(openSync(predecessorDatabase, "wx"));
   closeSync(openSync(orphanDatabase, "wx"));
+  closeSync(openSync(playerDatabase, "wx"));
   // Exercise the same schema-relative URL used by the local .env example.
   runDeployment(freshUrl);
   await inspectDatabase(freshUrl);
@@ -311,6 +316,26 @@ try {
   // Starting a second time must recognize the newly completed history too.
   runDeployment(freshUrl);
   await inspectDatabase(freshUrl);
+
+  // Reconstruct the released four-migration database (7bcb385), including
+  // invitations. Confirm the additive upgrade leaves every existing row intact.
+  const playerUrl = absoluteDatabaseUrl(playerDatabase);
+  for (const name of [baselineMigration, atomicMigration, integrityMigration, invitationMigration]) {
+    runPrisma(["db", "execute", "--file", resolve(prismaDirectory, "migrations", name, "migration.sql"), "--url", playerUrl], playerUrl);
+    runPrisma(["migrate", "resolve", "--applied", name, "--schema", currentSchema], playerUrl);
+  }
+  const playerClient = new PrismaClient({ datasources: { db: { url: playerUrl } } });
+  try {
+    await playerClient.$executeRawUnsafe(`INSERT INTO "User" (id, email, displayName) VALUES ('preserved', 'preserved@example.test', 'Existing player'), ('recipient', 'recipient@example.test', 'Recipient')`);
+    await playerClient.$executeRawUnsafe(`INSERT INTO "GameInvitation" (id, senderId, recipientId, pendingKey, updatedAt) VALUES ('invite', 'preserved', 'recipient', 'pair', CURRENT_TIMESTAMP)`);
+    runDeployment(playerUrl);
+    const users = await playerClient.user.findMany({ orderBy: { id: "asc" } });
+    assert(users.length === 2 && users.every((user) => user.computerLevel === null), "Upgrade did not preserve human users");
+    assert((await playerClient.gameInvitation.findUnique({ where: { id: "invite" } }))?.status === "pending", "Upgrade did not preserve the pending invitation");
+    await inspectDatabase(playerUrl);
+    verifyNoSchemaDrift(playerDatabase, playerUrl);
+    runDeployment(playerUrl);
+  } finally { await playerClient.$disconnect(); }
 
   runPrisma(
     ["db", "push", "--schema", legacySchema, "--skip-generate"],
@@ -356,11 +381,12 @@ try {
   await verifyOrphanMigrationStoppedBeforeAlter(orphanUrl);
 
   console.log(
-    "Migration verification passed for fresh, legacy db-push, exact 11b1f48 predecessor, and rejected-orphan SQLite databases.",
+    "Migration verification passed for fresh, released player-feature history, legacy db-push, exact 11b1f48 predecessor, and rejected-orphan SQLite databases.",
   );
 } finally {
   removeGeneratedDatabase(freshDatabase);
   removeGeneratedDatabase(legacyDatabase);
   removeGeneratedDatabase(predecessorDatabase);
   removeGeneratedDatabase(orphanDatabase);
+  removeGeneratedDatabase(playerDatabase);
 }

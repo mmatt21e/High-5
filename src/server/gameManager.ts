@@ -3,6 +3,8 @@ import type { Server, Socket } from "socket.io";
 import { prisma } from "../lib/prisma";
 import { joinMatch } from "../lib/match";
 import { publicPlayer } from "./playerIdentity";
+import { isComputerLevel, type ComputerLevel } from "../lib/computer";
+import { chooseComputerMove } from "../lib/game/computerStrategy";
 import { sendPushToUser } from "../lib/push";
 import {
   persistCompletedGame,
@@ -31,6 +33,7 @@ interface LiveMatch {
   inviteCode: string;
   status: "lobby" | "active" | "complete";
   targetWins: number;
+  computerLevel: ComputerLevel | null;
   host: { userId: string; displayName: string; avatar?: string };
   guest: { userId: string; displayName: string; avatar?: string } | null;
   scoreHost: number;
@@ -46,6 +49,7 @@ interface FiveOGlobals {
   __fiveOMatches?: Map<string, LiveMatch>;
   __fiveOMatchLoads?: SingleFlight<string, LiveMatch | null>;
   __fiveOMatchMutations?: KeyedSerialQueue<string>;
+  __fiveOComputerTimers?: Map<string, ReturnType<typeof setTimeout>>;
 }
 
 /**
@@ -63,6 +67,8 @@ const matchMutations =
 fiveOGlobals.__fiveOMatches = registry;
 fiveOGlobals.__fiveOMatchLoads = matchLoads;
 fiveOGlobals.__fiveOMatchMutations = matchMutations;
+const computerTimers = fiveOGlobals.__fiveOComputerTimers ?? new Map<string, ReturnType<typeof setTimeout>>();
+fiveOGlobals.__fiveOComputerTimers = computerTimers;
 
 function room(matchId: string) {
   return `match:${matchId}`;
@@ -85,6 +91,7 @@ async function readLiveFromDatabase(matchId: string): Promise<LiveMatch | null> 
           ? "lobby"
           : "complete",
     targetWins: m.targetWins,
+    computerLevel: isComputerLevel(m.guest?.computerLevel) ? m.guest.computerLevel : null,
     host: { userId: m.host.id, displayName: m.host.displayName, avatar: publicPlayer(m.host).avatar },
     guest: m.guest
       ? { userId: m.guest.id, displayName: m.guest.displayName, avatar: publicPlayer(m.guest).avatar }
@@ -241,6 +248,7 @@ function snapshotFor(live: LiveMatch, userId: string): MatchSnapshot {
     inviteCode: live.inviteCode,
     status: live.status,
     targetWins: live.targetWins,
+    computerLevel: live.computerLevel,
     host: { displayName: live.host.displayName, avatar: live.host.avatar },
     guest: live.guest ? { displayName: live.guest.displayName, avatar: live.guest.avatar } : null,
     scoreHost: live.scoreHost,
@@ -253,7 +261,7 @@ function snapshotFor(live: LiveMatch, userId: string): MatchSnapshot {
           ? 1
           : null,
     youReady: live.ready.has(userId),
-    opponentReady: opponentId ? live.ready.has(opponentId) : false,
+    opponentReady: Boolean(live.computerLevel) || (opponentId ? live.ready.has(opponentId) : false),
   };
 }
 
@@ -287,6 +295,7 @@ interface TurnNotification {
 function notificationForTurn(live: LiveMatch): TurnNotification | null {
   if (!live.game || live.game.phase !== "playing" || !live.guest) return null;
   const seat = live.game.toMove;
+  if (seat === 1 && live.computerLevel) return null;
   const player = seat === 0 ? live.host : live.guest;
   const opponent = seat === 0 ? live.guest : live.host;
 
@@ -381,6 +390,53 @@ function isMatchComplete(live: LiveMatch): boolean {
 
 // ----- Socket event handlers -----
 
+/** Shared human/computer write path, including atomic completion and rollback. */
+async function commitMove(live: LiveMatch, seat: PlayerIndex, move: (game: GameState, seat: PlayerIndex) => void) {
+  await persistLiveMutation(live, async () => {
+    const prior = JSON.stringify(live.game);
+    move(live.game!, seat);
+    if (live.game!.phase === "complete") await persistAndScore(live, prior);
+    else await saveState(live);
+  });
+}
+
+function computerToMove(live: LiveMatch): boolean {
+  return Boolean(live.computerLevel && live.guest && live.status === "active"
+    && live.game?.phase === "playing" && live.game.toMove === 1);
+}
+
+/** Delay outside the mutation queue; recheck persisted/current state inside it.
+ * Only one pending computer move exists per match, including reconnects. */
+function scheduleComputerTurn(io: IO, matchId: string) {
+  const cached = registry.get(matchId);
+  if (!cached || !computerToMove(cached) || computerTimers.has(matchId)) return;
+  const timer = setTimeout(() => {
+    let succeeded = false;
+    void matchMutations.run(matchId, async () => {
+      const live = await getLive(matchId);
+      if (!live || !computerToMove(live)) return null;
+      const move = chooseComputerMove(viewFor(live.game!, 1), live.computerLevel!);
+      if (!move) throw new Error("Computer could not choose a legal move");
+      await commitMove(live, 1, (game, seat) => {
+        if (move.kind === "discard") discardCard(game, seat, move.cardId);
+        else placeCard(game, seat, move.cardId, move.row);
+      });
+      await broadcast(io, live);
+      succeeded = true;
+      return notificationForTurn(live);
+    }).then((intent) => dispatchTurnNotification(io, intent)).catch((error: unknown) => {
+      console.error("Computer turn failed", error);
+      io.to(room(matchId)).emit("errorMsg", { message: "The computer's move could not be saved. Reopen this game to retry." });
+    }).finally(() => {
+      computerTimers.delete(matchId);
+      // Can be consecutive when the human has already filled all four rows.
+      if (succeeded) scheduleComputerTurn(io, matchId);
+    });
+  }, 450);
+  timer.unref();
+  computerTimers.set(matchId, timer);
+}
+
 export async function handleJoin(io: IO, socket: SocketT, code: string) {
   const userId = socket.data.userId as string;
   const joined = await joinMatch(code, userId);
@@ -429,6 +485,7 @@ export async function handleJoin(io: IO, socket: SocketT, code: string) {
     return null;
   });
   dispatchTurnNotification(io, notification);
+  scheduleComputerTurn(io, joined.matchId);
 }
 
 export async function handlePlace(
@@ -443,6 +500,7 @@ export async function handlePlace(
     applyMove(io, socket, (game, seat) => placeCard(game, seat, cardId, row)),
   );
   dispatchTurnNotification(io, notification);
+  scheduleComputerTurn(io, matchId);
 }
 
 export async function handleDiscard(io: IO, socket: SocketT, cardId: string) {
@@ -452,6 +510,7 @@ export async function handleDiscard(io: IO, socket: SocketT, cardId: string) {
     applyMove(io, socket, (game, seat) => discardCard(game, seat, cardId)),
   );
   dispatchTurnNotification(io, notification);
+  scheduleComputerTurn(io, matchId);
 }
 
 async function applyMove(
@@ -473,17 +532,8 @@ async function applyMove(
   const seat = seatOfUser(live, userId);
   if (seat === -1) return null;
 
-  let completed = false;
   try {
-    await persistLiveMutation(live, async () => {
-      const expectedPriorGameStateJson = JSON.stringify(live.game);
-      move(live.game!, seat);
-      completed = live.game!.phase === "complete";
-      if (completed) {
-        await persistAndScore(live, expectedPriorGameStateJson);
-      }
-      else await saveState(live);
-    });
+    await commitMove(live, seat, move);
   } catch (err) {
     if (err instanceof IllegalMoveError) {
       socket.emit("errorMsg", { message: err.message });
@@ -493,7 +543,7 @@ async function applyMove(
   }
 
   await broadcast(io, live);
-  return completed ? null : notificationForTurn(live);
+  return notificationForTurn(live);
 }
 
 export async function handleNext(io: IO, socket: SocketT) {
@@ -503,6 +553,7 @@ export async function handleNext(io: IO, socket: SocketT) {
   const notification = await matchMutations.run(matchId, async () => {
     const live = registry.get(matchId);
     if (!live || live.status === "complete" || !live.guest) return null;
+    if (seatOfUser(live, userId) === -1) return null;
     if (live.game && live.game.phase !== "complete") return null;
 
     // Retry a completion whose prior transaction rolled back before accepting
@@ -519,6 +570,7 @@ export async function handleNext(io: IO, socket: SocketT) {
     let bothReady = false;
     await persistLiveMutation(live, async () => {
       live.ready.add(userId);
+      if (live.computerLevel) live.ready.add(live.guest!.userId);
       bothReady =
         live.ready.has(live.host.userId) && live.ready.has(live.guest!.userId);
       if (bothReady) startGame(live);
@@ -528,6 +580,7 @@ export async function handleNext(io: IO, socket: SocketT) {
     return bothReady ? notificationForTurn(live) : null;
   });
   dispatchTurnNotification(io, notification);
+  scheduleComputerTurn(io, matchId);
 }
 
 /** A player voluntarily ends the match; it is marked complete for both. */
@@ -548,6 +601,9 @@ export async function handleEndMatch(io: IO, socket: SocketT) {
       await saveState(live);
     });
     await broadcast(io, live);
+    const timer = computerTimers.get(matchId);
+    if (timer) clearTimeout(timer);
+    computerTimers.delete(matchId);
   });
 }
 

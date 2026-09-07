@@ -56,7 +56,7 @@ export function LandingPage() {
 
       <main id="landing-content" className="landing-main">
         <section className="landing-hero" aria-labelledby="landing-title">
-          <p className="landing-eyebrow">Heads-up poker across two screens</p>
+          <p className="landing-eyebrow">Heads-up poker with a friend or the computer</p>
           <h1 id="landing-title" className="landing-title">
             <span>Build five hands.</span>
             <span>Win three.</span>

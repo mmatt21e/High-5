@@ -5,7 +5,28 @@ two devices. Players can search for another player's name and send an invitation
 or create a match and share an eight-character invite code. A named invitation
 starts a match only when its recipient accepts; invite-code joining remains
 available, including legacy five-character codes. Both players play against a
-server-authoritative deck and game engine.
+server-authoritative deck and game engine. You can also play a computer opponent
+on one device, with the same rules and saved-match support.
+
+## Computer opponents
+
+Choose **Play the computer** from the signed-in lobby:
+
+- **Lucky Guppy** (relaxed): unpredictable legal placements for learning the game.
+- **Sneaky Stacker** (strategic): builds combinations and protects its concealed
+  hand, with occasional experimental plays.
+- **The Cardfather** (advanced): combines hand-building with 64 sampled possible
+  completions per decision, compares your visible rows, and considers discards.
+
+Every level sees only its own hand and the public board. No opponent can read
+your hidden cards or future draws. Computer turns run on the server; no external
+AI service, API key, or second device is needed. Internet/server access and a
+signed-in account are still required.
+
+Computer results count in overall stats. Each named opponent has a separate
+head-to-head record and history filter. Games resume after leaving or restarting
+the server, and **Next game** only needs the human player to be ready. Human
+search, named invitations, and invite-code matches remain available unchanged.
 
 ## Players, history and avatars
 
@@ -27,8 +48,9 @@ server-authoritative deck and game engine.
   turn. All ten deck styles keep card indices separate from their vector artwork.
 
 Existing installations must run `npm run db:migrate` before starting this version.
-The additive `20260906000000_player_invitations` migration preserves existing
-accounts, matches and results. Migration SQL uses LF line endings on every platform
+The additive `20260907000000_computer_opponents` migration adds nullable computer
+identity metadata; existing accounts remain human. It preserves existing accounts,
+invitations, matches and results. Migration SQL uses LF line endings on every platform
 so released checksums remain stable.
 
 ## Game rules
@@ -81,7 +103,8 @@ npm run dev
 ```
 
 Open `http://localhost:3000`, register two users in separate browsers, create a
-match in one, and join it from the other.
+match in one, and join it from the other. Or sign in with one account and choose
+a named opponent under **Play the computer**.
 
 Development binds to `127.0.0.1` by default. If `AUTH_SECRET` is empty (or still
 contains the retired published placeholder), the dev server generates an

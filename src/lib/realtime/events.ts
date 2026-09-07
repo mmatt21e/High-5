@@ -1,12 +1,14 @@
 // Shared Socket.IO event contracts used by both the server and the client.
 
 import type { GameView, PlayerIndex } from "../game/types";
+import type { ComputerLevel } from "../computer";
 
 export interface MatchSnapshot {
   matchId: string;
   inviteCode: string;
   status: "lobby" | "active" | "complete";
   targetWins: number;
+  computerLevel?: ComputerLevel | null;
   host: { displayName: string; avatar?: string };
   guest: { displayName: string; avatar?: string } | null;
   scoreHost: number;

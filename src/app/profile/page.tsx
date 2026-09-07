@@ -50,6 +50,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
       </div>
 
       <h2 className="font-bold">Overall record</h2>
+      <p className="subtle-text text-xs">Includes human and computer games. Compare each named computer opponent separately below.</p>
       <div className="grid grid-cols-2 gap-3">
         <Big label="Win rate" value={`${winRate}%`} />
         <Big label="Win streak" value={stats?.currentStreak ?? 0} />
@@ -77,7 +78,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
               <tbody>{records.map((record) => <tr key={record.player.id}>
                 <th scope="row"><Link href={`/profile?opponent=${encodeURIComponent(record.player.id)}#game-history`} className="history-opponent">
                   <PlayerAvatar avatar={record.player.avatar} name={record.player.displayName} size="sm" />
-                  <span>{record.player.displayName}<small className="subtle-text">#{record.player.id.slice(-6)}</small></span>
+                  <span>{record.player.displayName}<small className="subtle-text">{record.player.computerLevel ? "Computer opponent" : `#${record.player.id.slice(-6)}`}</small></span>
                 </Link></th>
                 <td>{record.wins} / {record.losses} / {record.pushes}</td>
                 <td>{record.matchWins} / {record.matchLosses}</td>
@@ -94,7 +95,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
           <div className="mt-1 flex gap-2">
             <select name="opponent" id="history-opponent" defaultValue={opponentId ?? ""} className="field min-w-0 flex-1">
               <option value="">All opponents</option>
-              {records.map((record) => <option key={record.player.id} value={record.player.id}>{record.player.displayName} · #{record.player.id.slice(-6)}</option>)}
+              {records.map((record) => <option key={record.player.id} value={record.player.id}>{record.player.displayName} · {record.player.computerLevel ? "Computer" : `#${record.player.id.slice(-6)}`}</option>)}
             </select>
             <button className="btn-outline">View</button>
           </div>

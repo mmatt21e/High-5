@@ -12,6 +12,7 @@ const prismaDirectory = resolve(repositoryRoot, "prisma");
 const currentSchema = resolve(prismaDirectory, "schema.prisma");
 const legacySchema = resolve(repositoryRoot, "scripts", "fixtures", "pre-round2.schema.prisma");
 const prePlayerSchema = resolve(repositoryRoot, "scripts", "fixtures", "pre-player-features.schema.prisma");
+const preComputerSchema = resolve(repositoryRoot, "scripts", "fixtures", "pre-computer.schema.prisma");
 const require = createRequire(import.meta.url);
 const prismaCli = require.resolve("prisma/build/index.js");
 
@@ -20,13 +21,16 @@ const atomicMigration = "20260905150000_atomic_game_completion";
 const integrityMigration = "20260905200000_verify_foreign_key_integrity";
 const invitationMigration = "20260906000000_player_invitations";
 const previousHistory = [baselineMigration, atomicMigration, integrityMigration];
-const completeHistory = [...previousHistory, invitationMigration];
+const computerMigration = "20260907000000_computer_opponents";
+const playerHistory = [...previousHistory, invitationMigration];
+const completeHistory = [...playerHistory, computerMigration];
 const knownHistories = new Map([
   ["", "untracked"],
   [atomicMigration, "round2"],
   [baselineMigration, "legacy-baselined"],
   [[baselineMigration, atomicMigration].join(","), "pre-integrity"],
   [previousHistory.join(","), "pre-invitations"],
+  [playerHistory.join(","), "pre-computer"],
   [completeHistory.join(","), "current"],
 ]);
 
@@ -192,6 +196,8 @@ if (kind === "untracked") {
   assert(!isEmpty, "Migration history exists but application tables are missing. No changes made.");
   if (kind === "legacy-baselined") {
     assertSchemaMatches(legacySchema, "Baselined legacy");
+  } else if (kind === "pre-computer") {
+    assertSchemaMatches(preComputerSchema, "Before computer opponents");
   } else if (kind !== "current") {
     assertSchemaMatches(prePlayerSchema, "Before player invitations");
   } else {
