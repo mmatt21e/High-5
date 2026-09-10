@@ -38,6 +38,9 @@ beforeAll(async () => {
 }, 30_000);
 beforeEach(async () => {
   clearLive();
+  // Explicitly clear stats instead of relying on connection-local SQLite
+  // foreign-key settings to cascade fixture cleanup on every platform.
+  await prisma.stats.deleteMany();
   await prisma.gameInvitation.deleteMany(); await prisma.game.deleteMany(); await prisma.match.deleteMany(); await prisma.user.deleteMany();
   await prisma.user.createMany({ data: ["human", "outsider"].map((id) => ({ id, email: `${id}@example.test`, displayName: id })) });
   resetAccountRateLimit("match:create", "human"); resetAccountRateLimit("match:join", "human");
