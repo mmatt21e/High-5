@@ -8,8 +8,9 @@ No move, score, trick decision, or database operation waits for an animation.
 ## Effects
 
 - New deals send cards from the deck into your hand, with a short stagger.
-- Selected cards lift slightly. Placements travel into their rows, with the
-  existing Last marker identifying the latest play afterward.
+- Selected cards lift slightly. Your placements appear in their rows immediately
+  on drop or row activation, with the Last marker, without waiting for server
+  confirmation or a travel animation. Opponent placements retain their animation.
 - Draws arrive from the deck; discarded or exchanged held cards return toward it.
 - Row swaps and Second Thoughts visibly move the affected cards between rows.
 - Row completion briefly highlights the row and introduces its check mark.
@@ -43,6 +44,12 @@ No new runtime dependency or schema migration is required.
 client animation identities. `useGameSocket.ts` associates animation identity with
 the incoming game view, keeping separate match metadata updates from triggering
 a deal for the wrong board.
+
+Local placements preview only the known held card moving to a legal row. Other
+actions wait for confirmation; draws, turns and results are supplied by the
+server. Rejections and disconnects restore the last confirmed view. If a reply
+is missing for eight seconds, the client requests a fresh table without resending
+the placement. Confirmation does not replay the local placement animation.
 
 New updates cancel prior effects and restore real cards immediately. Disconnect,
 resize, tab visibility changes, preference changes, and unmount also cancel effects.

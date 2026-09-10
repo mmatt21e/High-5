@@ -26,7 +26,7 @@ import type { CardView, GameView, PlayerIndex } from "@/lib/game/types";
 import type { MatchSnapshot } from "@/lib/realtime/events";
 
 export function GameRoom({ code }: { code: string }) {
-  const { snapshot, view, error, connected, sync, animationKey, place, discard, next, endMatch, exhibition } =
+  const { snapshot, view, error, connected, sync, animationKey, placing, place, discard, next, endMatch, exhibition } =
     useGameSocket(code);
 
   if (error && !snapshot) {
@@ -86,6 +86,7 @@ export function GameRoom({ code }: { code: string }) {
     <>
       <Table
         animationKey={animationKey}
+        placing={placing}
         connected={connected}
         sync={sync}
         snapshot={snapshot}
@@ -171,6 +172,7 @@ function cvId(cv: CardView): string {
 
 function Table({
   animationKey,
+  placing,
   connected,
   sync,
   snapshot,
@@ -183,6 +185,7 @@ function Table({
   onExhibition,
 }: {
   animationKey: string;
+  placing: boolean;
   connected: boolean;
   sync: number;
   snapshot: MatchSnapshot;
@@ -231,6 +234,7 @@ function Table({
   let statusLabel = view.yourTurn ? "Your turn" : `${oppBoard.displayName}'s turn`;
   let progressLabel = `${view.placed[you]}/${view.total} placed`;
   if (!view.yourTurn && snapshot.computerLevel) statusLabel = "Computer thinking…";
+  if (placing) statusLabel = "Card placed";
   if (view.exhibition?.pending) statusLabel = "Trick waiting · open Tricks";
   if (view.exhibition) progressLabel = `Untracked · ${view.placed[you]}/${view.total}`;
   if (matchOver) {
@@ -256,7 +260,7 @@ function Table({
         gameNumber={snapshot.gameNumber}
       />
       <div className="table-player-section table-opponent-section">
-        <PlayerBar name={oppBoard.displayName} avatar={(opp === 0 ? snapshot.host : snapshot.guest)?.avatar} active={!showResults && !view.yourTurn} />
+        <PlayerBar name={oppBoard.displayName} avatar={(opp === 0 ? snapshot.host : snapshot.guest)?.avatar} active={!showResults && !placing && !view.yourTurn} />
         <AlignedBoard board={oppBoard} view={view} seat={opp} results={gameOver} />
       </div>
       {error ? (

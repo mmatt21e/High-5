@@ -20,6 +20,7 @@ export function describeMotionChanges(before: GameView, after: GameView) {
   return {
     entered: [...current.keys()].filter(id => !previous.has(id)),
     moved: [...current.keys()].filter(id => previous.has(id) && previous.get(id) !== current.get(id)),
+    placedByYou: [...current.keys()].filter(id => previous.get(id) === `${after.you}:hand` && current.get(id)?.startsWith(`${after.you}:row:`)),
     removed: [...previous.keys()].filter(id => !current.has(id)),
     completedRows: after.players.flatMap((player, seat) => player.rows.flatMap((row, index) =>
       row.filter(card => card.state === "card").length === 5 && before.players[seat].rows[index].filter(card => card.state === "card").length < 5 ? [`${seat}:${index}`] : [])),

@@ -33,16 +33,20 @@ export function useTableMotion(view: GameView, gameKey: string, sync: number, co
     cancel.current();
     const table = root.current;
     if (!table) return;
+    const before = previous.current;
+    const immediatePlacement = Boolean(before && describeMotionChanges(before.view, view).placedByYou.length);
     const cards = new Map<string, CardPosition>();
     table.querySelectorAll<HTMLElement>("[data-motion-card]").forEach(owner => {
       const element = owner.querySelector<HTMLElement>(".playing-card-face");
       if (!element || !owner.dataset.motionCard) return;
       const hand = owner.classList.contains("hand-select-card");
       cards.set(owner.dataset.motionCard, { rect: element.getBoundingClientRect(), element, hand,
-        copy: hand && effective === "full" ? copyAppearance(element) : undefined });
+        copy: hand && effective === "full" && !immediatePlacement ? copyAppearance(element) : undefined });
     });
-    const before = previous.current;
     previous.current = { view, key: gameKey, sync, cards };
+    // Do not spend the first placement frame copying computed styles or
+    // animating the remaining hand. Confirmation can prepare later effects.
+    if (immediatePlacement) return;
     if (!connected || effective === "off" || document.hidden || typeof Element.prototype.animate !== "function") return;
 
     // A reconnect is a fresh baseline; do not replay the moves missed offline.
@@ -106,12 +110,14 @@ export function useTableMotion(view: GameView, gameKey: string, sync: number, co
       const moved = new Set(change.moved), entered = new Set(change.entered);
       cards.forEach((card, id) => {
         const old = before.cards.get(id);
+        // Local placement is visible on the first frame, in every motion mode.
+        if (change.placedByYou.includes(id)) return;
         if (change.showdown && !old) {
           if (effective === "reduced") fade(card.element, "reveal");
           else run(card.element, [{ transform: "perspective(600px) rotateY(90deg)", opacity: 0 }, { transform: "perspective(600px) rotateY(0)", opacity: 1 }], 320, "reveal", 100);
         } else if (moved.has(id) && old) travel(card, old.rect, "card-move");
         else if (entered.has(id) && deck) travel(card, deck, card.hand ? "draw" : "opponent-play");
-        else if (old && !change.showdown && (Math.abs(old.rect.x - card.rect.x) > 1 || Math.abs(old.rect.y - card.rect.y) > 1)) travel(card, old.rect, "hand-settle");
+        else if (old?.hand && card.hand && !change.showdown && (Math.abs(old.rect.x - card.rect.x) > 1 || Math.abs(old.rect.y - card.rect.y) > 1)) travel(card, old.rect, "hand-settle");
       });
       if (!change.showdown) change.removed.forEach(id => {
         const card = before.cards.get(id);
