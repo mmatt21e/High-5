@@ -1,7 +1,7 @@
 # High-5 on Unraid
 
 Activated September 10, 2026 at 11:03 UTC. **Tower is the public data authority.**
-Accepted release: `high5-20260910T1050`. Whole-migration reboot and soak acceptance remain pending.
+Accepted release: `high5-20260910T1050`. Full host reboot passed at 14:28 UTC; soak acceptance remains pending.
 
 ## Prepared target
 
@@ -49,7 +49,7 @@ fresh isolated destinations and does not replace active production data.
 Stop the PC connector and writers, disable their restart/automation, take a final
 paired snapshot and verify its fresh Tower restore before opening Tower ingress.
 Exactly one public origin may accept writes. Existing-account/public checks,
-PC independence, Tower reboot recovery and the 48-hour soak remain pending.
+PC independence and the 48-hour soak remain pending.
 
 The migration creates ignored `runtime/pc-origin-disabled.json` before freezing the
 PC source. `deploy/Start-Docker.ps1` refuses every mode while it exists, because the
@@ -71,3 +71,8 @@ The local Unraid workspace holds the canonical runbook at
 `docs/WEBSITE_MIGRATION_PLAN_2026-09-09.md` and evidence at
 `docs/website-migration-2026-09-09/EXECUTION.md`. Record the actual accepted release
 and verification date here only after cutover succeeds.
+
+Full Tower reboot evidence: all nine website containers and 15 ordinary service
+containers returned automatically with preserved configuration, storage and sessions.
+Two actual production backup generations for this group have been independently
+restored and tested. Originals remain retained; this does not waive final acceptance.
