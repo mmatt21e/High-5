@@ -11,7 +11,7 @@ import { resetAccountRateLimit } from "../../lib/rateLimit";
 const fixture = vi.hoisted(() => ({ path: `${process.cwd().replaceAll("\\", "/")}/prisma/computer-tests-${process.pid}-${Date.now()}.db` }));
 vi.mock("../../lib/prisma", async () => {
   const { PrismaClient } = await import("@prisma/client");
-  return { prisma: new PrismaClient({ datasources: { db: { url: `file:${fixture.path}` } } }) };
+  return { prisma: new PrismaClient({ datasources: { db: { url: `file:${fixture.path}?connection_limit=1` } } }) };
 });
 vi.mock("../../lib/push", () => ({ sendPushToUser: vi.fn() }));
 import { prisma } from "../../lib/prisma";
