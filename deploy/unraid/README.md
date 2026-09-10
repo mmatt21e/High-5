@@ -1,7 +1,7 @@
 # High-5 on Unraid
 
-Prepared September 10, 2026. **Public authority remains on the original PC.**
-Tower activation, accepted release ID and final acceptance are pending.
+Activated September 10, 2026 at 11:03 UTC. **Tower is the public data authority.**
+Accepted release: `high5-20260910T1050`. Whole-migration reboot and soak acceptance remain pending.
 
 ## Prepared target
 
