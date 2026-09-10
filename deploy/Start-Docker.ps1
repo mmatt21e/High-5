@@ -9,6 +9,11 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
+$originDisabledMarker = Join-Path $PSScriptRoot 'unraid/runtime/pc-origin-disabled.json'
+if (Test-Path -LiteralPath $originDisabledMarker) {
+    throw 'This PC production origin is disabled for migration to Tower. Use the recorded migration recovery procedure; restarting retained PC data could create a second writable origin. Development requires separate data and credentials.'
+}
+
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $environmentPath = Join-Path $PSScriptRoot "docker.env"
 $baseComposePath = Join-Path $repositoryRoot "compose.yaml"

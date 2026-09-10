@@ -51,6 +51,11 @@ paired snapshot and verify its fresh Tower restore before opening Tower ingress.
 Exactly one public origin may accept writes. Existing-account/public checks,
 PC independence, Tower reboot recovery and the 48-hour soak remain pending.
 
+The migration creates ignored `runtime/pc-origin-disabled.json` before freezing the
+PC source. `deploy/Start-Docker.ps1` refuses every mode while it exists, because the
+old modes share production data. Keep this marker after cutover. Direct Docker
+commands remain administrator operations and must follow the same recovery rules.
+
 After Tower accepts writes, returning to the PC requires a new authoritative
 Tower backup restored into fresh PC recovery storage. Never resume stale PC data.
 The isolated reverse-host drill preserved games/sessions and subsequent new PC
