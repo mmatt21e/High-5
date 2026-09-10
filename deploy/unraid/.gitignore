@@ -1,0 +1,9 @@
+# Local runtime material is never source.
+.env
+.env.*
+*.env
+secrets/
+data/
+postgres/
+backups/
+compose.resolved.json

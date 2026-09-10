@@ -1,0 +1,230 @@
+{
+  "name": "five-o-poker",
+  "networks": {
+    "default": {}
+  },
+  "secrets": {
+    "cloudflare_tunnel_token": {
+      "file": "${WEBSITE_DATA_ROOT:?Set WEBSITE_DATA_ROOT}/high5/secrets/cloudflare_tunnel_token"
+    }
+  },
+  "services": {
+    "app": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "deploy": {
+        "replicas": 1
+      },
+      "environment": {
+        "VAPID_PRIVATE_KEY": "${VAPID_PRIVATE_KEY:-}",
+        "AUTH_URL": "https://${PUBLIC_HOSTNAME:?Set PUBLIC_HOSTNAME in deploy/docker.env}",
+        "AUTH_GOOGLE_SECRET": "${AUTH_GOOGLE_SECRET:-}",
+        "VAPID_PUBLIC_KEY": "${VAPID_PUBLIC_KEY:-}",
+        "NEXT_PUBLIC_VAPID_PUBLIC_KEY": "${NEXT_PUBLIC_VAPID_PUBLIC_KEY:-}",
+        "AUTH_GOOGLE_ID": "${AUTH_GOOGLE_ID:-}",
+        "AUTH_SECRET": "${AUTH_SECRET:?Set AUTH_SECRET in deploy/docker.env}",
+        "HOST": "0.0.0.0",
+        "VAPID_SUBJECT": "${VAPID_SUBJECT:-}",
+        "NODE_ENV": "production",
+        "AUTH_TRUST_HOST": "true",
+        "DATABASE_URL": "file:/data/five-o.db",
+        "PORT": "3000",
+        "NEXT_PUBLIC_GOOGLE_ENABLED": "${NEXT_PUBLIC_GOOGLE_ENABLED:-false}"
+      },
+      "expose": [
+        "3000"
+      ],
+      "healthcheck": {
+        "interval": "15s",
+        "retries": 5,
+        "start_period": "30s",
+        "test": [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health',{cache:'no-store'}).then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+        ],
+        "timeout": "5s"
+      },
+      "image": "${HIGH5_IMAGE:?Set the captured immutable image}",
+      "init": true,
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "stop_grace_period": "30s",
+      "volumes": [
+        {
+          "read_only": false,
+          "source": "${WEBSITE_DATA_ROOT:?Set WEBSITE_DATA_ROOT}/high5/data",
+          "bind": {
+            "create_host_path": false
+          },
+          "target": "/data",
+          "type": "bind"
+        }
+      ],
+      "pull_policy": "never",
+      "logging": {
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        },
+        "driver": "json-file"
+      }
+    },
+    "migrate": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "command": [
+        "npm",
+        "run",
+        "db:migrate"
+      ],
+      "environment": {
+        "VAPID_PRIVATE_KEY": "${VAPID_PRIVATE_KEY:-}",
+        "AUTH_URL": "https://${PUBLIC_HOSTNAME:?Set PUBLIC_HOSTNAME in deploy/docker.env}",
+        "AUTH_GOOGLE_SECRET": "${AUTH_GOOGLE_SECRET:-}",
+        "VAPID_PUBLIC_KEY": "${VAPID_PUBLIC_KEY:-}",
+        "NEXT_PUBLIC_VAPID_PUBLIC_KEY": "${NEXT_PUBLIC_VAPID_PUBLIC_KEY:-}",
+        "AUTH_GOOGLE_ID": "${AUTH_GOOGLE_ID:-}",
+        "AUTH_SECRET": "${AUTH_SECRET:?Set AUTH_SECRET in deploy/docker.env}",
+        "HOST": "0.0.0.0",
+        "VAPID_SUBJECT": "${VAPID_SUBJECT:-}",
+        "NODE_ENV": "production",
+        "AUTH_TRUST_HOST": "true",
+        "DATABASE_URL": "file:/data/five-o.db",
+        "PORT": "3000",
+        "NEXT_PUBLIC_GOOGLE_ENABLED": "${NEXT_PUBLIC_GOOGLE_ENABLED:-false}"
+      },
+      "image": "${HIGH5_IMAGE:?Set the captured immutable image}",
+      "init": true,
+      "networks": {
+        "default": null
+      },
+      "restart": "no",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "volumes": [
+        {
+          "read_only": false,
+          "source": "${WEBSITE_DATA_ROOT:?Set WEBSITE_DATA_ROOT}/high5/data",
+          "bind": {
+            "create_host_path": false
+          },
+          "target": "/data",
+          "type": "bind"
+        }
+      ],
+      "pull_policy": "never",
+      "logging": {
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        },
+        "driver": "json-file"
+      },
+      "profiles": [
+        "tools"
+      ]
+    },
+    "tunnel": {
+      "cap_drop": [
+        "ALL"
+      ],
+      "command": [
+        "tunnel",
+        "--metrics",
+        "127.0.0.1:2000",
+        "--no-autoupdate",
+        "run"
+      ],
+      "depends_on": {
+        "app": {
+          "condition": "service_healthy",
+          "required": true
+        }
+      },
+      "environment": {
+        "TUNNEL_TOKEN_FILE": "/run/secrets/cloudflare_tunnel_token"
+      },
+      "healthcheck": {
+        "interval": "15s",
+        "retries": 6,
+        "start_period": "20s",
+        "test": [
+          "CMD",
+          "cloudflared",
+          "--no-autoupdate",
+          "tunnel",
+          "--metrics",
+          "127.0.0.1:2000",
+          "ready"
+        ],
+        "timeout": "5s"
+      },
+      "image": "${HIGH5_TUNNEL_IMAGE:?Set the captured immutable image}",
+      "init": true,
+      "networks": {
+        "default": null
+      },
+      "restart": "unless-stopped",
+      "secrets": [
+        {
+          "source": "cloudflare_tunnel_token",
+          "target": "/run/secrets/cloudflare_tunnel_token"
+        }
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "pull_policy": "never",
+      "logging": {
+        "options": {
+          "max-file": "3",
+          "max-size": "10m"
+        },
+        "driver": "json-file"
+      },
+      "profiles": [
+        "ingress"
+      ]
+    }
+  },
+  "x-five-o-environment": {
+    "AUTH_GOOGLE_ID": "${AUTH_GOOGLE_ID:-}",
+    "AUTH_GOOGLE_SECRET": "${AUTH_GOOGLE_SECRET:-}",
+    "AUTH_SECRET": "${AUTH_SECRET:?Set AUTH_SECRET in deploy/docker.env}",
+    "AUTH_TRUST_HOST": "true",
+    "AUTH_URL": "${AUTH_URL:?Set AUTH_URL in deploy/docker.env}",
+    "DATABASE_URL": "file:/data/five-o.db",
+    "HOST": "0.0.0.0",
+    "NEXT_PUBLIC_GOOGLE_ENABLED": "${NEXT_PUBLIC_GOOGLE_ENABLED:-false}",
+    "NEXT_PUBLIC_VAPID_PUBLIC_KEY": "${NEXT_PUBLIC_VAPID_PUBLIC_KEY:-}",
+    "NODE_ENV": "production",
+    "PORT": "3000",
+    "VAPID_PRIVATE_KEY": "${VAPID_PRIVATE_KEY:-}",
+    "VAPID_PUBLIC_KEY": "${VAPID_PUBLIC_KEY:-}",
+    "VAPID_SUBJECT": "${VAPID_SUBJECT:-}"
+  },
+  "x-five-o-image": {
+    "build": {
+      "args": {
+        "NEXT_PUBLIC_GOOGLE_ENABLED": "${NEXT_PUBLIC_GOOGLE_ENABLED:-false}",
+        "NEXT_PUBLIC_VAPID_PUBLIC_KEY": "${NEXT_PUBLIC_VAPID_PUBLIC_KEY:-}"
+      },
+      "context": ".",
+      "dockerfile": "Dockerfile"
+    },
+    "image": "five-o-poker:${FIVEO_IMAGE_TAG:-local}"
+  },
+  "x-public-origin": {
+    "AUTH_URL": "https://${PUBLIC_HOSTNAME:?Set PUBLIC_HOSTNAME in deploy/docker.env}"
+  }
+}
