@@ -25,9 +25,12 @@ describe("public landing page", () => {
 
   it("keeps the authenticated lobby and gives anonymous visitors the landing page", () => {
     expect(homeSource).toContain(
-      "if (!session?.user?.id) return <LandingPage />",
+      'if (session?.user?.id) redirect("/lobby")',
     );
-    expect(homeSource).toContain("<Lobby />");
+    expect(homeSource).toContain("return <LandingPage />");
+    const lobbySource = readFileSync(new URL("../../app/lobby/page.tsx", import.meta.url), "utf8");
+    expect(lobbySource).toContain("<Lobby />");
+    expect(lobbySource).toContain("<GameFinder />");
     expect(homeSource).not.toContain('redirect("/login")');
   });
 

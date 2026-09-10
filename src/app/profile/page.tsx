@@ -2,10 +2,10 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { AppearanceSettings } from "@/components/AppearanceSettings";
-import { AvatarSettings } from "@/components/AvatarSettings";
+import { AppNavigation } from "@/components/AppNavigation";
+
 import { PlayerAvatar } from "@/components/PlayerAvatar";
-import { playerSelect, publicPlayer } from "@/server/playerIdentity";
+import { playerSelect } from "@/server/playerIdentity";
 import { HISTORY_PAGE_SIZE, opponentRecords, recentGames } from "@/server/playerHistory";
 
 export default async function ProfilePage({ searchParams }: { searchParams: Promise<{ opponent?: string; page?: string }> }) {
@@ -43,6 +43,8 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
         </Link>
       </header>
 
+      <AppNavigation current="profile" />
+
       <div className="surface-card p-4">
         <p className="text-lg font-bold">{user.displayName}</p>
         <p className="subtle-text text-sm">{session.user.email}</p>
@@ -66,7 +68,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
         <Cell label="Match wins" value={stats?.matchWins ?? 0} />
         <Cell label="Match losses" value={matchLosses} />
       </div>
-      <p className="subtle-text text-xs">A game scores five hands. A match is first to five game wins. Pushes are tied games; unfinished matches do not count as wins or losses.</p>
+      <p className="subtle-text text-xs">A game scores five hands. A match is first to its selected number of game wins. Pushes are tied games; unfinished matches do not count as wins or losses.</p>
 
       <section className="panel" aria-labelledby="opponents-heading">
         <h2 id="opponents-heading" className="font-bold">Head-to-head records</h2>
@@ -118,11 +120,6 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
         </nav>
       </section>
 
-      <div className="panel"><AvatarSettings player={publicPlayer(user)} /></div>
-
-      <div className="panel">
-        <AppearanceSettings />
-      </div>
     </main>
   );
 }

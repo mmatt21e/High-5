@@ -8,6 +8,34 @@ available, including legacy five-character codes. Both players play against a
 server-authoritative deck and game engine. You can also play a computer opponent
 on one device, with saved-match support and a separate House Rules exhibition.
 
+## Game lobby and settings
+
+Signed-in players arrive at **/lobby**. **Post a game** publishes your player
+name, avatar, selected match length (first to 1, 3, or 5 wins), and an optional
+160-character note to other signed-in players. Posts last 15 minutes and can be
+removed early. **Join** reserves both seats and opens the game; the waiting
+player's lobby refreshes every five seconds and opens the same game.
+
+**Auto-match** selects the oldest available request with the same match length,
+including public posts and other automatic searches. Posting also matches an
+already waiting automatic search. If nobody is available, keep the lobby open;
+the search renews while visible and expires after 90 seconds without a heartbeat.
+Cancel search to leave immediately. Automatic searches are not public posts.
+There is one current lobby request per player, and claiming both requests and
+creating the match happen in one SQLite transaction. Match notices survive a
+reload; clearing a notice leaves the saved game intact in **Your games**.
+
+The list filters by match length and shows up to the oldest 50 matching posts.
+Private invitations, invite codes, saved games, and computer opponents remain
+available below the finder. **/settings** contains account avatars, appearance,
+motion, notifications, and sign-out. Appearance and motion remain device-local;
+avatars remain account-wide. In-game quick settings are still available.
+
+This release adds `20260908000000_game_lobby`. Run `npm run db:migrate` before
+starting it against an existing database, using the backup procedure below.
+The migration adds the lobby request table without changing existing games,
+accounts, invitations, or results.
+
 ## Computer opponents
 
 Choose **Play the computer** from the signed-in lobby:

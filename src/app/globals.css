@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+.app-navigation { display: grid; grid-template-columns: 1fr 1.5fr 1fr; gap: 0.25rem; border-bottom: 1px solid var(--ui-divider); }
+.app-navigation .nav-link { justify-content: center; text-align: center; font-size: 0.85rem; padding: 0.5rem 0.2rem; border-bottom: 2px solid transparent; }
+.app-navigation [aria-current="page"] { color: var(--color-gold); border-bottom-color: var(--color-gold); font-weight: 700; }
+.game-finder, .lobby-post-form { display: grid; gap: 1rem; }
+.lobby-eyebrow { color: var(--color-gold); font-size: 0.65rem; letter-spacing: 0.15em; font-weight: 700; margin-bottom: 0.4rem; }
+.lobby-posts { display: grid; gap: 0.65rem; margin-top: 0.85rem; }
+.lobby-empty { padding: 1.5rem 0.25rem 0.5rem; text-align: center; }
+
 @theme {
   --color-felt-900: #0a2a1a;
   --color-felt-800: #0e3a24;

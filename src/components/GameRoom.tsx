@@ -445,6 +445,7 @@ function SettingsModal({
           </button>
         </div>
         <AppearanceSettings />
+        <Link href="/settings" className="nav-link mt-3 text-sm">All settings & avatar →</Link>
         <div className="section-divider mt-4 border-t pt-4">
           <div className="mb-2 text-sm font-bold">Notifications</div>
           <NotificationToggle />

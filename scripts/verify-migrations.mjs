@@ -44,6 +44,7 @@ const legacyDatabase = resolve(prismaDirectory, `mig-legacy-${token}.db`);
 const predecessorDatabase = resolve(prismaDirectory, `mig-round2-${token}.db`);
 const orphanDatabase = resolve(prismaDirectory, `mig-orphan-${token}.db`);
 const playerDatabase = resolve(prismaDirectory, `mig-player-${token}.db`);
+const computerDatabase = resolve(prismaDirectory, `mig-computer-${token}.db`);
 
 function databaseUrl(databasePath) {
   // Relative SQLite URLs are resolved from the schema directory by Prisma.
@@ -141,7 +142,7 @@ async function inspectDatabase(url) {
     );
     assert(
       appliedMigrations.map(({ migration_name }) => migration_name).join(",") ===
-        [baselineMigration, atomicMigration, integrityMigration, invitationMigration, computerMigration].join(","),
+        [baselineMigration, atomicMigration, integrityMigration, invitationMigration, computerMigration, "20260908000000_game_lobby"].join(","),
       "Expected the complete tracked migration history to be applied",
     );
     const userColumns = await client.$queryRawUnsafe('PRAGMA table_info("User")');
@@ -309,6 +310,7 @@ try {
   closeSync(openSync(predecessorDatabase, "wx"));
   closeSync(openSync(orphanDatabase, "wx"));
   closeSync(openSync(playerDatabase, "wx"));
+  closeSync(openSync(computerDatabase, "wx"));
   // Exercise the same schema-relative URL used by the local .env example.
   runDeployment(freshUrl);
   await inspectDatabase(freshUrl);
@@ -336,6 +338,26 @@ try {
     verifyNoSchemaDrift(playerDatabase, playerUrl);
     runDeployment(playerUrl);
   } finally { await playerClient.$disconnect(); }
+
+  // Exercise the exact five-migration predecessor used by the lobby release.
+  const computerUrl = absoluteDatabaseUrl(computerDatabase);
+  for (const name of [baselineMigration, atomicMigration, integrityMigration, invitationMigration, computerMigration]) {
+    runPrisma(["db", "execute", "--file", resolve(prismaDirectory, "migrations", name, "migration.sql"), "--url", computerUrl], computerUrl);
+    runPrisma(["migrate", "resolve", "--applied", name, "--schema", currentSchema], computerUrl);
+  }
+  const computerClient = new PrismaClient({ datasources: { db: { url: computerUrl } } });
+  try {
+    await computerClient.user.create({ data: { id: "human", email: "human@example.test", displayName: "Human" } });
+    await computerClient.user.create({ data: { id: "computer", email: "computer@example.test", displayName: "Computer", computerLevel: "easy" } });
+    await computerClient.match.create({ data: { id: "saved", inviteCode: "ABCDEFGH", hostId: "human", guestId: "computer", status: "active", gameState: '{"saved":true}' } });
+    runDeployment(computerUrl);
+    assert((await computerClient.user.findUnique({ where: { id: "computer" } })).computerLevel === "easy", "Lobby upgrade changed computer identity");
+    assert((await computerClient.match.findUnique({ where: { id: "saved" } })).gameState === '{"saved":true}', "Lobby upgrade changed saved game");
+    assert(await computerClient.gameRequest.count() === 0, "New lobby should have no requests");
+    await inspectDatabase(computerUrl);
+    verifyNoSchemaDrift(computerDatabase, computerUrl);
+    runDeployment(computerUrl);
+  } finally { await computerClient.$disconnect(); }
 
   runPrisma(
     ["db", "push", "--schema", legacySchema, "--skip-generate"],
@@ -381,7 +403,7 @@ try {
   await verifyOrphanMigrationStoppedBeforeAlter(orphanUrl);
 
   console.log(
-    "Migration verification passed for fresh, released player-feature history, legacy db-push, exact 11b1f48 predecessor, and rejected-orphan SQLite databases.",
+    "Migration verification passed for fresh, released player-feature and computer histories, legacy db-push, exact 11b1f48 predecessor, and rejected-orphan SQLite databases.",
   );
 } finally {
   removeGeneratedDatabase(freshDatabase);
@@ -389,4 +411,5 @@ try {
   removeGeneratedDatabase(predecessorDatabase);
   removeGeneratedDatabase(orphanDatabase);
   removeGeneratedDatabase(playerDatabase);
+  removeGeneratedDatabase(computerDatabase);
 }

@@ -23,7 +23,8 @@ const invitationMigration = "20260906000000_player_invitations";
 const previousHistory = [baselineMigration, atomicMigration, integrityMigration];
 const computerMigration = "20260907000000_computer_opponents";
 const playerHistory = [...previousHistory, invitationMigration];
-const completeHistory = [...playerHistory, computerMigration];
+const computerHistory = [...playerHistory, computerMigration];
+const completeHistory = [...computerHistory, "20260908000000_game_lobby"];
 const knownHistories = new Map([
   ["", "untracked"],
   [atomicMigration, "round2"],
@@ -31,6 +32,7 @@ const knownHistories = new Map([
   [[baselineMigration, atomicMigration].join(","), "pre-integrity"],
   [previousHistory.join(","), "pre-invitations"],
   [playerHistory.join(","), "pre-computer"],
+  [computerHistory.join(","), "pre-lobby"],
   [completeHistory.join(","), "current"],
 ]);
 
@@ -198,6 +200,8 @@ if (kind === "untracked") {
     assertSchemaMatches(legacySchema, "Baselined legacy");
   } else if (kind === "pre-computer") {
     assertSchemaMatches(preComputerSchema, "Before computer opponents");
+  } else if (kind === "pre-lobby") {
+    assertSchemaMatches(resolve(repositoryRoot, "scripts", "fixtures", "pre-lobby.schema.prisma"), "Before lobby");
   } else if (kind !== "current") {
     assertSchemaMatches(prePlayerSchema, "Before player invitations");
   } else {
