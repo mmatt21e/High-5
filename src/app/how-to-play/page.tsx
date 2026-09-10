@@ -49,7 +49,8 @@ export default function HowToPlayPage() {
       <Step n={3} title="Draw one, place one">
         On your turn you <b>draw a card</b> (now holding six). Then place{" "}
         <b>one card</b> — the drawn card or a held one — into one of your four
-        rows. You always keep five cards concealed.
+        rows. Drag a card from your hand onto a highlighted row, or tap a card
+        and then tap the row. You always keep five cards concealed.
       </Step>
 
       <Step n={4} title="One discard per game">

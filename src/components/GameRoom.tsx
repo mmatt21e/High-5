@@ -10,6 +10,7 @@ import {
 import Link from "next/link";
 import { useGameSocket } from "./useGameSocket";
 import { useTableMotion } from "./useTableMotion";
+import { useCardDrag } from "./useCardDrag";
 import { AppearanceSettings } from "./AppearanceSettings";
 import { NotificationToggle } from "./NotificationToggle";
 import { ExhibitionDrawer } from "./ExhibitionDrawer";
@@ -214,11 +215,14 @@ function Table({
     if (!view.yourTurn && selected) setSelected(null);
   }, [view, myBoard.hand, selected]);
 
-  function tapRow(rowIndex: number) {
-    if (!view.yourTurn || !selected) return;
+  const canPlay = connected && view.yourTurn && !gameOver && !matchOver && !settingsOpen && !tricksOpen && !view.exhibition?.pending;
+  function placeCard(id: string, rowIndex: number) {
+    if (!canPlay || !myBoard.hand.some(card => cvId(card) === id)) return;
     if (!view.legalRows.includes(rowIndex)) return;
-    if (onPlace(selected, rowIndex)) setSelected(null);
+    if (onPlace(id, rowIndex)) setSelected(null);
   }
+  const { drag, cardHandlers } = useCardDrag({ root: motionRef, enabled: canPlay, revision: view,
+    legalRows: view.legalRows, onSelect: setSelected, onPlace: placeCard });
 
   const openSettings = useCallback(() => setSettingsOpen(true), []);
   const closeSettings = useCallback(() => setSettingsOpen(false), []);
@@ -277,8 +281,9 @@ function Table({
           view={view}
           seat={you}
           results={gameOver}
-          legalRows={!showResults && view.yourTurn && selected ? view.legalRows : []}
-          onRow={tapRow}
+          legalRows={canPlay && selected ? view.legalRows : []}
+          dropRow={drag?.row}
+          onRow={(row) => { if (selected) placeCard(selected, row); }}
         />
       </div>
       {showResults ? (
@@ -294,11 +299,16 @@ function Table({
           <YourHand
             hand={myBoard.hand}
             selected={selected}
-            yourTurn={view.yourTurn}
+            yourTurn={canPlay}
+            drag={drag}
+            cardHandlers={cardHandlers}
             onSelect={(id) => setSelected((current) => current === id ? null : id)}
           />
         </div>
       )}
+      {drag && <div className="card-drag-preview" aria-hidden="true" style={{ left: drag.x, top: drag.y, width: drag.width, height: drag.height }}>
+        <CardSlot slot={myBoard.hand.find(card => cvId(card) === drag.id) ?? { state: "empty" }} size="hand" decorative table />
+      </div>}
     </main>
   );
 
@@ -525,12 +535,13 @@ function rowOutcome(winner: PlayerIndex | null | undefined, seat: PlayerIndex): 
 }
 
 /** Both seats share identical row geometry; only the local board is interactive. */
-function AlignedBoard({ board, view, seat, results, legalRows = [], onRow }: {
+function AlignedBoard({ board, view, seat, results, legalRows = [], dropRow, onRow }: {
   board: GameView["players"][0];
   view: GameView;
   seat: PlayerIndex;
   results: boolean;
   legalRows?: number[];
+  dropRow?: number | null;
   onRow?: (row: number) => void;
 }) {
   const isYou = seat === view.you;
@@ -573,6 +584,7 @@ function AlignedBoard({ board, view, seat, results, legalRows = [], onRow }: {
           "table-row",
           complete && "table-row-finished",
           playable && "table-row-playable",
+          playable && dropRow === rowIndex && "table-row-drop-target",
           outcome === "Won" && "table-row-won",
         ].filter(Boolean).join(" ");
 
@@ -602,6 +614,7 @@ function AlignedBoard({ board, view, seat, results, legalRows = [], onRow }: {
           <button
             key={rowIndex}
             data-row={rowIndex}
+            data-drop-row={playable ? rowIndex : undefined}
             type="button"
             className={className}
             disabled={!playable}
@@ -621,13 +634,16 @@ function AlignedBoard({ board, view, seat, results, legalRows = [], onRow }: {
 }
 
 /** Selection never changes the private hand dock's geometry. */
-function YourHand({ hand, selected, yourTurn, onSelect }: {
+function YourHand({ hand, selected, yourTurn, drag, cardHandlers, onSelect }: {
   hand: CardView[];
   selected: string | null;
   yourTurn: boolean;
+  drag: ReturnType<typeof useCardDrag>["drag"];
+  cardHandlers: ReturnType<typeof useCardDrag>["cardHandlers"];
   onSelect: (id: string) => void;
 }) {
-  const selectionHelp = selected ? "Tap a highlighted row to place" : "Select a card to play";
+  const selectionHelp = drag ? (drag.row === null ? "Drag to a highlighted row" : `Release to play on Row ${drag.row + 1}`)
+    : selected ? "Tap a row or drag your card" : "Drag a card to a row, or tap to select";
   const instruction = yourTurn ? selectionHelp : "Waiting for your turn";
 
   return (
@@ -652,9 +668,10 @@ function YourHand({ hand, selected, yourTurn, onSelect }: {
                 type="button"
                 disabled={!yourTurn || cv.state !== "card"}
                 onClick={() => id && onSelect(id)}
+                {...cardHandlers(id)}
                 aria-label={cardLabel}
                 aria-pressed={isSelected}
-                className={`hand-select-card${isSelected ? " hand-select-card-selected" : ""}`}
+                className={`hand-select-card${isSelected ? " hand-select-card-selected" : ""}${drag?.id === id ? " hand-select-card-dragging" : ""}`}
               >
                 <CardSlot slot={cv} size="hand" decorative table />
               </button>

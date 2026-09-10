@@ -38,6 +38,36 @@ immutable candidate, then `publish high5` opens ingress after checks. These
 commands do not perform the initial PC handover; schema upgrades require their
 own validated procedure.
 
+### Shipping a code change
+
+A push to GitHub does **not** update Tower. `.github/workflows/quality.yml`
+runs tests, dependency auditing, and Docker packaging checks; it does not upload
+an image or invoke the production controller. Container autostart restores the
+accepted release after a reboot and does not fetch new code.
+
+For an update, commit and push the reviewed changes, then verify the GitHub
+Quality workflow for that exact commit. Build the Docker image on the PC using
+the active release's public build arguments, save and transfer it to Tower,
+and verify the imported image identity. Prepare a new immutable release manifest
+and resolved Compose file by preserving the active release's configuration,
+secrets, data mounts, and tunnel image, changing only the app/migration image.
+For a release with no schema changes, use `preserve-schema` mode.
+
+Run on Tower, replacing `<release-id>` with that prepared release:
+
+```sh
+/mnt/cache/appdata/websites/control/website-control.sh deploy high5 <release-id>
+/mnt/cache/appdata/websites/control/website-control.sh publish high5
+/mnt/cache/appdata/websites/control/website-control.sh status high5
+```
+
+`deploy` stops this group's writers and ingress, creates an encrypted recovery
+backup, checks that schema and row counts are preserved, and starts the new app
+with ingress closed. Run `publish` only after staging succeeds and checks pass;
+then verify `https://edgegames.win/api/health` and the changed website behavior.
+Retain the previous image and backup for recovery. Do not use the retired PC
+launcher to deploy the hosted site.
+
 Complete encrypted group backups run every six hours to private array storage
 `/mnt/disk1/website-backups`. The hourly PC copy requires the PC on and Matt signed
 in. The recovery identity stays off-server. Local health reports live under

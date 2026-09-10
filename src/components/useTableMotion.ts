@@ -16,6 +16,8 @@ function copyAppearance(source: HTMLElement): HTMLElement {
   originals.forEach((element, index) => {
     const style = getComputedStyle(element);
     for (const property of style) copies[index].style.setProperty(property, style.getPropertyValue(property));
+    // Computed pointer-events can override the decorative layer's inheritance.
+    copies[index].style.pointerEvents = "none";
     copies[index].removeAttribute("id");
   });
   return copy;

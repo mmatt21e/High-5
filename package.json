@@ -51,9 +51,10 @@
     "cross-env": "^7.0.3",
     "eslint": "9.39.5",
     "eslint-config-next": "15.5.25",
+    "jsdom": "^30.0.1",
     "tailwindcss": "4.3.3",
     "typescript": "^5.7.2",
-    "vitest": "3.2.6"
+    "vitest": "4.1.11"
   },
   "overrides": {
     "next": {
