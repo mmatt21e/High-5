@@ -170,7 +170,7 @@ export function LandingPage() {
       </main>
 
       <footer className="landing-footer">
-        <span>Five-O Poker</span>
+        <Link href="/">All Edge Games</Link>
         <Link href="/how-to-play">Rules &amp; card options</Link>
       </footer>
     </div>

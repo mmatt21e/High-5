@@ -30,7 +30,13 @@
         "AUTH_TRUST_HOST": "true",
         "DATABASE_URL": "file:/data/five-o.db",
         "PORT": "3000",
-        "NEXT_PUBLIC_GOOGLE_ENABLED": "${NEXT_PUBLIC_GOOGLE_ENABLED:-false}"
+        "NEXT_PUBLIC_GOOGLE_ENABLED": "${NEXT_PUBLIC_GOOGLE_ENABLED:-false}",
+        "ADMIN_SETUP_KEY": "${ADMIN_SETUP_KEY:-}",
+        "SMTP_HOST": "${SMTP_HOST:-}",
+        "SMTP_PORT": "${SMTP_PORT:-587}",
+        "SMTP_USER": "${SMTP_USER:-}",
+        "SMTP_PASSWORD": "${SMTP_PASSWORD:-}",
+        "SMTP_FROM": "${SMTP_FROM:-}"
       },
       "expose": [
         "3000"
@@ -100,7 +106,13 @@
         "AUTH_TRUST_HOST": "true",
         "DATABASE_URL": "file:/data/five-o.db",
         "PORT": "3000",
-        "NEXT_PUBLIC_GOOGLE_ENABLED": "${NEXT_PUBLIC_GOOGLE_ENABLED:-false}"
+        "NEXT_PUBLIC_GOOGLE_ENABLED": "${NEXT_PUBLIC_GOOGLE_ENABLED:-false}",
+        "ADMIN_SETUP_KEY": "${ADMIN_SETUP_KEY:-}",
+        "SMTP_HOST": "${SMTP_HOST:-}",
+        "SMTP_PORT": "${SMTP_PORT:-587}",
+        "SMTP_USER": "${SMTP_USER:-}",
+        "SMTP_PASSWORD": "${SMTP_PASSWORD:-}",
+        "SMTP_FROM": "${SMTP_FROM:-}"
       },
       "image": "${HIGH5_IMAGE:?Set the captured immutable image}",
       "init": true,
@@ -211,7 +223,13 @@
     "PORT": "3000",
     "VAPID_PRIVATE_KEY": "${VAPID_PRIVATE_KEY:-}",
     "VAPID_PUBLIC_KEY": "${VAPID_PUBLIC_KEY:-}",
-    "VAPID_SUBJECT": "${VAPID_SUBJECT:-}"
+    "VAPID_SUBJECT": "${VAPID_SUBJECT:-}",
+    "ADMIN_SETUP_KEY": "${ADMIN_SETUP_KEY:-}",
+    "SMTP_HOST": "${SMTP_HOST:-}",
+    "SMTP_PORT": "${SMTP_PORT:-587}",
+    "SMTP_USER": "${SMTP_USER:-}",
+    "SMTP_PASSWORD": "${SMTP_PASSWORD:-}",
+    "SMTP_FROM": "${SMTP_FROM:-}"
   },
   "x-five-o-image": {
     "build": {

@@ -23,11 +23,12 @@ describe("public landing page", () => {
     expect(landingSource).toContain('href="/how-to-play"');
   });
 
-  it("keeps the authenticated lobby and gives anonymous visitors the landing page", () => {
-    expect(homeSource).toContain(
-      'if (session?.user?.id) redirect("/lobby")',
-    );
-    expect(homeSource).toContain("return <LandingPage />");
+  it("keeps the collection public and the authenticated lobby separate", () => {
+    expect(homeSource).toContain("Edge Games");
+    expect(homeSource).toContain('"/lobby" : "/login"');
+    expect(homeSource).toContain('status: { in: ["live", "coming-soon"] }');
+    const gamePage = readFileSync(new URL("../../app/games/five-o/page.tsx", import.meta.url), "utf8");
+    expect(gamePage).toContain("<LandingPage />");
     const lobbySource = readFileSync(new URL("../../app/lobby/page.tsx", import.meta.url), "utf8");
     expect(lobbySource).toContain("<Lobby />");
     expect(lobbySource).toContain("<GameFinder />");

@@ -45,6 +45,7 @@ const predecessorDatabase = resolve(prismaDirectory, `mig-round2-${token}.db`);
 const orphanDatabase = resolve(prismaDirectory, `mig-orphan-${token}.db`);
 const playerDatabase = resolve(prismaDirectory, `mig-player-${token}.db`);
 const computerDatabase = resolve(prismaDirectory, `mig-computer-${token}.db`);
+const lobbyDatabase = resolve(prismaDirectory, `mig-lobby-${token}.db`);
 
 function databaseUrl(databasePath) {
   // Relative SQLite URLs are resolved from the schema directory by Prisma.
@@ -142,7 +143,7 @@ async function inspectDatabase(url) {
     );
     assert(
       appliedMigrations.map(({ migration_name }) => migration_name).join(",") ===
-        [baselineMigration, atomicMigration, integrityMigration, invitationMigration, computerMigration, "20260908000000_game_lobby"].join(","),
+        [baselineMigration, atomicMigration, integrityMigration, invitationMigration, computerMigration, "20260908000000_game_lobby", "20260911000000_site_admin"].join(","),
       "Expected the complete tracked migration history to be applied",
     );
     const userColumns = await client.$queryRawUnsafe('PRAGMA table_info("User")');
@@ -359,6 +360,25 @@ try {
     runDeployment(computerUrl);
   } finally { await computerClient.$disconnect(); }
 
+  // Upgrade the exact six-migration production predecessor, preserving lobby state.
+  const lobbyUrl = absoluteDatabaseUrl(lobbyDatabase);
+  for (const name of [baselineMigration, atomicMigration, integrityMigration, invitationMigration, computerMigration, "20260908000000_game_lobby"]) {
+    runPrisma(["db", "execute", "--file", resolve(prismaDirectory, "migrations", name, "migration.sql"), "--url", lobbyUrl], lobbyUrl);
+    runPrisma(["migrate", "resolve", "--applied", name, "--schema", currentSchema], lobbyUrl);
+  }
+  const lobbyClient = new PrismaClient({ datasources: { db: { url: lobbyUrl } } });
+  try {
+    await lobbyClient.user.create({ data: { id: "waiting", email: "waiting@example.test" } });
+    await lobbyClient.gameRequest.create({ data: { id: "post", userId: "waiting", mode: "post", expiresAt: new Date(Date.now() + 600000) } });
+    runDeployment(lobbyUrl);
+    assert((await lobbyClient.gameRequest.findUnique({ where: { id: "post" } })).userId === "waiting", "Admin upgrade changed lobby request");
+    assert(await lobbyClient.siteAdmin.count() === 0, "Migration must not create a publicly claimable admin");
+    assert((await lobbyClient.catalogGame.findUnique({ where: { id: "five-o" } })).href === "/lobby", "Five-O listing was not seeded");
+    await inspectDatabase(lobbyUrl);
+    verifyNoSchemaDrift(lobbyDatabase, lobbyUrl);
+    runDeployment(lobbyUrl);
+  } finally { await lobbyClient.$disconnect(); }
+
   runPrisma(
     ["db", "push", "--schema", legacySchema, "--skip-generate"],
     legacyFixtureUrl,
@@ -412,4 +432,5 @@ try {
   removeGeneratedDatabase(orphanDatabase);
   removeGeneratedDatabase(playerDatabase);
   removeGeneratedDatabase(computerDatabase);
+  removeGeneratedDatabase(lobbyDatabase);
 }

@@ -40,6 +40,29 @@ own validated procedure.
 
 ### Shipping a code change
 
+For the Edge Games admin release, pass `ADMIN_SETUP_KEY` (private random 32+
+characters) to the app and migration environments in the captured candidate.
+Preserve existing configuration. `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`,
+`SMTP_PASSWORD`, and `SMTP_FROM` enable recovery mail when configured; never
+invent provider settings or include secrets in source control.
+
+The controller deliberately supports only schema-preserving app rollouts. The
+additive `20260911000000_site_admin` upgrade must be rehearsed separately on an
+online SQLite snapshot before production. Use `verify-admin-upgrade.mjs capture`
+before migration and `verify` afterward to compare every original table schema
+and row hash, historical migration records, new tables, integrity, and foreign
+keys. Verify the prior application image still starts against the upgraded copy.
+
+For the live schema step, take an encrypted recovery backup, stop the group through
+the controller, and retain a complete frozen data-directory copy. Under the
+namespace operation lock, run the candidate's guarded migration and the same
+verification against the frozen baseline. On failure keep maintenance active;
+do not publish or discard the recovery copies. After success, the prior app can
+resume because only new tables were added. The normal controller `deploy` and
+`publish` sequence then upgrades the application against that verified schema,
+with its own additional encrypted backup and exact before/after checks. Do not
+change the controller or mislabel a schema-changing migration as preserved.
+
 A push to GitHub does **not** update Tower. `.github/workflows/quality.yml`
 runs tests, dependency auditing, and Docker packaging checks; it does not upload
 an image or invoke the production controller. Container autostart restores the

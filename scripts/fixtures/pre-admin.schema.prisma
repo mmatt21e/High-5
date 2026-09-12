@@ -37,55 +37,6 @@ model User {
   gameRequest GameRequest?
 }
 
-// Site administration is deliberately separate from player accounts.
-model SiteAdmin {
-  id              String @id @default("owner")
-  username        String @unique
-  passwordHash    String
-  needsSetup      Boolean @default(true)
-  recoveryEmail   String?
-  emailVerified   Boolean @default(false)
-  version         Int @default(0)
-  sessions        AdminSession[]
-  tokens          AdminToken[]
-}
-
-model AdminSession {
-  tokenHash String @id
-  adminId   String
-  version   Int
-  expiresAt DateTime
-  admin     SiteAdmin @relation(fields: [adminId], references: [id], onDelete: Cascade)
-  @@index([expiresAt])
-}
-
-model AdminToken {
-  tokenHash String @id
-  adminId   String
-  purpose   String
-  email     String
-  version   Int
-  expiresAt DateTime
-  admin     SiteAdmin @relation(fields: [adminId], references: [id], onDelete: Cascade)
-  @@index([expiresAt])
-}
-
-model SiteContent {
-  id       String @id @default("home")
-  headline String @default("Good company. Great games.")
-  intro    String @default("Pull up a seat. Start with Five-O Poker, and come back for more games as the collection grows.")
-}
-
-model CatalogGame {
-  id          String @id @default(cuid())
-  title       String
-  description String
-  category    String @default("Card game")
-  href        String @default("")
-  status      String @default("draft")
-  sortOrder   Int @default(0)
-}
-
 // One current lobby intent per player. IDs prevent stale tabs cancelling a new post.
 model GameRequest {
   id         String   @id @default(cuid())

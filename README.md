@@ -1,5 +1,17 @@
 # Five-O Poker
 
+## Edge Games website and admin
+
+The home page now hosts the **Edge Games** collection, ready for future games.
+Five-O's introduction is at `/games/five-o`; play continues at `/lobby`.
+`/admin` manages the home copy, game listings, and owner credentials.
+First login uses **admin / admin**, followed by mandatory username/password
+replacement and recovery-email setup. Production also requires a private
+`ADMIN_SETUP_KEY` so visitors cannot claim the default account. Email recovery
+requires SMTP configuration and address verification.
+See [setup, migration, and recovery instructions](docs/SITE_ADMIN.md).
+Apply `20260911000000_site_admin` with the guarded migration before starting.
+
 Five-O Poker is a mobile-first, heads-up poker game played in real time across
 two devices. Players can search for another player's name and send an invitation,
 or create a match and share an eight-character invite code. A named invitation
