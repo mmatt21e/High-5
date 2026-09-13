@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   title: "Five-O Poker",
   description: "Heads-up Five-O Poker, played across two devices.",
   manifest: "/manifest.webmanifest",
+  icons: { apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }] },
   appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Five-O" },
 };
 

@@ -46,6 +46,7 @@ const orphanDatabase = resolve(prismaDirectory, `mig-orphan-${token}.db`);
 const playerDatabase = resolve(prismaDirectory, `mig-player-${token}.db`);
 const computerDatabase = resolve(prismaDirectory, `mig-computer-${token}.db`);
 const lobbyDatabase = resolve(prismaDirectory, `mig-lobby-${token}.db`);
+const adminDatabase = resolve(prismaDirectory, `mig-admin-${token}.db`);
 
 function databaseUrl(databasePath) {
   // Relative SQLite URLs are resolved from the schema directory by Prisma.
@@ -143,7 +144,7 @@ async function inspectDatabase(url) {
     );
     assert(
       appliedMigrations.map(({ migration_name }) => migration_name).join(",") ===
-        [baselineMigration, atomicMigration, integrityMigration, invitationMigration, computerMigration, "20260908000000_game_lobby", "20260911000000_site_admin"].join(","),
+        [baselineMigration, atomicMigration, integrityMigration, invitationMigration, computerMigration, "20260908000000_game_lobby", "20260911000000_site_admin", "20260912000000_members"].join(","),
       "Expected the complete tracked migration history to be applied",
     );
     const userColumns = await client.$queryRawUnsafe('PRAGMA table_info("User")');
@@ -312,6 +313,7 @@ try {
   closeSync(openSync(orphanDatabase, "wx"));
   closeSync(openSync(playerDatabase, "wx"));
   closeSync(openSync(computerDatabase, "wx"));
+  closeSync(openSync(adminDatabase, "wx"));
   // Exercise the same schema-relative URL used by the local .env example.
   runDeployment(freshUrl);
   await inspectDatabase(freshUrl);
@@ -379,6 +381,28 @@ try {
     runDeployment(lobbyUrl);
   } finally { await lobbyClient.$disconnect(); }
 
+  // Upgrade the deployed seven-migration admin release without changing owner or player data.
+  const adminUrl = absoluteDatabaseUrl(adminDatabase);
+  for (const name of [baselineMigration, atomicMigration, integrityMigration, invitationMigration, computerMigration, "20260908000000_game_lobby", "20260911000000_site_admin"]) {
+    runPrisma(["db", "execute", "--file", resolve(prismaDirectory, "migrations", name, "migration.sql"), "--url", adminUrl], adminUrl);
+    runPrisma(["migrate", "resolve", "--applied", name, "--schema", currentSchema], adminUrl);
+  }
+  const adminClient = new PrismaClient({ datasources: { db: { url: adminUrl } } });
+  try {
+    await adminClient.siteAdmin.create({ data: { id: "owner", username: "existing-owner", passwordHash: "preserve-this-hash", needsSetup: false, recoveryEmail: "owner@example.test", emailVerified: true, version: 4 } });
+    await adminClient.user.create({ data: { id: "public-player", email: "public@example.test", displayName: "Public player" } });
+    const ownerBefore = JSON.stringify(await adminClient.siteAdmin.findMany());
+    const playersBefore = JSON.stringify(await adminClient.user.findMany());
+    runDeployment(adminUrl);
+    assert(JSON.stringify(await adminClient.siteAdmin.findMany()) === ownerBefore, "Members upgrade changed owner credentials");
+    assert(JSON.stringify(await adminClient.user.findMany()) === playersBefore, "Members upgrade changed players");
+    assert(await adminClient.memberAccount.count() === 0, "Public users must not be enrolled as members");
+    assert(await adminClient.memberInvite.count() === 0, "Migration must not issue invitations");
+    await inspectDatabase(adminUrl);
+    verifyNoSchemaDrift(adminDatabase, adminUrl);
+    runDeployment(adminUrl);
+  } finally { await adminClient.$disconnect(); }
+
   runPrisma(
     ["db", "push", "--schema", legacySchema, "--skip-generate"],
     legacyFixtureUrl,
@@ -423,7 +447,7 @@ try {
   await verifyOrphanMigrationStoppedBeforeAlter(orphanUrl);
 
   console.log(
-    "Migration verification passed for fresh, released player-feature and computer histories, legacy db-push, exact 11b1f48 predecessor, and rejected-orphan SQLite databases.",
+    "Migration verification passed for fresh, released player-feature, computer, lobby and site-admin histories, legacy db-push, exact 11b1f48 predecessor, and rejected-orphan SQLite databases.",
   );
 } finally {
   removeGeneratedDatabase(freshDatabase);
@@ -433,4 +457,5 @@ try {
   removeGeneratedDatabase(playerDatabase);
   removeGeneratedDatabase(computerDatabase);
   removeGeneratedDatabase(lobbyDatabase);
+  removeGeneratedDatabase(adminDatabase);
 }

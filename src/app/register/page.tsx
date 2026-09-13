@@ -5,6 +5,7 @@ import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { safeCallbackPath } from "@/lib/safeCallbackPath";
+import { InstallGameButton } from "@/components/InstallGame";
 
 export default function RegisterPage() {
   return (
@@ -137,6 +138,7 @@ function RegisterForm() {
           Preview interfaces &amp; playing cards
         </Link>
       </p>
+      <InstallGameButton className="self-center" />
     </main>
   );
 }

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { FannedColumn } from "@/components/PlayingCard";
+import { InstallGameButton } from "@/components/InstallGame";
 import type { CardView } from "@/lib/game/types";
 
 const OPEN_HANDS: CardView[][] = [
@@ -67,13 +68,15 @@ export function LandingPage() {
             protecting a fifth that stays concealed until showdown.
           </p>
           <div className="landing-actions">
-            <Link href="/register" className="btn-primary landing-primary-action">
-              Create an account
+            <Link href="/practice" className="btn-primary landing-primary-action">
+              Try guided practice
             </Link>
             <Link href="/how-to-play" className="btn-outline landing-secondary-action">
               How to play
             </Link>
           </div>
+          <p className="supporting-text mt-2 text-center text-xs">Learn the basics. No account needed.</p>
+          <InstallGameButton className="mt-3 w-full" />
         </section>
 
         <figure className="landing-table" aria-labelledby="landing-table-caption">

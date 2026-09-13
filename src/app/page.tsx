@@ -46,6 +46,7 @@ export default async function HomePage() {
         </Link>
         <nav aria-label="Main navigation">
           <a href="#games">The games</a>
+          <Link href="/members">Members</Link>
           <Link href={session?.user ? "/lobby" : "/login"}>
             {session?.user ? "Your lobby" : "Sign in"}{" "}
             <span aria-hidden="true">↗</span>
@@ -178,6 +179,25 @@ export default async function HomePage() {
             {session?.user ? "Open the lobby" : "Join the table"}{" "}
             <span aria-hidden="true">↗</span>
           </Link>
+        </section>
+        <section className="collection-note" aria-labelledby="more-edge-heading">
+          <div>
+            <p className="collection-kicker">MORE FROM EDGE</p>
+            <h2 id="more-edge-heading">BankrollEdge</h2>
+            <p>
+              Track your poker sessions, sports bets, and bankroll with our
+              companion app. Use it in your browser or install it on your phone.
+            </p>
+          </div>
+          <a
+            href="https://bankrolledge.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="collection-cta"
+          >
+            Visit BankrollEdge <span aria-hidden="true">↗</span>
+            <span className="sr-only"> (opens in a new tab)</span>
+          </a>
         </section>
       </main>
       <footer className="collection-footer">

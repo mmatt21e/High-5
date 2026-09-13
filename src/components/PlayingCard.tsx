@@ -1,8 +1,8 @@
 import type { CSSProperties } from "react";
 import type { Card } from "@/lib/game/cards";
-import { RANK_LABEL, SUIT_LABEL } from "@/lib/game/cards";
+import { RANK_LABEL, SUIT_LABEL } from "../lib/game/cards";
 import type { CardView } from "@/lib/game/types";
-import { CARD_GEOMETRY } from "@/lib/cardAppearance";
+import { CARD_GEOMETRY } from "../lib/cardAppearance";
 
 export type CardSize = "sm" | "md" | "lg" | "hand";
 

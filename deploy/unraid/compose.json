@@ -17,6 +17,7 @@
         "replicas": 1
       },
       "environment": {
+        "CODEX_DASHBOARD_URL": "${CODEX_DASHBOARD_URL:-}",
         "VAPID_PRIVATE_KEY": "${VAPID_PRIVATE_KEY:-}",
         "AUTH_URL": "https://${PUBLIC_HOSTNAME:?Set PUBLIC_HOSTNAME in deploy/docker.env}",
         "AUTH_GOOGLE_SECRET": "${AUTH_GOOGLE_SECRET:-}",

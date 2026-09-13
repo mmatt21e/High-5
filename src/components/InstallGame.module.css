@@ -1,0 +1,70 @@
+.button {
+  gap: 0.4rem;
+  flex-shrink: 0;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.button:focus-visible,
+.dialog button:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 3px;
+}
+
+.dialog {
+  width: min(28rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  margin: auto;
+  padding: 1.25rem;
+  border: 1px solid var(--ui-panel-border);
+  border-radius: var(--ui-panel-radius);
+  background: var(--table-felt-shadow);
+  color: var(--theme-foreground);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+}
+
+.dialog::backdrop {
+  background: rgb(0 0 0 / 70%);
+}
+
+.heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.heading h2 {
+  color: var(--color-gold);
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.close {
+  min-width: 44px;
+  min-height: 44px;
+  font-size: 1.75rem;
+  border-radius: var(--ui-control-radius);
+}
+
+.dialog p {
+  margin-block: 0.75rem;
+}
+
+.dialog ol {
+  list-style: decimal;
+  padding-left: 1.5rem;
+  margin-block: 1rem;
+}
+
+.dialog li + li {
+  margin-top: 0.6rem;
+}
+
+.note {
+  color: var(--ui-muted-text);
+  font-size: 0.8125rem;
+}

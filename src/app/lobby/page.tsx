@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { AppNavigation } from "@/components/AppNavigation";
+import { InstallGameButton } from "@/components/InstallGame";
 import { GameFinder } from "@/components/GameFinder";
 import { Lobby } from "@/components/Lobby";
 import { PlayerChallenges } from "@/components/PlayerChallenges";
@@ -75,17 +76,21 @@ export default async function LobbyPage() {
 
   return (
     <main className="app-screen flex flex-1 flex-col">
-      <header className="app-header flex items-center justify-between">
+      <header className="app-header flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="app-title text-2xl font-black">Game lobby</h1>
           <p className="app-subtitle text-sm">
             Hi, {session.user.displayName}
           </p>
         </div>
-
+        <InstallGameButton />
       </header>
 
       <AppNavigation current="lobby" />
+      <Link href="/practice" className="surface-list-item mb-3 flex items-center justify-between gap-3 px-3 py-3">
+        <span><strong className="text-sm">Guided practice</strong><span className="supporting-text block text-xs">Learn the basics with hints and undo. No effect on your record.</span></span>
+        <span className="text-gold" aria-hidden="true">→</span>
+      </Link>
       <GameFinder />
 
       {games.length > 0 && (

@@ -92,6 +92,23 @@ export default async function AdminPage() {
         </div>
       </div>
       <section className="admin-panel">
+        <h2>Codex</h2>
+        <p>Open your Tower workspace, conversations, and scheduled monitors.</p>
+        {/* Full navigation opens the standalone dashboard document. */}
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+        <a href="/admin/codex" className="btn-outline">
+          Open Codex
+        </a>
+        <p className="admin-help">Your Codex dashboard access key is required.</p>
+      </section>
+      <section className="admin-panel">
+        <h2>Members-only collection</h2>
+        <p>Invite people to create private accounts and manage their access.</p>
+        <Link href="/admin/members" className="btn-outline">
+          Manage members &amp; invitations
+        </Link>
+      </section>
+      <section className="admin-panel">
         <h2>Recovery email</h2>
         <p>
           {admin.recoveryEmail} ·{" "}

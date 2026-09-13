@@ -1,0 +1,236 @@
+// Prisma schema for Five-O Poker.
+//
+// SQLite is the supported datastore for both local and current production
+// deployments. The committed migration history is SQLite-specific; changing
+// providers requires a separately designed and tested migration history.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ----- Auth.js (NextAuth) models -----
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  displayName   String    @default("") // backfilled on create for OAuth users
+  passwordHash  String? // null for OAuth-only accounts
+  image         String?
+  computerLevel String?   @unique // null for humans; easy | medium | hard for built-in opponents
+  createdAt     DateTime  @default(now())
+
+  accounts Account[]
+  sessions Session[]
+  stats    Stats?
+
+  hostedMatches Match[]            @relation("HostMatches")
+  guestMatches  Match[]            @relation("GuestMatches")
+  pushSubs      PushSubscription[]
+  sentInvitations GameInvitation[] @relation("InvitationSender")
+  receivedInvitations GameInvitation[] @relation("InvitationRecipient")
+  gameRequest GameRequest?
+}
+
+// Site administration is deliberately separate from player accounts.
+model SiteAdmin {
+  id              String @id @default("owner")
+  username        String @unique
+  passwordHash    String
+  needsSetup      Boolean @default(true)
+  recoveryEmail   String?
+  emailVerified   Boolean @default(false)
+  version         Int @default(0)
+  sessions        AdminSession[]
+  tokens          AdminToken[]
+}
+
+model AdminSession {
+  tokenHash String @id
+  adminId   String
+  version   Int
+  expiresAt DateTime
+  admin     SiteAdmin @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  @@index([expiresAt])
+}
+
+model AdminToken {
+  tokenHash String @id
+  adminId   String
+  purpose   String
+  email     String
+  version   Int
+  expiresAt DateTime
+  admin     SiteAdmin @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  @@index([expiresAt])
+}
+
+model SiteContent {
+  id       String @id @default("home")
+  headline String @default("Good company. Great games.")
+  intro    String @default("Pull up a seat. Start with Five-O Poker, and come back for more games as the collection grows.")
+}
+
+model CatalogGame {
+  id          String @id @default(cuid())
+  title       String
+  description String
+  category    String @default("Card game")
+  href        String @default("")
+  status      String @default("draft")
+  sortOrder   Int @default(0)
+}
+
+// One current lobby intent per player. IDs prevent stale tabs cancelling a new post.
+model GameRequest {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  mode       String   // post | auto
+  status     String   @default("waiting") // waiting | matched
+  targetWins Int      @default(5)
+  note       String   @default("")
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  matchId    String?
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match      Match?   @relation(fields: [matchId], references: [id], onDelete: SetNull)
+
+  @@index([status, targetWins, createdAt])
+}
+
+// A named invitation reserves no game seat until the recipient accepts.
+model GameInvitation {
+  id          String   @id @default(cuid())
+  senderId    String
+  recipientId String
+  status      String   @default("pending") // pending | accepted | declined | cancelled
+  pendingKey  String?  @unique // unordered player pair; cleared when resolved
+  matchId     String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sender    User   @relation("InvitationSender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient User   @relation("InvitationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  match     Match? @relation(fields: [matchId], references: [id], onDelete: SetNull)
+
+  @@index([recipientId, status, createdAt])
+  @@index([senderId, status, createdAt])
+}
+
+// A browser Web Push subscription for turn notifications.
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ----- Game domain models -----
+
+model Stats {
+  userId        String @id
+  gamesPlayed   Int    @default(0)
+  gameWins      Int    @default(0)
+  gameLosses    Int    @default(0)
+  gamePushes    Int    @default(0)
+  fiveOs        Int    @default(0) // games won by sweeping all five hands
+  matchesPlayed Int    @default(0)
+  matchWins     Int    @default(0)
+  currentStreak Int    @default(0) // consecutive game wins
+  bestStreak    Int    @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// A match pairs two players via an invite code and runs first-to-N games.
+model Match {
+  id         String   @id @default(cuid())
+  inviteCode String   @unique
+  status     String   @default("lobby") // lobby | active | complete | abandoned
+  targetWins Int      @default(5)
+  hostId     String
+  guestId    String?
+  scoreHost  Int      @default(0)
+  scoreGuest Int      @default(0)
+  winnerId   String?
+  // Async persistence: the current in-progress game and turn state so players
+  // can close the app and resume later.
+  gameNumber Int      @default(0)
+  gameSeed   Int? // opaque CSPRNG nonce for current-game persistence identity
+  gameState  String? // serialized in-progress GameState (JSON), null between games
+  readyHost  Boolean  @default(false)
+  readyGuest Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  host  User   @relation("HostMatches", fields: [hostId], references: [id], onDelete: Cascade)
+  guest User?  @relation("GuestMatches", fields: [guestId], references: [id], onDelete: SetNull)
+  games Game[]
+  invitation GameInvitation?
+  requests GameRequest[]
+
+  @@index([hostId, updatedAt])
+  @@index([guestId, updatedAt])
+}
+
+// A single completed game within a match. The board snapshot and result are
+// stored as JSON strings for portability across SQLite/Postgres.
+model Game {
+  id          String   @id @default(cuid())
+  matchId     String
+  gameNumber  Int
+  seed        Int // opaque shuffle nonce; the persisted snapshot carries deck order
+  winnerSeat  Int? // 0 = host, 1 = guest, null = push
+  isFiveO     Boolean  @default(false)
+  resultJson  String // serialized GameResult
+  boardJson   String // serialized final boards
+  createdAt   DateTime @default(now())
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@unique([matchId, gameNumber])
+}

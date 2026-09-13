@@ -2337,3 +2337,11 @@ html[data-motion="reduced"] .target-glow { animation: none; }
     grid-template-columns: 1fr;
   }
 }
+/* Private member collection shares the public site's type and colors. */
+.member-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; }
+.member-feature { border-top: 4px solid #254e43; }
+.member-issued { background: #eef3ed; border: 1px solid #bdd0bf; padding: 1rem; margin-top: 1rem; border-radius: .5rem; overflow-wrap: anywhere; }
+.member-search { display: flex; align-items: end; gap: 1rem; flex-wrap: wrap; }
+.member-search .admin-field { flex: 1; min-width: 180px; }
+.member-pagination { display: flex; justify-content: space-between; gap: 1rem; margin-top: 1.5rem; }
+@media (max-width: 640px) { .member-grid { grid-template-columns: 1fr; } }

@@ -24,6 +24,12 @@ export default function HowToPlayPage() {
       </header>
 
       <section className="panel">
+        <h2 className="mb-2 font-bold">Learn by playing</h2>
+        <p className="supporting-text mb-3 text-sm">Try four short lessons with hints and undo. Practice never affects your record, and you don’t need an account.</p>
+        <Link href="/practice" className="btn-primary w-full">Try guided practice</Link>
+      </section>
+
+      <section className="panel">
         <h2 className="mb-2 font-bold">Choose your opponent</h2>
         <p className="supporting-text text-sm">Invite a player by name or code, or choose Play the computer in the lobby. Start with Analyst Edge, challenge House Edge, or take on Counter Edge. These three follow the same rules and cannot see your hidden cards. Their results count in your overall and head-to-head records.</p>
         <p className="supporting-text mt-3 text-sm"><strong>Wildcard Edge: House Rules exhibition.</strong> This fourth opponent can cheat, peek, swap cards, and offer deals. Results never affect statistics or history. One row is low-hand-wins, announced before play. Every trick waits for your response: allow it, use Play Fair!, call a suspicious bluff, or accept/decline a deal. Open Tricks for your redraw and row-swap powers, the trick log, and the full rulebook. Fresh deal restarts whenever you like; the current board saves so you can resume.</p>

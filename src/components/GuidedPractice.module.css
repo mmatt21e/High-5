@@ -1,0 +1,67 @@
+.practice { display: flex; flex: 1; flex-direction: column; gap: 16px; padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+.header, .sectionHeading, .tools { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.header h1 { color: var(--color-gold); font-family: var(--ui-title-font); font-size: 24px; font-weight: 800; }
+.header a { font-size: 13px; white-space: nowrap; min-height: 44px; display: flex; align-items: center; }
+.eyebrow { color: var(--color-gold); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.reassurance, .muted { color: var(--ui-muted-text); font-size: 13px; line-height: 1.5; }
+.reassurance { margin-top: -8px; }
+.coach, .held, .opponent, .handResult { border: 1px solid var(--ui-panel-border); border-radius: 14px; background: var(--ui-panel); padding: 16px; }
+.coach { display: grid; gap: 10px; border-color: var(--color-gold); }
+.coach h2 { font-family: var(--ui-title-font); font-size: 23px; font-weight: 700; line-height: 1.2; }
+.coach p:not(.eyebrow) { font-size: 14px; line-height: 1.55; }
+.progress { display: flex; gap: 5px; margin-bottom: 2px; }
+.progress span { flex: 1; height: 3px; border-radius: 4px; background: var(--ui-divider); }
+.progress span[data-reached="true"] { background: var(--color-gold); }
+.textButton { min-height: 44px; color: var(--color-gold); text-decoration: underline; text-underline-offset: 3px; font-size: 13px; text-align: left; cursor: pointer; }
+.textButton:disabled { color: var(--ui-subtle-text); cursor: default; text-decoration: none; }
+.hint { padding: 12px; border-left: 2px solid var(--color-gold); background: var(--ui-elevated); }
+.sectionHeading { margin-bottom: 8px; font-size: 12px; }
+.sectionHeading h2, .sectionHeading h3 { font-size: 14px; font-weight: 700; }
+.sectionHeading > span { color: var(--ui-muted-text); }
+.table { padding: 0 4px; }
+.rows { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.row { min-width: 0; display: grid; gap: 7px; padding: 8px 3px 3px; border: 1px solid var(--ui-divider); border-radius: 10px; background: var(--ui-surface); text-align: center; }
+.row > span { font-size: 12px; font-weight: 600; }
+.row :global(.card-row-well) { width: 100%; }
+.row[data-target="true"] { border-color: var(--color-gold); cursor: pointer; }
+.row[data-target="true"]:hover { background: var(--ui-elevated); }
+.row:disabled { opacity: 1; }
+.held { padding: 14px 12px; }
+.heldCards { display: flex; align-items: flex-start; justify-content: space-between; gap: 1px; margin: 12px 0 6px; }
+.cardButton { position: relative; display: flex; align-items: center; justify-content: center; min-width: 44px; min-height: 70px; border-radius: 8px; outline: 2px solid transparent; outline-offset: 1px; }
+.cardButton:not(:disabled) { cursor: pointer; }
+.cardButton[aria-pressed="true"] { outline-color: var(--color-gold); background: var(--ui-elevated); }
+.newCard { position: absolute; top: -10px; right: 0; border-radius: 4px; padding: 0 4px; color: var(--ui-on-accent); background: var(--color-gold); font-size: 10px; font-weight: 800; }
+.selection { min-height: 22px; padding-top: 3px; font-size: 12px; color: var(--color-gold); }
+.feedback { color: var(--color-gold); font-size: 13px; line-height: 1.5; }
+.feedback:empty { display: none; }
+.feedback:not(:empty) { margin-top: 8px; }
+.preview { display: grid; gap: 5px; padding: 12px 0; font-size: 13px; border-top: 1px solid var(--ui-divider); }
+.cardStrip { display: flex; gap: 4px; flex-wrap: wrap; }
+.held > button { width: 100%; margin: 8px 0; }
+.opponent summary { min-height: 44px; display: list-item; align-content: center; font-size: 13px; color: var(--color-gold); cursor: pointer; }
+.opponent[open] .rows { margin: 12px 0; }
+.opponent > p { margin: 12px 0 6px; }
+.footer { display: grid; gap: 6px; padding: 0 4px; }
+.tools { flex-wrap: wrap; gap: 4px 12px; }
+.tools a { min-height: 44px; display: flex; align-items: center; font-size: 13px; }
+.footer > p { font-size: 11px; }
+.completionActions, .showdown { display: grid; gap: 12px; }
+.result { padding: 8px 4px; display: grid; gap: 6px; }
+.result h3 { font-family: var(--ui-title-font); font-size: 24px; font-weight: 700; }
+.result > p:not(.eyebrow) { font-size: 14px; }
+.handResult { display: grid; gap: 10px; }
+.handResult .sectionHeading { margin: 0; }
+.handLabel { font-size: 12px; margin-bottom: 6px; color: var(--ui-muted-text); }
+.hiddenResult { border-color: var(--color-gold); }
+.sectionHeading .won { color: var(--ui-success); }
+.practice :is(button, summary, a):focus-visible { outline: 2px solid var(--color-gold); outline-offset: 4px; }
+.coach h2:focus { outline: none; }
+@media (max-width: 360px) {
+  .practice { padding-left: 12px; padding-right: 12px; }
+  .coach, .opponent, .handResult { padding: 12px; }
+  .header h1 { font-size: 21px; }
+  .held { padding: 12px 6px; }
+  .heldCards { gap: 0; }
+  .rows { gap: 4px; }
+}

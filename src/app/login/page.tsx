@@ -5,6 +5,7 @@ import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { safeCallbackPath } from "@/lib/safeCallbackPath";
+import { InstallGameButton } from "@/components/InstallGame";
 
 const googleEnabled = process.env.NEXT_PUBLIC_GOOGLE_ENABLED === "true";
 
@@ -118,6 +119,7 @@ function LoginForm() {
           How to play &amp; customize cards
         </Link>
       </p>
+      <InstallGameButton className="self-center" />
     </main>
   );
 }

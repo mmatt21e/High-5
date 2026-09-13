@@ -5,7 +5,17 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: ["/", "/how-to-play"],
-      disallow: ["/admin", "/api/", "/play/", "/profile", "/lobby", "/settings", "/login", "/register"],
+      disallow: [
+        "/admin",
+        "/members",
+        "/api/",
+        "/play/",
+        "/profile",
+        "/lobby",
+        "/settings",
+        "/login",
+        "/register",
+      ],
     },
     sitemap: "https://edgegames.win/sitemap.xml",
     host: "https://edgegames.win",

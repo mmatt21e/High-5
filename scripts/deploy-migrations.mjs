@@ -25,7 +25,8 @@ const computerMigration = "20260907000000_computer_opponents";
 const playerHistory = [...previousHistory, invitationMigration];
 const computerHistory = [...playerHistory, computerMigration];
 const lobbyHistory = [...computerHistory, "20260908000000_game_lobby"];
-const completeHistory = [...lobbyHistory, "20260911000000_site_admin"];
+const adminHistory = [...lobbyHistory, "20260911000000_site_admin"];
+const completeHistory = [...adminHistory, "20260912000000_members"];
 const knownHistories = new Map([
   ["", "untracked"],
   [atomicMigration, "round2"],
@@ -35,6 +36,7 @@ const knownHistories = new Map([
   [playerHistory.join(","), "pre-computer"],
   [computerHistory.join(","), "pre-lobby"],
   [lobbyHistory.join(","), "pre-admin"],
+  [adminHistory.join(","), "pre-members"],
   [completeHistory.join(","), "current"],
 ]);
 
@@ -206,6 +208,8 @@ if (kind === "untracked") {
     assertSchemaMatches(resolve(repositoryRoot, "scripts", "fixtures", "pre-lobby.schema.prisma"), "Before lobby");
   } else if (kind === "pre-admin") {
     assertSchemaMatches(resolve(repositoryRoot, "scripts", "fixtures", "pre-admin.schema.prisma"), "Before site admin");
+  } else if (kind === "pre-members") {
+    assertSchemaMatches(resolve(repositoryRoot, "scripts", "fixtures", "pre-members.schema.prisma"), "Before members");
   } else if (kind !== "current") {
     assertSchemaMatches(prePlayerSchema, "Before player invitations");
   } else {

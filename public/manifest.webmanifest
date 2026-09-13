@@ -2,16 +2,36 @@
   "name": "Five-O Poker",
   "short_name": "Five-O",
   "description": "Heads-up Five-O Poker, played across two devices.",
-  "start_url": "/",
+  "id": "/",
+  "start_url": "/lobby",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0a2a1a",
   "theme_color": "#0a2a1a",
   "icons": [
     {
+      "src": "/icons/five-o-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/five-o-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/five-o-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
       "src": "/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }

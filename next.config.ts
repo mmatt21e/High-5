@@ -5,6 +5,18 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   async headers() {
     return [
+      ...[
+        "/members/:path*",
+        "/api/members/:path*",
+        "/api/admin/members/:path*",
+        "/admin/members/:path*",
+      ].map((source) => ({
+        source,
+        headers: [
+          { key: "Cache-Control", value: "private, no-store, max-age=0" },
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+        ],
+      })),
       {
         source: "/sw.js",
         headers: [

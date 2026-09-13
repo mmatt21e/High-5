@@ -2,8 +2,15 @@
 // pages. Navigations and APIs always go to the network; only immutable public
 // assets are eligible for Cache Storage.
 
-const CACHE = "fiveo-static-v2";
-const PUBLIC_ASSETS = ["/manifest.webmanifest", "/icon.svg"];
+const CACHE = "fiveo-static-v3";
+const PUBLIC_ASSETS = [
+  "/icon.svg",
+  "/icons/five-o-192.png",
+  "/icons/five-o-512.png",
+  "/icons/five-o-maskable-512.png",
+  "/icons/apple-touch-icon.png",
+];
+// The manifest changes as launch/install settings evolve; always fetch it fresh.
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -17,7 +24,7 @@ self.addEventListener("activate", (event) => {
     caches
       .keys()
       .then((keys) =>
-        Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))),
+        Promise.all(keys.filter((k) => k.startsWith("fiveo-static-") && k !== CACHE).map((k) => caches.delete(k))),
       )
       .then(() => self.clients.claim()),
   );
