@@ -1,0 +1,8 @@
+{
+  "src/app/admin/page.tsx": "af33e866c7209ab9bf5828031b899746370779c153eb6c109de90c9546b284a1",
+  "src/server/sportsLabGateway.ts": "af33e866c7209ab9bf5828031b899746370779c153eb6c109de90c9546b284a1",
+  "scripts/sports-lab-bridge.ts": "af33e866c7209ab9bf5828031b899746370779c153eb6c109de90c9546b284a1",
+  "next.config.ts": "af33e866c7209ab9bf5828031b899746370779c153eb6c109de90c9546b284a1",
+  "eslint.config.mjs": "7ff06255d2eb4edec927f3a8e59fa8130d39213db5b9467d37dd27ead72d1bdf",
+  "scripts/start.mjs": "7ff06255d2eb4edec927f3a8e59fa8130d39213db5b9467d37dd27ead72d1bdf"
+}

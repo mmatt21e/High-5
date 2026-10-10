@@ -2,6 +2,10 @@ import { createServer, type IncomingMessage } from "node:http";
 import { randomBytes } from "node:crypto";
 import { parse } from "node:url";
 import next from "next";
+import { ADMIN_COOKIE } from "./src/server/admin";
+import { sportsLabConfig } from "./src/server/sportsLabConfig";
+import { createSportsLabGateway } from "./src/server/sportsLabGateway";
+import { sportsLabAdminSession } from "./src/server/sportsLabAuthorization";
 import { Server, type Socket } from "socket.io";
 import type { ZodType } from "zod";
 import { SOCKET_PATH } from "./src/lib/realtime/events";
@@ -49,7 +53,9 @@ if (
 const hostname = process.env.HOST?.trim() || (dev ? "127.0.0.1" : "0.0.0.0");
 const port = parseInt(process.env.PORT ?? "3000", 10);
 
-const app = next({ dev, hostname, port });
+// Keep Lab-host traffic outside Next.js and Socket.IO upgrade listeners.
+const applicationServer = createServer();
+const app = next({ dev, hostname, port, httpServer: applicationServer });
 const handle = app.getRequestHandler();
 
 /**
@@ -145,11 +151,24 @@ function runValidatedSocketAction<T>(
 }
 
 app.prepare().then(() => {
-  const httpServer = createServer((req, res) => {
+  // Next has now loaded development env files; production env is already injected.
+  const labConfig = sportsLabConfig();
+  const labGateway = labConfig ? createSportsLabGateway(labConfig, sportsLabAdminSession, ADMIN_COOKIE) : null;
+  applicationServer.on("request", (req, res) => {
     handle(req, res, parse(req.url ?? "/", true));
   });
+  const httpServer = createServer((req, res) => {
+    if (labGateway?.handles(req)) { labGateway.handle(req, res); return; }
+    if (req.url?.split("?", 1)[0] === "/api/admin") res.once("finish", () => labGateway?.recheck());
+    applicationServer.emit("request", req, res);
+  });
+  httpServer.on("upgrade", (req, socket, head) => {
+    if (labGateway?.labHost(req)) { labGateway.upgrade(req, socket, head); return; }
+    applicationServer.emit("upgrade", req, socket, head);
+  });
+  httpServer.on("close", () => labGateway?.close());
 
-  const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
+  const io = new Server<ClientToServerEvents, ServerToClientEvents>(applicationServer, {
     path: SOCKET_PATH,
     allowRequest: (req, callback) => {
       callback(null, isAllowedSocketRequest(req));

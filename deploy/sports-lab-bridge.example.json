@@ -1,0 +1,5 @@
+{
+  "listenAddress": "<BRIDGE_PRIVATE_IPV4>",
+  "listenPort": 18501,
+  "trustedAddress": "<GATEWAY_PRIVATE_IPV4>"
+}

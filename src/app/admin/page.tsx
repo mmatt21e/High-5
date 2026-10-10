@@ -102,6 +102,14 @@ export default async function AdminPage() {
         <p className="admin-help">Your Codex dashboard access key is required.</p>
       </section>
       <section className="admin-panel">
+        <h2>Sports Lab</h2>
+        <p>Open your private sports research workspace.</p>
+        <Link href="/admin/sports-lab" className="btn-outline">
+          Open Sports Lab
+        </Link>
+        <p className="admin-help">{process.env.SPORTS_LAB_ORIGIN ? "Administrator access required. The Lab computer must be online." : "Local access only. Remote access is not configured."}</p>
+      </section>
+      <section className="admin-panel">
         <h2>Members-only collection</h2>
         <p>Invite people to create private accounts and manage their access.</p>
         <Link href="/admin/members" className="btn-outline">
