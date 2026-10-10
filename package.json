@@ -26,20 +26,21 @@
   },
   "dependencies": {
     "@auth/prisma-adapter": "2.11.3",
-    "@next/env": "15.5.25",
+    "@next/env": "15.5.27",
     "@prisma/client": "6.12.0",
+    "admin-mailer": "npm:nodemailer@10.0.9",
     "bcryptjs": "^2.4.3",
-    "next": "15.5.25",
+    "next": "15.5.27",
     "next-auth": "5.0.0-beta.32",
-    "admin-mailer": "npm:nodemailer@10.0.8",
     "prisma": "6.12.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "sharp": "0.35.4",
+    "sharp": "0.35.5",
     "socket.io": "4.8.3",
     "socket.io-client": "4.8.3",
     "tsx": "4.23.13",
     "web-push": "^3.6.7",
+    "ws": "8.21.3",
     "zod": "^3.24.1"
   },
   "devDependencies": {
@@ -50,9 +51,10 @@
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
     "@types/web-push": "^3.6.4",
+    "@types/ws": "8.18.1",
     "cross-env": "^7.0.3",
     "eslint": "9.39.5",
-    "eslint-config-next": "15.5.25",
+    "eslint-config-next": "15.5.27",
     "jsdom": "^30.0.1",
     "tailwindcss": "4.3.3",
     "typescript": "^5.7.2",
@@ -61,6 +63,9 @@
   "overrides": {
     "next": {
       "postcss": "8.5.23"
+    },
+    "@next/eslint-plugin-next@15.5.27": {
+      "fast-glob": "file:../../../tools/eslint-next-glob"
     }
   }
 }

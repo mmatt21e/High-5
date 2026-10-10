@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
         "/api/members/:path*",
         "/api/admin/members/:path*",
         "/admin/members/:path*",
+        "/admin/sports-lab/:path*",
       ].map((source) => ({
         source,
         headers: [

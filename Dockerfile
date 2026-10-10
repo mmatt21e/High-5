@@ -8,7 +8,8 @@ WORKDIR /app
 
 FROM base AS dependencies
 
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json .npmrc ./
+COPY tools/eslint-next-glob ./tools/eslint-next-glob
 RUN npm ci
 
 FROM base AS builder
@@ -22,7 +23,8 @@ ENV DATABASE_URL=file:/tmp/five-o-build.db \
     NEXT_TELEMETRY_DISABLED=1
 
 COPY --from=dependencies /app/node_modules ./node_modules
-COPY package.json package-lock.json ./
+COPY --from=dependencies /app/tools/eslint-next-glob ./tools/eslint-next-glob
+COPY package.json package-lock.json .npmrc ./
 COPY next.config.ts postcss.config.mjs tsconfig.json ./
 COPY prisma ./prisma
 COPY public ./public

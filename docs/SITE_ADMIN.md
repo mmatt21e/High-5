@@ -94,3 +94,9 @@ and [Nodemailer SMTP transport](https://nodemailer.com/smtp).
   dashboard/listing editor with a disposable fixture. That fixture was removed.
 - No production deployment or real recovery-email delivery performed. SMTP
   configuration and owner email verification remain deployment setup steps.
+
+## Sports Lab
+
+The administration dashboard includes **Open Sports Lab**, leading to the
+administrator-checked `/admin/sports-lab` page. When configured, the secure launcher reuses your administrator session on a dedicated Lab hostname. Without complete configuration, the page explicitly shows only local access and remote unavailability.
+See [Sports Lab access and remote approval boundary](SPORTS_LAB_ADMIN.md).
